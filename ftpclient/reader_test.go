@@ -3,6 +3,7 @@ package ftpclient
 import (
 	"fmt"
 	"io/ioutil"
+	"regexp"
 	"testing"
 	"time"
 )
@@ -17,13 +18,52 @@ func TestGenerateCSVFile(t *testing.T) {
 		content = content + fmt.Sprintf(
 			"%d,%v,1765,1,20.011,14.991,9.021,%d\n",
 			i,
-			time.Now().Format("2020/03/10 14:50:28"),
+			timeFormat(time.Now()),
 			i,
 		)
 	}
 
-	err := ioutil.WriteFile("/Users/wangbob/workspace/ftpserver/devicedata-test.csv", []byte(content), 0644)
+	err := ioutil.WriteFile("/Users/sasuke/workspace/ftpdata/1765/1765-1-20200312-w.csv", []byte(content), 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+var timePattern = `(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}:\d{2})`
+
+func TestTimeFormat(t *testing.T) {
+	fmt.Println(timeFormat(time.Now()))
+}
+
+func timeFormat(t time.Time) string {
+	r := regexp.MustCompile(timePattern)
+	re := r.FindAllStringSubmatch(t.String(), -1)
+	if len(re) > 0 {
+		return fmt.Sprintf("%s/%s/%s %s", re[0][1], re[0][2], re[0][3], re[0][4])
+	}
+	return ""
+}
+
+func TestDecode(t *testing.T) {
+	datas, err := ReadFile("./1765/1765-1-20200312-w.csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var cd CSVDecoder
+	if err := cd.Decode([]byte(datas)); err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println("Header:")
+	fmt.Println(cd.Headers)
+
+	fmt.Println("Limits:")
+	fmt.Println(cd.Limits)
+
+	fmt.Println("Rows:")
+	for i := 0; i < 10; i++ {
+		fmt.Println(cd.Rows[i])
+	}
+	fmt.Println("...")
 }
