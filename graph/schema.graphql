@@ -16,4 +16,3 @@ input LoginInput {
   account: String!
   password: String!
 }
-
