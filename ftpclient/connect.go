@@ -1,7 +1,9 @@
 package ftpclient
 
 import (
-	"github.com/SasukeBo/ftpviewer/conf"
+	"errors"
+	"fmt"
+	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/jlaffaye/ftp"
 	"io/ioutil"
 	"log"
@@ -11,20 +13,37 @@ import (
 var ftpConn *ftp.ServerConn
 
 func init() {
-	err := connect()
-	if err != nil {
-		panic(err)
-	}
+	connect()
 }
 
 // connect make a connection for ftp server
 func connect() error {
 	var err error
-	ftpConn, err = ftp.Dial(conf.FtpAddress(), ftp.DialWithTimeout(5*time.Second))
+	ftphostConf := orm.GetSystemConfigCache("ftp_host")
+	if ftphostConf == nil {
+		return errors.New("没有找到FTP服务器Host配置")
+	}
+
+	ftpportConf := orm.GetSystemConfigCache("ftp_port")
+	if ftpportConf == nil {
+		return errors.New("没有找到FTP服务器Port配置")
+	}
+
+	ftpuserConf := orm.GetSystemConfigCache("ftp_username")
+	if ftpuserConf == nil {
+		return errors.New("没有找到FTP服务器登录账号")
+	}
+
+	ftppassConf := orm.GetSystemConfigCache("ftp_password")
+	if ftppassConf == nil {
+		return errors.New("没有找到FTP服务器登录密码")
+	}
+
+	ftpConn, err = ftp.Dial(fmt.Sprintf("%v:%v", ftphostConf.Value, ftpportConf.Value), ftp.DialWithTimeout(4*time.Second))
 	if err != nil {
 		return err
 	}
-	err = ftpConn.Login(conf.FtpServerUser, conf.FtpServerPass)
+	err = ftpConn.Login(ftpuserConf.Value, ftppassConf.Value)
 	if err != nil {
 		return err
 	}

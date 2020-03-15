@@ -2,21 +2,40 @@ package orm
 
 import (
 	"fmt"
+
 	"github.com/SasukeBo/ftpviewer/conf"
 	"github.com/jinzhu/gorm"
+
 	// set db driver
-	_ "github.com/jinzhu/gorm/dialects/mysql"
+	"crypto/md5"
 	"time"
+
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
 // DB connection to database
 var DB *gorm.DB
 
+// User 系统用户
+type User struct {
+	gorm.Model
+	Admin       bool   `gorm:"default:false"`
+	Username    string `gorm:"not null;unique_index"`
+	Password    string `gorm:"not null"`
+	AccessToken string
+}
+
 // SystemConfig 系统设置表
 type SystemConfig struct {
 	gorm.Model
-	Key   string
+	Key   string `gorm:"unique_index"`
 	Value string
+}
+
+// Material 材料
+type Material struct {
+	ID   int    `gorm:"column:id;primary_key"`
+	Name string `gorm:"not null"`
 }
 
 // Device 生产设备表
@@ -32,6 +51,7 @@ type Product struct {
 	UUID       string `gorm:"column:product_uuid;unique_index;not null"`
 	MaterialID string `gorm:"column:material_id;not null;index"`
 	DeviceID   int    `gorm:"column:device_id;not null"`
+	Qualified  bool   `gorm:"column:qualified;default:false"`
 	CreatedAt  time.Time
 }
 
@@ -54,18 +74,52 @@ type SizeValue struct {
 
 func init() {
 	var err error
-	DB, err = gorm.Open("mysql", conf.DBdns)
+
+	if conf.GetEnv() == "TEST" {
+		DB, err = gorm.Open("mysql", conf.DBdnstest)
+	} else {
+		DB, err = gorm.Open("mysql", conf.DBdns)
+	}
+
 	if err != nil {
 		panic(fmt.Errorf("open connection to db error: \n%v", err.Error()))
 	}
+	DB.LogMode(true)
 	err = DB.AutoMigrate(
 		&SystemConfig{},
 		&Device{},
 		&Product{},
 		&Size{},
 		&SizeValue{},
+		&Material{},
+		&User{},
 	).Error
 	if err != nil {
 		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
 	}
+
+	generateRootUser()
+}
+
+func generateRootUser() {
+	var root User
+	DB.Where("username = ?", "admin").First(&root)
+	if root.ID > 0 {
+		return
+	}
+
+	u := &User{
+		Username: "admin",
+		Password: Encrypt("admin"),
+		Admin:    true,
+	}
+
+	if err := DB.Create(u).Error; err != nil {
+		panic(err)
+	}
+}
+
+// Encrypt _
+func Encrypt(origin string) string {
+	return fmt.Sprintf("%x", md5.Sum([]byte(origin)))
 }

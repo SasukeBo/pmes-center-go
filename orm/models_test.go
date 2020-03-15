@@ -5,6 +5,7 @@ import (
 )
 
 func TestCURD(t *testing.T) {
+	defer ClearDB()
 	conf := SystemConfig{
 		Key:   "hello",
 		Value: "world",
@@ -33,4 +34,14 @@ func TestCURD(t *testing.T) {
 	if err := DB.Delete(&confr).Error; err != nil {
 		t.Fatal(err)
 	}
+}
+
+// ClearDB clear database
+func ClearDB() {
+	DB.Exec("delete from devices where 1")
+	DB.Exec("delete from materials where 1")
+	DB.Exec("delete from products where 1")
+	DB.Exec("delete from size_values where 1")
+	DB.Exec("delete from sizes where 1")
+	DB.Exec("delete from system_configs where 1")
 }

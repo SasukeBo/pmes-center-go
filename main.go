@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/SasukeBo/ftpviewer/graph"
@@ -24,9 +25,19 @@ func playgroundHandler() gin.HandlerFunc {
 	}
 }
 
+func GinContextToContextMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := context.WithValue(c.Request.Context(), "GinContext", c)
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	}
+}
+
 func main() {
 	r := gin.Default()
 	r.POST("/query", graphqlHandler())
-	r.GET("/", playgroundHandler())
-	r.Run(":4476")
+	r.GET("/", gin.BasicAuth(gin.Accounts{
+		"sasuke": "Wb922149@...S",
+	}), playgroundHandler())
+	r.Run(":44761")
 }

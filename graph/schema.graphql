@@ -1,9 +1,51 @@
 type Query {
   currentUser: User!
+  products(searchInput: Search!): ProductWrap!
+  cpk(cpkInput: Search!): AnalysisResult!
+  materials(searchInput: Search!): [AnalysisResult]!
+  devices(searchInput: Search!): [AnalysisResult]!
 }
 
 type Mutation {
   login(loginInput: LoginInput!): User!
+  setting(settingInput: SettingInput!): SystemConfig!
+  addMaterial(materialID: String!): AnalysisResult!
+  active(accessToken: String!): String!
+}
+
+type AnalysisResult {
+  id: Int!
+  name: String!
+  cp: Float!
+  cpk: Float!
+  ok: Int!
+  ng: Int!
+  normal: Float!
+  dataset: Map!
+}
+
+input Search {
+  "设备名称"
+  deviceName: String
+  "料号"
+  materialID: String!
+  "起始时间"
+  beginTime: Time
+  "结束时间"
+  endTime: Time
+}
+
+input SettingInput {
+  key: String!
+  value: String!
+}
+
+type SystemConfig {
+  id: Int!
+  key: String!
+  value: String!
+  createdAt: Time!
+  updatedAt: Time!
 }
 
 type User {
@@ -16,3 +58,23 @@ input LoginInput {
   account: String!
   password: String!
 }
+
+type Product {
+  id: Int!
+  uuid: String!
+  materialID: String!
+  deviceID: Int!
+  qualified: Boolean!
+  sizeValue: Map!
+  createdAt: Time!
+}
+
+type ProductWrap {
+  tableHeader: [String]!
+  products: [Product]!
+  count: Int!
+  qualifiedRate: Float!
+}
+
+scalar Time
+scalar Map
