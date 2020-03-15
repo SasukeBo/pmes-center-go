@@ -2,14 +2,16 @@ package logic
 
 import (
 	"context"
-
-	"github.com/gin-gonic/gin"
-	"github.com/vektah/gqlparser/v2/gqlerror"
+	"encoding/base64"
+	"time"
 
 	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/gin-gonic/gin"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
-func getGinContext(ctx context.Context) *gin.Context {
+// GetGinContext _
+func GetGinContext(ctx context.Context) *gin.Context {
 	c := ctx.Value("GinContext")
 	if c == nil {
 		panic(&gqlerror.Error{
@@ -35,18 +37,9 @@ func getGinContext(ctx context.Context) *gin.Context {
 
 // Authenticate _
 func Authenticate(ctx context.Context) error {
-	gc := getGinContext(ctx)
+	gc := GetGinContext(ctx)
 
-	token, err := gc.Cookie("access_token")
-	if err != nil {
-		return &gqlerror.Error{
-			Message: "用户验证失败",
-			Extensions: map[string]interface{}{
-				"originErr": "get access_token failed.",
-			},
-		}
-	}
-
+	token := gc.GetHeader("Access-Token")
 	user := orm.GetUserWithTokenCache(token)
 	if user == nil {
 		return &gqlerror.Error{
@@ -64,7 +57,7 @@ func Authenticate(ctx context.Context) error {
 
 // CurrentUser _
 func CurrentUser(ctx context.Context) *orm.User {
-	gc := getGinContext(ctx)
+	gc := GetGinContext(ctx)
 	user, ok := gc.Get("current_user")
 	if !ok {
 		return nil
@@ -75,4 +68,11 @@ func CurrentUser(ctx context.Context) *orm.User {
 	}
 
 	return nil
+}
+
+// GenToken _
+func GenToken(base string) string {
+	t := time.Now()
+	data := []byte(base + t.String())
+	return base64.StdEncoding.EncodeToString(data)
 }

@@ -96,16 +96,16 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Account  func(childComplexity int) int
-		ID       func(childComplexity int) int
-		Password func(childComplexity int) int
+		Account func(childComplexity int) int
+		Admin   func(childComplexity int) int
+		ID      func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
 	Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error)
 	Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error)
-	AddMaterial(ctx context.Context, materialID string) (*model.AnalysisResult, error)
+	AddMaterial(ctx context.Context, materialID string) (bool, error)
 	Active(ctx context.Context, accessToken string) (string, error)
 }
 type QueryResolver interface {
@@ -409,19 +409,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Account(childComplexity), true
 
+	case "User.admin":
+		if e.complexity.User.Admin == nil {
+			break
+		}
+
+		return e.complexity.User.Admin(childComplexity), true
+
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
 		}
 
 		return e.complexity.User.ID(childComplexity), true
-
-	case "User.password":
-		if e.complexity.User.Password == nil {
-			break
-		}
-
-		return e.complexity.User.Password(childComplexity), true
 
 	}
 	return 0, false
@@ -498,7 +498,7 @@ var sources = []*ast.Source{
 type Mutation {
   login(loginInput: LoginInput!): User!
   setting(settingInput: SettingInput!): SystemConfig!
-  addMaterial(materialID: String!): AnalysisResult!
+  addMaterial(materialID: String!): Boolean!
   active(accessToken: String!): String!
 }
 
@@ -540,7 +540,7 @@ type SystemConfig {
 type User {
   id: Int!
   account: String!
-  password: String!
+  admin: Boolean!
 }
 
 input LoginInput {
@@ -1127,9 +1127,9 @@ func (ec *executionContext) _Mutation_addMaterial(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.AnalysisResult)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNAnalysisResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAnalysisResult(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_active(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2052,7 +2052,7 @@ func (ec *executionContext) _User_account(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_password(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_admin(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2069,7 +2069,7 @@ func (ec *executionContext) _User_password(ctx context.Context, field graphql.Co
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Password, nil
+		return obj.Admin, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2081,9 +2081,9 @@ func (ec *executionContext) _User_password(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -3608,8 +3608,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "password":
-			out.Values[i] = ec._User_password(ctx, field, obj)
+		case "admin":
+			out.Values[i] = ec._User_admin(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

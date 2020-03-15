@@ -18,7 +18,7 @@ func TestGenerateCSVFile(t *testing.T) {
 		content = content + fmt.Sprintf(
 			"%d,%v,1765,1,20.011,14.991,9.021,%d\n",
 			i,
-			timeFormat(time.Now()),
+			timeFormatReverse(time.Now()),
 			i,
 		)
 	}
@@ -29,14 +29,14 @@ func TestGenerateCSVFile(t *testing.T) {
 	}
 }
 
-var timePattern = `(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}:\d{2})`
+var timePatternReverse = `(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2}:\d{2})`
 
 func TestTimeFormat(t *testing.T) {
-	fmt.Println(timeFormat(time.Now()))
+	fmt.Println(timeFormatReverse(time.Now()))
 }
 
-func timeFormat(t time.Time) string {
-	r := regexp.MustCompile(timePattern)
+func timeFormatReverse(t time.Time) string {
+	r := regexp.MustCompile(timePatternReverse)
 	re := r.FindAllStringSubmatch(t.String(), -1)
 	if len(re) > 0 {
 		return fmt.Sprintf("%s/%s/%s %s", re[0][1], re[0][2], re[0][3], re[0][4])

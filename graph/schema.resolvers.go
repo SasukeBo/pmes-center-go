@@ -11,11 +11,35 @@ import (
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
-	"github.com/vektah/gqlparser/v2/gqlerror"
+	"github.com/jinzhu/gorm"
 )
 
 func (r *mutationResolver) Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	var user orm.User
+
+	if err := orm.DB.Where("username = ? AND password = ?", loginInput.Account, orm.Encrypt(loginInput.Password)).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, NewGQLError("账号或密码不正确", err.Error())
+		}
+
+		return nil, NewGQLError("登录失败", err.Error())
+	}
+
+	token := logic.GenToken(user.Password)
+	if err := orm.DB.Model(&user).Update("access_token", token).Error; err != nil {
+		return nil, NewGQLError("登录失败", err.Error())
+	}
+
+	gc := logic.GetGinContext(ctx)
+	if gc != nil {
+		gc.Header("Access-Token", token)
+	}
+
+	return &model.User{
+		ID:      int(user.ID),
+		Account: user.Username,
+		Admin:   user.Admin,
+	}, nil
 }
 
 func (r *mutationResolver) Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error) {
@@ -25,12 +49,7 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 
 	user := logic.CurrentUser(ctx)
 	if user == nil || !user.Admin {
-		return nil, &gqlerror.Error{
-			Message: "添加系统配置失败，您不是Admin",
-			Extensions: map[string]interface{}{
-				"originErr": fmt.Sprintf("%+v", *user),
-			},
-		}
+		return nil, NewGQLError("添加系统配置失败，您不是Admin", fmt.Sprintf("%+v", *user))
 	}
 
 	conf := orm.GetSystemConfigCache(settingInput.Key)
@@ -40,17 +59,11 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 			Value: settingInput.Value,
 		}
 	} else {
-		fmt.Printf("%+v\n", conf)
 		conf.Value = settingInput.Value
 	}
 
 	if err := orm.DB.Save(conf).Error; err != nil {
-		return nil, &gqlerror.Error{
-			Message: "添加系统配置失败",
-			Extensions: map[string]interface{}{
-				"originErr": err.Error(),
-			},
-		}
+		return nil, NewGQLError("添加系统配置失败", err.Error())
 	}
 
 	orm.CacheSystemConfig(*conf)
@@ -64,8 +77,26 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 	}, nil
 }
 
-func (r *mutationResolver) AddMaterial(ctx context.Context, materialID string) (*model.AnalysisResult, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *mutationResolver) AddMaterial(ctx context.Context, materialID string) (bool, error) {
+	if err := logic.Authenticate(ctx); err != nil {
+		return false, err
+	}
+
+	material := orm.GetMaterialWithIDCache(materialID)
+	if material != nil {
+		return false, NewGQLError("料号已经存在，请确认你的输入。", "find material, can't create another one.")
+	}
+
+	m := orm.Material{Name: materialID}
+	if err := orm.DB.Create(&m).Error; err != nil {
+		return false, NewGQLError("创建料号失败", err.Error())
+	}
+
+	if !logic.IsMaterialExist(materialID) {
+		return true, NewGQLError("料号创建成功，但是FTP服务器现在没有该料号的数据。", "IsMaterialExist false")
+	}
+
+	return true, nil
 }
 
 func (r *mutationResolver) Active(ctx context.Context, accessToken string) (string, error) {
@@ -73,7 +104,20 @@ func (r *mutationResolver) Active(ctx context.Context, accessToken string) (stri
 }
 
 func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	if err := logic.Authenticate(ctx); err != nil {
+		return nil, err
+	}
+
+	user := logic.CurrentUser(ctx)
+	if user == nil {
+		return nil, NewGQLError("用户未登录", "current user is nil")
+	}
+
+	return &model.User{
+		ID:      int(user.ID),
+		Account: user.Username,
+		Admin:   user.Admin,
+	}, nil
 }
 
 func (r *queryResolver) Products(ctx context.Context, searchInput model.Search) (*model.ProductWrap, error) {

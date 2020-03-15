@@ -9,7 +9,7 @@ type Query {
 type Mutation {
   login(loginInput: LoginInput!): User!
   setting(settingInput: SettingInput!): SystemConfig!
-  addMaterial(materialID: String!): AnalysisResult!
+  addMaterial(materialID: String!): Boolean!
   active(accessToken: String!): String!
 }
 
@@ -51,7 +51,7 @@ type SystemConfig {
 type User {
   id: Int!
   account: String!
-  password: String!
+  admin: Boolean!
 }
 
 input LoginInput {

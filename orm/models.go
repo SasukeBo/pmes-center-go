@@ -6,10 +6,10 @@ import (
 	"github.com/SasukeBo/ftpviewer/conf"
 	"github.com/jinzhu/gorm"
 
-	// set db driver
 	"crypto/md5"
 	"time"
 
+	// set db driver
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
@@ -41,18 +41,18 @@ type Material struct {
 // Device 生产设备表
 type Device struct {
 	ID         int    `gorm:"column:id;primary_key"`
-	Name       string `gorm:"not null"`
+	Name       string `gorm:"not null;unique_index"`
 	MaterialID string `gorm:"column:material_id;not null;index"`
 }
 
 // Product 产品表
 type Product struct {
-	ID         int    `gorm:"column:id;primary_key"`
-	UUID       string `gorm:"column:product_uuid;unique_index;not null"`
-	MaterialID string `gorm:"column:material_id;not null;index"`
-	DeviceID   int    `gorm:"column:device_id;not null"`
-	Qualified  bool   `gorm:"column:qualified;default:false"`
-	CreatedAt  time.Time
+	ID          int    `gorm:"column:id;primary_key"`
+	UUID        string `gorm:"column:product_uuid;unique_index;not null"`
+	MaterialID  string `gorm:"column:material_id;not null;index"`
+	DeviceID    int    `gorm:"column:device_id;not null"`
+	Qualified   bool   `gorm:"column:qualified;default:false"`
+	ProductedAt time.Time
 }
 
 // Size 尺寸

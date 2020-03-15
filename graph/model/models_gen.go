@@ -64,7 +64,7 @@ type SystemConfig struct {
 }
 
 type User struct {
-	ID       int    `json:"id"`
-	Account  string `json:"account"`
-	Password string `json:"password"`
+	ID      int    `json:"id"`
+	Account string `json:"account"`
+	Admin   bool   `json:"admin"`
 }

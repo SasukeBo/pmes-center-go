@@ -2,13 +2,15 @@ package orm
 
 import (
 	"testing"
+
+	"github.com/SasukeBo/ftpviewer/test"
 )
 
 func TestCURD(t *testing.T) {
-	defer ClearDB()
+	defer test.ClearDB()
 	conf := SystemConfig{
-		Key:   "hello",
-		Value: "world",
+		Key:   "名字",
+		Value: "汪波",
 	}
 
 	if err := DB.Create(&conf).Error; err != nil {
@@ -36,12 +38,9 @@ func TestCURD(t *testing.T) {
 	}
 }
 
-// ClearDB clear database
-func ClearDB() {
-	DB.Exec("delete from devices where 1")
-	DB.Exec("delete from materials where 1")
-	DB.Exec("delete from products where 1")
-	DB.Exec("delete from size_values where 1")
-	DB.Exec("delete from sizes where 1")
-	DB.Exec("delete from system_configs where 1")
+func TestExec(t *testing.T) {
+	err := DB.Exec("INSERT INTO devices (name, material_id) VALUES (?, ?)", []byte("设备1"), "1765").Error
+	if err != nil {
+		t.Fatal(err)
+	}
 }

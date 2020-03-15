@@ -1,13 +1,13 @@
 package ftpclient
 
 import (
-	"errors"
 	"fmt"
-	"github.com/SasukeBo/ftpviewer/orm"
-	"github.com/jlaffaye/ftp"
 	"io/ioutil"
 	"log"
 	"time"
+
+	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/jlaffaye/ftp"
 )
 
 var ftpConn *ftp.ServerConn
@@ -21,31 +21,37 @@ func connect() error {
 	var err error
 	ftphostConf := orm.GetSystemConfigCache("ftp_host")
 	if ftphostConf == nil {
-		return errors.New("没有找到FTP服务器Host配置")
+		return &FTPError{Message: "没有找到FTP服务器Host配置"}
 	}
 
 	ftpportConf := orm.GetSystemConfigCache("ftp_port")
 	if ftpportConf == nil {
-		return errors.New("没有找到FTP服务器Port配置")
+		return &FTPError{Message: "没有找到FTP服务器Port配置"}
 	}
 
 	ftpuserConf := orm.GetSystemConfigCache("ftp_username")
 	if ftpuserConf == nil {
-		return errors.New("没有找到FTP服务器登录账号")
+		return &FTPError{Message: "没有找到FTP服务器登录账号"}
 	}
 
 	ftppassConf := orm.GetSystemConfigCache("ftp_password")
 	if ftppassConf == nil {
-		return errors.New("没有找到FTP服务器登录密码")
+		return &FTPError{Message: "没有找到FTP服务器登录密码"}
 	}
 
 	ftpConn, err = ftp.Dial(fmt.Sprintf("%v:%v", ftphostConf.Value, ftpportConf.Value), ftp.DialWithTimeout(4*time.Second))
 	if err != nil {
-		return err
+		return &FTPError{
+			Message:   fmt.Sprintf("连接FTP服务器%s:%s失败", ftphostConf.Value, ftpportConf.Value),
+			OriginErr: err,
+		}
 	}
 	err = ftpConn.Login(ftpuserConf.Value, ftppassConf.Value)
 	if err != nil {
-		return err
+		return &FTPError{
+			Message:   fmt.Sprintf("登录FTP服务器%s:%s失败", ftphostConf.Value, ftpportConf.Value),
+			OriginErr: err,
+		}
 	}
 	ftpConn.NoOp()
 	return nil
@@ -67,13 +73,19 @@ func ReadFile(path string) (string, error) {
 	}()
 	if err != nil {
 		log.Printf("[c.Retr] with file(%v) failed:\n%v\n", path, err)
-		return "", err
+		return "", &FTPError{
+			Message:   fmt.Sprintf("读取文件%s失败", path),
+			OriginErr: err,
+		}
 	}
 
 	buf, err := ioutil.ReadAll(res)
 	if err != nil {
 		log.Printf("[ReadFile] ioutil.ReadAll response failed: %v\n", err)
-		return "", err
+		return "", &FTPError{
+			Message:   fmt.Sprintf("读取文件%s失败", path),
+			OriginErr: err,
+		}
 	}
 
 	return string(buf), nil
@@ -90,5 +102,28 @@ func GetList(path string) ([]string, error) {
 	}
 
 	entries, err := ftpConn.NameList(path)
-	return entries, err
+	if err != nil {
+		return entries, &FTPError{
+			Message:   fmt.Sprintf("获取路径%s下文件列表失败", path),
+			OriginErr: err,
+		}
+	}
+
+	return entries, nil
+}
+
+// FTPError _
+type FTPError struct {
+	Message   string
+	OriginErr error
+}
+
+// Error _
+func (e *FTPError) Error() string {
+	return e.Message
+}
+
+// Logger _
+func (e *FTPError) Logger() {
+	log.Printf("%s, originErr: %v", e.Message, e.OriginErr)
 }
