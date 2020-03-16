@@ -11,9 +11,11 @@ import (
 
 // CSVDecoder csv decoder object
 type CSVDecoder struct {
-	Headers []string
-	Rows    [][]string
-	Limits  [][]string
+	Headers    []string
+	Rows       [][]string
+	Limits     [][]string
+	MaterialID string
+	DeviceName string
 }
 
 // Decode 解析csv文件，输出二维字符串

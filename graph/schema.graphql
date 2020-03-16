@@ -1,8 +1,23 @@
 type Query {
+  """
+  获取当前用户
+  """
   currentUser: User!
+  """
+  获取产品数据
+  """
   products(searchInput: Search!): ProductWrap!
-  cpk(cpkInput: Search!): AnalysisResult!
+  """
+  获取尺寸数据
+  """
+  sizes(searchInput: Search!): AnalysisResult!
+  """
+  获取料号数据
+  """
   materials(searchInput: Search!): [AnalysisResult]!
+  """
+  获取设备生产数据
+  """
   devices(searchInput: Search!): [AnalysisResult]!
 }
 
@@ -25,13 +40,13 @@ type AnalysisResult {
 }
 
 input Search {
-  "设备名称"
+  "设备名称，如果不为空则指定该设备生产的产品"
   deviceName: String
-  "料号"
+  "料号，如果不为空则指定该料号的产品"
   materialID: String!
-  "起始时间"
+  "查询时间范围起始时间"
   beginTime: Time
-  "结束时间"
+  "查询时间范围结束时间"
   endTime: Time
 }
 

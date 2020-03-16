@@ -40,13 +40,13 @@ type ProductWrap struct {
 }
 
 type Search struct {
-	// 设备名称
+	// 设备名称，如果不为空则指定该设备生产的产品
 	DeviceName *string `json:"deviceName"`
-	// 料号
+	// 料号，如果不为空则指定该料号的产品
 	MaterialID string `json:"materialID"`
-	// 起始时间
+	// 查询时间范围起始时间
 	BeginTime *time.Time `json:"beginTime"`
-	// 结束时间
+	// 查询时间范围结束时间
 	EndTime *time.Time `json:"endTime"`
 }
 

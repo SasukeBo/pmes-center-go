@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/SasukeBo/ftpviewer/ftpclient"
+
 	"github.com/SasukeBo/ftpviewer/graph/generated"
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
@@ -87,14 +89,16 @@ func (r *mutationResolver) AddMaterial(ctx context.Context, materialID string) (
 		return false, NewGQLError("料号已经存在，请确认你的输入。", "find material, can't create another one.")
 	}
 
+	if !logic.IsMaterialExist(materialID) {
+		return true, NewGQLError("FTP服务器现在没有该料号的数据。", "IsMaterialExist false")
+	}
+
 	m := orm.Material{Name: materialID}
 	if err := orm.DB.Create(&m).Error; err != nil {
 		return false, NewGQLError("创建料号失败", err.Error())
 	}
 
-	if !logic.IsMaterialExist(materialID) {
-		return true, NewGQLError("料号创建成功，但是FTP服务器现在没有该料号的数据。", "IsMaterialExist false")
-	}
+	ftpclient.PushFetch(materialID)
 
 	return true, nil
 }
@@ -121,10 +125,51 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
 }
 
 func (r *queryResolver) Products(ctx context.Context, searchInput model.Search) (*model.ProductWrap, error) {
-	panic(fmt.Errorf("not implemented"))
+	cond := "WHERE (1=1)"
+	vals := make([]interface{}, 0)
+	var products []orm.Product
+	material := orm.GetMaterialWithIDCache(searchInput.MaterialID)
+	if material != nil {
+		cond = cond + "AND material_id = ?"
+		vals = append(vals, material.ID)
+	}
+
+	device := orm.GetDeviceWithNameCache(*searchInput.DeviceName)
+	if device != nil {
+		cond = cond + "AND device_id = ?"
+		vals = append(vals, device.ID)
+	}
+
+	if searchInput.BeginTime != nil {
+		cond = cond + "AND producted_at > ?"
+		vals = append(vals, searchInput.BeginTime)
+	}
+
+	if searchInput.EndTime != nil {
+		cond = cond + "AND producted_at < ?"
+		vals = append(vals, searchInput.EndTime)
+	}
+
+	fmt.Println(cond)
+	if err := orm.DB.Where(cond, vals...).Find(&products).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			if material == nil {
+				return nil, NewGQLError("没有找到产品数据，请确认FTP服务器是否有数据文件", err.Error())
+			}
+
+			_, err := logic.FetchMaterialDatas(material.Name, searchInput.BeginTime, searchInput.EndTime)
+			if err != nil {
+				return nil, NewGQLError("从FTP服务器获取数据失败", err.Error())
+			}
+		}
+
+		return nil, NewGQLError("获取数据失败，请重试", err.Error())
+	}
+
+	return nil, nil
 }
 
-func (r *queryResolver) Cpk(ctx context.Context, cpkInput model.Search) (*model.AnalysisResult, error) {
+func (r *queryResolver) Sizes(ctx context.Context, searchInput model.Search) (*model.AnalysisResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 

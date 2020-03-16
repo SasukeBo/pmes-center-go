@@ -2,6 +2,7 @@ package logic
 
 import (
 	"log"
+	"time"
 
 	"github.com/SasukeBo/ftpviewer/ftpclient"
 )
@@ -26,4 +27,9 @@ func IsMaterialExist(materialID string) bool {
 	}
 
 	return false
+}
+
+// FetchMaterialDatas 根据料号从FTP服务器获取时间范围内数据
+func FetchMaterialDatas(materialID string, begin, end *time.Time) (interface{}, error) {
+	return nil, nil
 }

@@ -13,9 +13,11 @@ import (
 	"github.com/SasukeBo/ftpviewer/orm"
 )
 
-var queue chan string
+var fetchQueue chan string
+var cacheQueue chan *CSVDecoder
 
 var (
+	reg               *regexp.Regexp
 	singleInsertLimit = 10000
 	filenamePattern   = `(\d+)-(\d+)-(\d+)-[w|b]\.csv`
 	timePattern       = `(\d{4})/(\d{2})/(\d{2}) (\d{2}:\d{2}:\d{2})`
@@ -33,44 +35,62 @@ var (
 	sizeValueFieldTpl = `(?,?,?)`
 )
 
-// FetchCSV _
-func FetchCSV() {
+// FTPWorker _
+func FTPWorker() {
 	for {
 		select {
-		case path := <-queue:
-			go fetch(path)
+		case path := <-fetchQueue:
+			go fetchAndStore(path)
+		case csvr := <-cacheQueue:
+			go Store(csvr)
 		}
 	}
 }
 
-func fetch(path string) {
+func fetchAndStore(path string) {
+	csvr, err := Fetch(path)
+	if err != nil {
+		return
+	}
+
+	Store(csvr)
+}
+
+// Fetch fetch data from ftp server with file path
+func Fetch(path string) (*CSVDecoder, error) {
+	csvDecoder := CSVDecoder{}
+	result := reg.FindAllStringSubmatch(filepath.Base(path), -1)
+	if len(result) > 0 && len(result[0]) > 3 {
+		csvDecoder.MaterialID = result[0][1]
+		csvDecoder.DeviceName = fmt.Sprintf("%s设备%s", csvDecoder.MaterialID, result[0][2])
+	} else {
+		return nil, &FTPError{
+			Message: fmt.Sprintf("文件名格式不正确，%s", path),
+		}
+	}
+
 	content, err := ReadFile(path)
 	if err != nil {
 		if fe, ok := err.(*FTPError); ok {
 			fe.Logger()
-			return
+			return nil, err
 		}
 
 		log.Println(err)
-		return
+		return nil, &FTPError{
+			Message:   fmt.Sprintf("从FTP服务器读取文件%s失败", path),
+			OriginErr: err,
+		}
 	}
 
-	csvDecoder := CSVDecoder{}
 	csvDecoder.Decode([]byte(content))
-
-	reg := regexp.MustCompile(filenamePattern)
-	result := reg.FindAllStringSubmatch(filepath.Base(path), -1)
-	var materialID string
-	var deviceName string
-	if len(result) > 0 && len(result[0]) > 3 {
-		materialID = result[0][1]
-		deviceName = fmt.Sprintf("%s设备%s", materialID, result[0][2])
-	}
-
-	store(csvDecoder, materialID, deviceName)
+	return &csvDecoder, nil
 }
 
-func store(csv CSVDecoder, mid, dn string) {
+// Store csv data into db
+func Store(csv *CSVDecoder) {
+	mid := csv.MaterialID
+	dn := csv.DeviceName
 	rowLen := len(csv.Headers)
 	sizeNames := csv.Headers[4 : rowLen-1]
 	material := orm.GetMaterialWithIDCache(mid)
@@ -185,6 +205,18 @@ func parseFloat(v string) float64 {
 	return fv
 }
 
+// PushFetch _
+func PushFetch(path string) {
+	fetchQueue <- path
+}
+
+// PushStore _
+func PushStore(csvr *CSVDecoder) {
+	cacheQueue <- csvr
+}
+
 func init() {
-	queue = make(chan string, 10)
+	fetchQueue = make(chan string, 10)
+	cacheQueue = make(chan *CSVDecoder, 10)
+	reg = regexp.MustCompile(filenamePattern)
 }

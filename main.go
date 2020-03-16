@@ -5,6 +5,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/SasukeBo/ftpviewer/ftpclient"
 	"github.com/SasukeBo/ftpviewer/graph"
 	"github.com/SasukeBo/ftpviewer/graph/generated"
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,7 @@ func GinContextToContextMiddleware() gin.HandlerFunc {
 }
 
 func main() {
+	go ftpclient.FTPWorker()
 	r := gin.Default()
 	r.Use(GinContextToContextMiddleware())
 	r.POST("/query", graphqlHandler())

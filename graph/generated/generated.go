@@ -80,11 +80,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Cpk         func(childComplexity int, cpkInput model.Search) int
 		CurrentUser func(childComplexity int) int
 		Devices     func(childComplexity int, searchInput model.Search) int
 		Materials   func(childComplexity int, searchInput model.Search) int
 		Products    func(childComplexity int, searchInput model.Search) int
+		Sizes       func(childComplexity int, searchInput model.Search) int
 	}
 
 	SystemConfig struct {
@@ -111,7 +111,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
 	Products(ctx context.Context, searchInput model.Search) (*model.ProductWrap, error)
-	Cpk(ctx context.Context, cpkInput model.Search) (*model.AnalysisResult, error)
+	Sizes(ctx context.Context, searchInput model.Search) (*model.AnalysisResult, error)
 	Materials(ctx context.Context, searchInput model.Search) ([]*model.AnalysisResult, error)
 	Devices(ctx context.Context, searchInput model.Search) ([]*model.AnalysisResult, error)
 }
@@ -312,18 +312,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProductWrap.TableHeader(childComplexity), true
 
-	case "Query.cpk":
-		if e.complexity.Query.Cpk == nil {
-			break
-		}
-
-		args, err := ec.field_Query_cpk_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Cpk(childComplexity, args["cpkInput"].(model.Search)), true
-
 	case "Query.currentUser":
 		if e.complexity.Query.CurrentUser == nil {
 			break
@@ -366,6 +354,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Products(childComplexity, args["searchInput"].(model.Search)), true
+
+	case "Query.sizes":
+		if e.complexity.Query.Sizes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_sizes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Sizes(childComplexity, args["searchInput"].(model.Search)), true
 
 	case "SystemConfig.createdAt":
 		if e.complexity.SystemConfig.CreatedAt == nil {
@@ -488,10 +488,25 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	&ast.Source{Name: "graph/schema.graphql", Input: `type Query {
+  """
+  获取当前用户
+  """
   currentUser: User!
+  """
+  获取产品数据
+  """
   products(searchInput: Search!): ProductWrap!
-  cpk(cpkInput: Search!): AnalysisResult!
+  """
+  获取尺寸数据
+  """
+  sizes(searchInput: Search!): AnalysisResult!
+  """
+  获取料号数据
+  """
   materials(searchInput: Search!): [AnalysisResult]!
+  """
+  获取设备生产数据
+  """
   devices(searchInput: Search!): [AnalysisResult]!
 }
 
@@ -514,13 +529,13 @@ type AnalysisResult {
 }
 
 input Search {
-  "设备名称"
+  "设备名称，如果不为空则指定该设备生产的产品"
   deviceName: String
-  "料号"
+  "料号，如果不为空则指定该料号的产品"
   materialID: String!
-  "起始时间"
+  "查询时间范围起始时间"
   beginTime: Time
-  "结束时间"
+  "查询时间范围结束时间"
   endTime: Time
 }
 
@@ -645,20 +660,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_cpk_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.Search
-	if tmp, ok := rawArgs["cpkInput"]; ok {
-		arg0, err = ec.unmarshalNSearch2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSearch(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["cpkInput"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Query_devices_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -688,6 +689,20 @@ func (ec *executionContext) field_Query_materials_args(ctx context.Context, rawA
 }
 
 func (ec *executionContext) field_Query_products_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.Search
+	if tmp, ok := rawArgs["searchInput"]; ok {
+		arg0, err = ec.unmarshalNSearch2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSearch(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["searchInput"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_sizes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 model.Search
@@ -1622,7 +1637,7 @@ func (ec *executionContext) _Query_products(ctx context.Context, field graphql.C
 	return ec.marshalNProductWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐProductWrap(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_cpk(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_sizes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1638,7 +1653,7 @@ func (ec *executionContext) _Query_cpk(ctx context.Context, field graphql.Collec
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_cpk_args(ctx, rawArgs)
+	args, err := ec.field_Query_sizes_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1646,7 +1661,7 @@ func (ec *executionContext) _Query_cpk(ctx context.Context, field graphql.Collec
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Cpk(rctx, args["cpkInput"].(model.Search))
+		return ec.resolvers.Query().Sizes(rctx, args["searchInput"].(model.Search))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3483,7 +3498,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "cpk":
+		case "sizes":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -3491,7 +3506,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_cpk(ctx, field)
+				res = ec._Query_sizes(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
