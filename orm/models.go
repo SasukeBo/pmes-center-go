@@ -99,6 +99,20 @@ func init() {
 	}
 
 	generateRootUser()
+	generateDefaultConfig()
+}
+
+func generateDefaultConfig() {
+	t := time.Now()
+	var sql = `
+	INSERT INTO system_configs (system_configs.key, system_configs.value, created_at, updated_at)
+	VALUES (?, ?, ?, ?)
+	`
+	DB.Exec(sql, "ftp_password", "123456", t, t)
+	DB.Exec(sql, "ftp_username", "admin", t, t)
+	DB.Exec(sql, "ftp_host", "0.0.0.0", t, t)
+	DB.Exec(sql, "ftp_port", "44762", t, t)
+	DB.Exec(sql, "cache_days", "30", t, t)
 }
 
 func generateRootUser() {

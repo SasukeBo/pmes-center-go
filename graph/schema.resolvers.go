@@ -7,8 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/SasukeBo/ftpviewer/ftpclient"
-
 	"github.com/SasukeBo/ftpviewer/graph/generated"
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
@@ -98,7 +96,7 @@ func (r *mutationResolver) AddMaterial(ctx context.Context, materialID string) (
 		return false, NewGQLError("创建料号失败", err.Error())
 	}
 
-	ftpclient.PushFetch(materialID)
+	logic.FetchMaterialDatas(materialID, nil, nil)
 
 	return true, nil
 }
