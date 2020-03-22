@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/SasukeBo/ftpviewer/ftpclient"
@@ -40,6 +39,7 @@ func main() {
 	go ftpclient.FTPWorker()
 	r := gin.Default()
 	r.Use(GinContextToContextMiddleware())
+	r.Use(gin.Recovery())
 	r.POST("/query", graphqlHandler())
 	r.GET("/", gin.BasicAuth(gin.Accounts{
 		"sasuke": "Wb922149@...S",

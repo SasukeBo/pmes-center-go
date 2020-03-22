@@ -5,7 +5,6 @@ package ftpclient
 import (
 	"fmt"
 	"log"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
@@ -14,25 +13,25 @@ import (
 )
 
 var fetchQueue chan string
-var cacheQueue chan *CSVDecoder
+var cacheQueue chan *XLSXReader
 
 var (
 	reg               *regexp.Regexp
 	singleInsertLimit = 10000
-	filenamePattern   = `(\d+)-(\d+)-(\d+)-[w|b]\.csv`
+	filenamePattern   = `(\d+)-(\d+)-(\d+)-[w|b]\.xlsx`
 	timePattern       = `(\d{4})/(\d{2})/(\d{2}) (\d{2}:\d{2}:\d{2})`
 	insertProductsTpl = `
-		INSERT INTO products (product_uuid, material_id, device_id, qualified, producted_at)
+		INSERT INTO products (product_uuid, material_id, device_id, qualified)
 		VALUES
 		%s
 	`
-	productValueFieldTpl = `(?,?,?,?,?)`
+	productValueFieldTpl = `(?,?,?,?)`
 	insertSizeValuesTpl  = `
-		INSERT INTO size_values (size_id, product_uuid, size_values.value)
+		INSERT INTO size_values (size_name, product_uuid, size_values.value, qualified)
 		VALUES
 		%s
 	`
-	sizeValueFieldTpl = `(?,?,?)`
+	sizeValueFieldTpl = `(?,?,?,?)`
 )
 
 // FTPWorker _
@@ -41,124 +40,69 @@ func FTPWorker() {
 		select {
 		case path := <-fetchQueue:
 			go fetchAndStore(path)
-		case csvr := <-cacheQueue:
-			go Store(csvr)
+		case xr := <-cacheQueue:
+			go Store(xr)
 		}
 	}
 }
 
 func fetchAndStore(path string) {
-	csvr, err := Fetch(path)
-	if err != nil {
+	xr := NewXLSXReader()
+	if err := xr.Read(path); err != nil {
+		log.Println(err)
 		return
 	}
 
-	Store(csvr)
+	Store(xr)
 }
 
-// Fetch fetch data from ftp server with file path
-func Fetch(path string) (*CSVDecoder, error) {
-	csvDecoder := CSVDecoder{}
-	result := reg.FindAllStringSubmatch(filepath.Base(path), -1)
-	if len(result) > 0 && len(result[0]) > 3 {
-		csvDecoder.MaterialID = result[0][1]
-		csvDecoder.DeviceName = fmt.Sprintf("%s设备%s", csvDecoder.MaterialID, result[0][2])
-	} else {
-		return nil, &FTPError{
-			Message: fmt.Sprintf("文件名格式不正确，%s", path),
+// Store xlsx data into db
+func Store(xr *XLSXReader) {
+	defer func() {
+		err := recover()
+		if err != nil {
+			log.Println(err)
 		}
-	}
-
-	content, err := ReadFile(path)
-	if err != nil {
-		if fe, ok := err.(*FTPError); ok {
-			fe.Logger()
-			return nil, err
-		}
-
-		log.Println(err)
-		return nil, &FTPError{
-			Message:   fmt.Sprintf("从FTP服务器读取文件%s失败", path),
-			OriginErr: err,
-		}
-	}
-
-	csvDecoder.Decode([]byte(content))
-	return &csvDecoder, nil
-}
-
-// Store csv data into db
-func Store(csv *CSVDecoder) {
-	mid := csv.MaterialID
-	dn := csv.DeviceName
-	rowLen := len(csv.Headers)
-	sizeNames := csv.Headers[4 : rowLen-1]
-	material := orm.GetMaterialWithIDCache(mid)
+	}()
+	mid := xr.MaterialID
+	dn := xr.DeviceName
+	material := orm.GetMaterialWithID(mid)
 	if material == nil {
-		material = &orm.Material{Name: mid}
-		if err := orm.DB.Create(material).Error; err != nil {
-			log.Println("create material failed, err: " + err.Error())
-			return
-		}
-		orm.CacheMaterial(*material)
+		return
 	}
 
-	device := orm.GetDeviceWithNameCache(dn)
+	device := orm.GetDeviceWithName(dn)
 	if device == nil {
-		device = &orm.Device{Name: dn, MaterialID: material.Name}
-		if err := orm.DB.Create(device).Error; err != nil {
-			log.Println("create device failed, err:" + err.Error())
-			return
-		}
-		orm.CacheDevice(*device)
-	}
-
-	sizes := make([]orm.Size, 0)
-	for i, sn := range sizeNames {
-		size := orm.GetSizeWithMaterialIDSizeNameCache(sn, material.Name)
-		if size == nil {
-			upperLimit := parseFloat(csv.Limits[0][i+4])
-			lowerLimit := parseFloat(csv.Limits[1][i+4])
-			size = &orm.Size{
-				Name:       sn,
-				MaterialID: material.Name,
-				UpperLimit: upperLimit,
-				LowerLimit: lowerLimit,
-			}
-			if err := orm.DB.Create(size).Error; err != nil {
-				log.Println("create size failed, err:" + err.Error())
-				return
-			}
-			orm.CacheSize(*size)
-			sizes = append(sizes, *size)
-		}
+		return
 	}
 
 	products := make([]interface{}, 0)
-	sizevalues := make([]interface{}, 0)
-	for _, row := range csv.Rows {
-		qualified := true
-		puuid := row[rowLen-1]
-		for j, v := range row[4 : rowLen-1] {
-			value := parseFloat(v)
-			size := sizes[j]
-			sv := []interface{}{size.ID, puuid, value}
-			if value < size.LowerLimit || value > size.UpperLimit {
-				qualified = false
+	sizeValues := make([]interface{}, 0)
+	for i, row := range xr.DateSet {
+		qp := true
+		puuid := fmt.Sprintf("%s%v", xr.ProductUUIDPrefix, i)
+		for k, v := range xr.DimSL {
+			qs := true
+			value := parseFloat(row[v.Index])
+			if value < v.LSL || value > v.USL {
+				qp = false
+				qs = false
 			}
-			sizevalues = append(sizevalues, sv...)
+			sv := []interface{}{k, puuid, value, qs}
+			sizeValues = append(sizeValues, sv...)
 		}
 
-		productedAt := timeFormat(row[1])
-		pv := []interface{}{puuid, material.Name, device.ID, qualified, productedAt}
+		pv := []interface{}{puuid, material.Name, device.ID, qp}
 		products = append(products, pv...)
 	}
 
-	execInsert(products, 5, insertProductsTpl, productValueFieldTpl)
-	execInsert(sizevalues, 3, insertSizeValuesTpl, sizeValueFieldTpl)
+	execInsert(products, 4, insertProductsTpl, productValueFieldTpl)
+	execInsert(sizeValues, 4, insertSizeValuesTpl, sizeValueFieldTpl)
 }
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {
+	tx := orm.DB.Begin()
+	tx.LogMode(false)
 	datalen := len(dataset)
 	totalLen := datalen / itemLen
 	vSQL := valuetpl
@@ -169,7 +113,7 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {
 	for i := 0; i < totalLen/singleInsertLimit; i++ {
 		begin := i * singleInsertLimit * itemLen
 		end := (i + 1) * singleInsertLimit * itemLen
-		orm.DB.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...)
+		tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...)
 	}
 
 	restLen := totalLen % singleInsertLimit
@@ -180,8 +124,9 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {
 		}
 		end := datalen
 		begin := datalen - restLen*itemLen
-		orm.DB.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...)
+		tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...)
 	}
+	tx.Commit()
 }
 
 func timeFormat(t string) time.Time {
@@ -211,12 +156,12 @@ func PushFetch(path string) {
 }
 
 // PushStore _
-func PushStore(csvr *CSVDecoder) {
-	cacheQueue <- csvr
+func PushStore(xr *XLSXReader) {
+	cacheQueue <- xr
 }
 
 func init() {
 	fetchQueue = make(chan string, 10)
-	cacheQueue = make(chan *CSVDecoder, 10)
+	cacheQueue = make(chan *XLSXReader, 10)
 	reg = regexp.MustCompile(filenamePattern)
 }

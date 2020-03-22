@@ -40,7 +40,7 @@ func Authenticate(ctx context.Context) error {
 	gc := GetGinContext(ctx)
 
 	token := gc.GetHeader("Access-Token")
-	user := orm.GetUserWithTokenCache(token)
+	user := orm.GetUserWithToken(token)
 	if user == nil {
 		return &gqlerror.Error{
 			Message: "用户验证失败",

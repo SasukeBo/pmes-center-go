@@ -19,22 +19,22 @@ func init() {
 // connect make a connection for ftp server
 func connect() error {
 	var err error
-	ftphostConf := orm.GetSystemConfigCache("ftp_host")
+	ftphostConf := orm.GetSystemConfig("ftp_host")
 	if ftphostConf == nil {
 		return &FTPError{Message: "没有找到FTP服务器Host配置"}
 	}
 
-	ftpportConf := orm.GetSystemConfigCache("ftp_port")
+	ftpportConf := orm.GetSystemConfig("ftp_port")
 	if ftpportConf == nil {
 		return &FTPError{Message: "没有找到FTP服务器Port配置"}
 	}
 
-	ftpuserConf := orm.GetSystemConfigCache("ftp_username")
+	ftpuserConf := orm.GetSystemConfig("ftp_username")
 	if ftpuserConf == nil {
 		return &FTPError{Message: "没有找到FTP服务器登录账号"}
 	}
 
-	ftppassConf := orm.GetSystemConfigCache("ftp_password")
+	ftppassConf := orm.GetSystemConfig("ftp_password")
 	if ftppassConf == nil {
 		return &FTPError{Message: "没有找到FTP服务器登录密码"}
 	}
@@ -58,11 +58,11 @@ func connect() error {
 }
 
 // ReadFile read file by path
-func ReadFile(path string) (string, error) {
+func ReadFile(path string) ([]byte, error) {
 	if ftpConn == nil {
 		err := connect()
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 	res, err := ftpConn.Retr(path)
@@ -73,7 +73,7 @@ func ReadFile(path string) (string, error) {
 	}()
 	if err != nil {
 		log.Printf("[c.Retr] with file(%v) failed:\n%v\n", path, err)
-		return "", &FTPError{
+		return nil, &FTPError{
 			Message:   fmt.Sprintf("读取文件%s失败", path),
 			OriginErr: err,
 		}
@@ -82,13 +82,13 @@ func ReadFile(path string) (string, error) {
 	buf, err := ioutil.ReadAll(res)
 	if err != nil {
 		log.Printf("[ReadFile] ioutil.ReadAll response failed: %v\n", err)
-		return "", &FTPError{
+		return nil, &FTPError{
 			Message:   fmt.Sprintf("读取文件%s失败", path),
 			OriginErr: err,
 		}
 	}
 
-	return string(buf), nil
+	return buf, nil
 }
 
 // GetList return current workspace file list

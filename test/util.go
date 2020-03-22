@@ -1,7 +1,9 @@
 package test
 
 import (
+	"fmt"
 	"github.com/SasukeBo/ftpviewer/conf"
+	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/jinzhu/gorm"
 
 	// db driver
@@ -23,9 +25,7 @@ func ClearDB() {
 
 // SetConfig _
 func SetConfig() {
-	db, _ := gorm.Open("mysql", conf.DBdnstest)
-
-	db.Exec(`
+	orm.DB.Exec(`
 	INSERT INTO system_configs (system_configs.key, system_configs.value, id)
 	values
 	("ftp_host", "localhost", 1),
@@ -33,4 +33,10 @@ func SetConfig() {
 	("ftp_username", "admin", 3),
 	("ftp_password", "123456", 4)
 	`)
+}
+
+// SetMaterialAndDevice _
+func SetMaterial(name string, deviceID int) {
+	orm.DB.Exec(`INSERT INTO materials (materials.name) values (?)`, name)
+	orm.DB.Exec(`INSERT INTO devices (material_id, name) values (?, ?)`, name, fmt.Sprintf("%s设备%d", name, deviceID))
 }

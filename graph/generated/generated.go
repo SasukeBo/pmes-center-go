@@ -105,7 +105,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error)
 	Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error)
-	AddMaterial(ctx context.Context, materialID string) (bool, error)
+	AddMaterial(ctx context.Context, materialID string) (string, error)
 	Active(ctx context.Context, accessToken string) (string, error)
 }
 type QueryResolver interface {
@@ -513,7 +513,7 @@ var sources = []*ast.Source{
 type Mutation {
   login(loginInput: LoginInput!): User!
   setting(settingInput: SettingInput!): SystemConfig!
-  addMaterial(materialID: String!): Boolean!
+  addMaterial(materialID: String!): String!
   active(accessToken: String!): String!
 }
 
@@ -1142,9 +1142,9 @@ func (ec *executionContext) _Mutation_addMaterial(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_active(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {

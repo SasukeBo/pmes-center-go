@@ -7,7 +7,8 @@ import (
 )
 
 func TestFetchData(t *testing.T) {
-	defer test.ClearDB()
+	test.ClearDB()
 	test.SetConfig()
-	fetchAndStore("./1765/1765-1-20200312-w.csv")
+	test.SetMaterial("1828", 1)
+	fetchAndStore("./1828/1828-1-20200116-b.xlsx")
 }

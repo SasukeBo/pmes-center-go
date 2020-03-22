@@ -52,7 +52,7 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 		return nil, NewGQLError("添加系统配置失败，您不是Admin", fmt.Sprintf("%+v", *user))
 	}
 
-	conf := orm.GetSystemConfigCache(settingInput.Key)
+	conf := orm.GetSystemConfig(settingInput.Key)
 	if conf == nil {
 		conf = &orm.SystemConfig{
 			Key:   settingInput.Key,
@@ -66,8 +66,6 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 		return nil, NewGQLError("添加系统配置失败", err.Error())
 	}
 
-	orm.CacheSystemConfig(*conf)
-
 	return &model.SystemConfig{
 		ID:        int(conf.ID),
 		Key:       conf.Key,
@@ -77,28 +75,30 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 	}, nil
 }
 
-func (r *mutationResolver) AddMaterial(ctx context.Context, materialID string) (bool, error) {
+func (r *mutationResolver) AddMaterial(ctx context.Context, materialID string) (string, error) {
 	if err := logic.Authenticate(ctx); err != nil {
-		return false, err
-	}
-
-	material := orm.GetMaterialWithIDCache(materialID)
-	if material != nil {
-		return false, NewGQLError("料号已经存在，请确认你的输入。", "find material, can't create another one.")
+		return "error", err
 	}
 
 	if !logic.IsMaterialExist(materialID) {
-		return true, NewGQLError("FTP服务器现在没有该料号的数据。", "IsMaterialExist false")
+		return "error", NewGQLError("FTP服务器现在没有该料号的数据。", "IsMaterialExist false")
+	}
+
+	material := orm.GetMaterialWithID(materialID)
+	if material != nil {
+		return "error", NewGQLError("料号已经存在，请确认你的输入。", "find material, can't create another one.")
 	}
 
 	m := orm.Material{Name: materialID}
 	if err := orm.DB.Create(&m).Error; err != nil {
-		return false, NewGQLError("创建料号失败", err.Error())
+		return "error", NewGQLError("创建料号失败", err.Error())
 	}
 
-	logic.FetchMaterialDatas(materialID, nil, nil)
+	if err := logic.FetchMaterialDatas(materialID, nil, nil); err != nil {
+		return "error", NewGQLError(err.Error(), fmt.Sprintf("logic.FetchMaterialDatas(%s, nil, nil)", materialID))
+	}
 
-	return true, nil
+	return "success", nil
 }
 
 func (r *mutationResolver) Active(ctx context.Context, accessToken string) (string, error) {
@@ -126,13 +126,13 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search) 
 	cond := "WHERE (1=1)"
 	vals := make([]interface{}, 0)
 	var products []orm.Product
-	material := orm.GetMaterialWithIDCache(searchInput.MaterialID)
+	material := orm.GetMaterialWithID(searchInput.MaterialID)
 	if material != nil {
 		cond = cond + "AND material_id = ?"
 		vals = append(vals, material.ID)
 	}
 
-	device := orm.GetDeviceWithNameCache(*searchInput.DeviceName)
+	device := orm.GetDeviceWithName(*searchInput.DeviceName)
 	if device != nil {
 		cond = cond + "AND device_id = ?"
 		vals = append(vals, device.ID)
@@ -155,9 +155,9 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search) 
 				return nil, NewGQLError("没有找到产品数据，请确认FTP服务器是否有数据文件", err.Error())
 			}
 
-			_, err := logic.FetchMaterialDatas(material.Name, searchInput.BeginTime, searchInput.EndTime)
+			err := logic.FetchMaterialDatas(material.Name, searchInput.BeginTime, searchInput.EndTime)
 			if err != nil {
-				return nil, NewGQLError("从FTP服务器获取数据失败", err.Error())
+				return nil, NewGQLError(err.Error(), fmt.Sprintf("logic.FetchMaterialDatas(%s, nil, nil)", material.Name))
 			}
 		}
 

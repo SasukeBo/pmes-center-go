@@ -35,7 +35,7 @@ type SystemConfig struct {
 // Material 材料
 type Material struct {
 	ID   int    `gorm:"column:id;primary_key"`
-	Name string `gorm:"not null"`
+	Name string `gorm:"not null;unique_index"`
 }
 
 // Device 生产设备表
@@ -47,18 +47,17 @@ type Device struct {
 
 // Product 产品表
 type Product struct {
-	ID          int    `gorm:"column:id;primary_key"`
-	UUID        string `gorm:"column:product_uuid;unique_index;not null"`
-	MaterialID  string `gorm:"column:material_id;not null;index"`
-	DeviceID    int    `gorm:"column:device_id;not null"`
-	Qualified   bool   `gorm:"column:qualified;default:false"`
-	ProductedAt time.Time
+	ID         int    `gorm:"column:id;primary_key"`
+	UUID       string `gorm:"column:product_uuid;unique_index;not null"`
+	MaterialID string `gorm:"column:material_id;not null;index"`
+	DeviceID   int    `gorm:"column:device_id;not null"`
+	Qualified  bool   `gorm:"column:qualified;default:false"`
 }
 
 // Size 尺寸
 type Size struct {
 	ID         int    `gorm:"column:id;primary_key"`
-	Name       string `gorm:"unique_index;not null"`
+	Name       string `gorm:"index;not null"`
 	MaterialID string `gorm:"column:material_id;not null;index"`
 	UpperLimit float64
 	LowerLimit float64
@@ -67,9 +66,16 @@ type Size struct {
 // SizeValue 检测值
 type SizeValue struct {
 	ID          int
-	SizeID      int `gorm:"column:size_id;not null"`
-	ProductUUID int `gorm:"column:product_uuid;not null"`
+	SizeName    string `gorm:"column:size_name;index; not null"`
+	ProductUUID string `gorm:"column:product_uuid;not null"`
 	Value       float64
+	Qualified   bool `gorm:"column:qualified;default:false"`
+}
+
+// FileList 存储已加载数据的文件路径
+type FileList struct {
+	ID int
+	Path string
 }
 
 func init() {
@@ -93,6 +99,7 @@ func init() {
 		&SizeValue{},
 		&Material{},
 		&User{},
+		&FileList{},
 	).Error
 	if err != nil {
 		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
@@ -103,6 +110,9 @@ func init() {
 }
 
 func generateDefaultConfig() {
+	if conf.GetEnv() == "TEST" {
+		DB.Exec("DELETE FROM system_configs WHERE 1 = 1")
+	}
 	t := time.Now()
 	var sql = `
 	INSERT INTO system_configs (system_configs.key, system_configs.value, created_at, updated_at)
