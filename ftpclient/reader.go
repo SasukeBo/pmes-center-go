@@ -80,6 +80,9 @@ func (xr *XLSXReader) ReadSize(path string) error {
 			LSLSet = &dataSheet[i]
 			continue
 		}
+		if dimSet != nil && USLSet != nil && LSLSet != nil {
+			break
+		}
 	}
 
 	if dimSet == nil || USLSet == nil || LSLSet == nil {

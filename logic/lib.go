@@ -73,24 +73,26 @@ func FetchMaterialDatas(materialID string, begin, end *time.Time) error {
 
 	reg := regexp.MustCompile(fileNamePattern)
 
-	preHandleSize := false
-	for _, filename := range fileList {
-		matched := reg.FindAllStringSubmatch(filename, -1)
-		if len(matched) > 0 && len(matched[0]) > 4 {
-			xr := ftpclient.NewXLSXReader()
-			err := xr.ReadSize("./" + materialID + "/" + filename)
-			if err != nil { // 如果读取失败
-				continue
+	// preHandleSize := false
+	go func() {
+		for _, filename := range fileList {
+			matched := reg.FindAllStringSubmatch(filename, -1)
+			if len(matched) > 0 && len(matched[0]) > 4 {
+				xr := ftpclient.NewXLSXReader()
+				err := xr.ReadSize("./" + materialID + "/" + filename)
+				if err != nil { // 如果读取失败
+					continue
+				}
+				// preHandleSize = true
+				go handleSize(xr.DimSL, materialID)
+				break
 			}
-			handleSize(xr.DimSL, materialID)
-			preHandleSize = true
-			break
 		}
-	}
+	}()
 
-	if !preHandleSize {
-		return fmt.Errorf("无法为料号%s创建尺寸数据，请检查FTP服务器下料号数据文件格式是否正确！", materialID)
-	}
+	//if !preHandleSize {
+	//	return fmt.Errorf("无法为料号%s创建尺寸数据，请检查FTP服务器下料号数据文件格式是否正确！", materialID)
+	//}
 
 	for _, filename := range fileList {
 		matched := reg.FindAllStringSubmatch(filename, -1)
@@ -99,12 +101,14 @@ func FetchMaterialDatas(materialID string, begin, end *time.Time) error {
 			if fileIsNeed(path, matched[0][3], begin, end) {
 				createDeviceIfNotExist(matched[0][2], materialID)
 				xr := ftpclient.NewXLSXReader()
-				err := xr.Read(path)
-				if err != nil {
-					continue
-				}
-				orm.DB.Create(&orm.FileList{Path: path})
-				ftpclient.PushStore(xr)
+				go func() {
+					err := xr.Read(path)
+					if err != nil {
+						return
+					}
+					orm.DB.Create(&orm.FileList{Path: path})
+					ftpclient.PushStore(xr)
+				}()
 			}
 		}
 	}
