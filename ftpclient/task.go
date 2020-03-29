@@ -21,17 +21,17 @@ var (
 	filenamePattern   = `(\d+)-(\d+)-(\d+)-[w|b]\.xlsx`
 	timePattern       = `(\d{4})/(\d{2})/(\d{2}) (\d{2}:\d{2}:\d{2})`
 	insertProductsTpl = `
-		INSERT INTO products (product_uuid, material_id, device_id, qualified)
+		INSERT INTO products (product_uuid, material_id, device_id, qualified, created_at)
 		VALUES
 		%s
 	`
-	productValueFieldTpl = `(?,?,?,?)`
+	productValueFieldTpl = `(?,?,?,?,?)`
 	insertSizeValuesTpl  = `
-		INSERT INTO size_values (size_name, product_uuid, size_values.value, qualified)
+		INSERT INTO size_values (device_id, size_id, product_uuid, size_values.value, qualified, created_at)
 		VALUES
 		%s
 	`
-	sizeValueFieldTpl = `(?,?,?,?)`
+	sizeValueFieldTpl = `(?,?,?,?,?,?)`
 )
 
 // FTPWorker _
@@ -64,15 +64,21 @@ func Store(xr *XLSXReader) {
 			log.Println(err)
 		}
 	}()
-	mid := xr.MaterialID
-	dn := xr.DeviceName
-	material := orm.GetMaterialWithID(mid)
+	materialName := xr.MaterialID
+	deviceName := xr.DeviceName
+	material := orm.GetMaterialWithName(materialName)
 	if material == nil {
 		return
 	}
 
-	device := orm.GetDeviceWithName(dn)
+	device := orm.GetDeviceWithName(deviceName)
 	if device == nil {
+		return
+	}
+
+	var sizes []orm.Size
+	if err := orm.DB.Where("material_id = ?", material.ID).Find(&sizes).Error; err != nil {
+		fmt.Println(err)
 		return
 	}
 
@@ -81,23 +87,23 @@ func Store(xr *XLSXReader) {
 	for i, row := range xr.DateSet {
 		qp := true
 		puuid := fmt.Sprintf("%s%v", xr.ProductUUIDPrefix, i)
-		for k, v := range xr.DimSL {
+		for _, v := range sizes {
 			qs := true
 			value := parseFloat(row[v.Index])
-			if value < v.LSL || value > v.USL {
+			if value < v.LowerLimit || value > v.UpperLimit {
 				qp = false
 				qs = false
 			}
-			sv := []interface{}{k, puuid, value, qs}
+			sv := []interface{}{device.ID, v.ID, puuid, value, qs, time.Now()}
 			sizeValues = append(sizeValues, sv...)
 		}
 
-		pv := []interface{}{puuid, material.Name, device.ID, qp}
+		pv := []interface{}{puuid, material.ID, device.ID, qp, time.Now()}
 		products = append(products, pv...)
 	}
 
-	execInsert(products, 4, insertProductsTpl, productValueFieldTpl)
-	execInsert(sizeValues, 4, insertSizeValuesTpl, sizeValueFieldTpl)
+	execInsert(products, 5, insertProductsTpl, productValueFieldTpl)
+	execInsert(sizeValues, 6, insertSizeValuesTpl, sizeValueFieldTpl)
 }
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {
@@ -124,7 +130,9 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {
 		}
 		end := datalen
 		begin := datalen - restLen*itemLen
-		tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...)
+		if err := tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...).Error; err != nil {
+			log.Println(err)
+		}
 	}
 	tx.Commit()
 }

@@ -8,9 +8,9 @@ type Query {
   """
   products(searchInput: Search!): ProductWrap!
   """
-  获取尺寸数据
+  分析尺寸数据
   """
-  sizes(searchInput: Search!): AnalysisResult!
+  analyzeSize(searchInput: Search!): SizeResult!
   """
   获取料号数据
   """
@@ -21,11 +21,23 @@ type Query {
   devices(searchInput: Search!): [AnalysisResult]!
 }
 
+
+
 type Mutation {
   login(loginInput: LoginInput!): User!
   setting(settingInput: SettingInput!): SystemConfig!
-  addMaterial(materialID: String!): String!
+  addMaterial(materialName: String!): String!
   active(accessToken: String!): String!
+}
+
+type SizeResult {
+  total: Int!
+  ok: Int!
+  ng: Int!
+  cp: Float!
+  cpk: Float!
+  normal: Float!
+  dataset: Map
 }
 
 type AnalysisResult {
@@ -40,10 +52,12 @@ type AnalysisResult {
 }
 
 input Search {
-  "设备名称，如果不为空则指定该设备生产的产品"
-  deviceName: String
-  "料号，如果不为空则指定该料号的产品"
-  materialID: String!
+  "料号，指定料号"
+  materialID: Int
+  "设备名称，如果不为空则指定该设备生产"
+  deviceID: Int
+  "尺寸，如果不为空则指定改尺寸数据"
+  sizeID: Int
   "查询时间范围起始时间"
   beginTime: Time
   "查询时间范围结束时间"

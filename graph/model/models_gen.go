@@ -40,10 +40,12 @@ type ProductWrap struct {
 }
 
 type Search struct {
-	// 设备名称，如果不为空则指定该设备生产的产品
-	DeviceName *string `json:"deviceName"`
-	// 料号，如果不为空则指定该料号的产品
-	MaterialID string `json:"materialID"`
+	// 料号，指定料号
+	MaterialID *int `json:"materialID"`
+	// 设备名称，如果不为空则指定该设备生产
+	DeviceID *int `json:"deviceID"`
+	// 尺寸，如果不为空则指定改尺寸数据
+	SizeID *int `json:"sizeID"`
 	// 查询时间范围起始时间
 	BeginTime *time.Time `json:"beginTime"`
 	// 查询时间范围结束时间
@@ -53,6 +55,16 @@ type Search struct {
 type SettingInput struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+type SizeResult struct {
+	Total   int                    `json:"total"`
+	Ok      int                    `json:"ok"`
+	Ng      int                    `json:"ng"`
+	Cp      float64                `json:"cp"`
+	Cpk     float64                `json:"cpk"`
+	Normal  float64                `json:"normal"`
+	Dataset map[string]interface{} `json:"dataset"`
 }
 
 type SystemConfig struct {

@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/99designs/gqlgen v0.11.3
+	github.com/chfenger/goNum v0.0.0-20191211064013-a00d841c1e7b // indirect
 	github.com/dgryski/trifles v0.0.0-20191129005055-5a6159895336 // indirect
 	github.com/gin-gonic/gin v1.5.0
 	github.com/gorilla/websocket v1.4.1 // indirect

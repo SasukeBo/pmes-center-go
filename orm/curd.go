@@ -19,27 +19,53 @@ func GetUserWithToken(token string) *User {
 }
 
 // GetMaterialWithID _
-func GetMaterialWithID(materialID string) *Material {
+func GetMaterialWithID(materialID int) *Material {
 	var m Material
-	if err := DB.Where("name = ?", materialID).First(&m).Error; err != nil {
+	if err := DB.Where("id = ?", materialID).First(&m).Error; err != nil {
+		return nil
+	}
+	return &m
+}
+
+// GetMaterialWithName _
+func GetMaterialWithName(name string) *Material {
+	var m Material
+	if err := DB.Where("name = ?", name).First(&m).Error; err != nil {
 		return nil
 	}
 	return &m
 }
 
 // GetDeviceWithName _
-func GetDeviceWithName(dn string) *Device {
+func GetDeviceWithName(name string) *Device {
 	var d Device
-	if err := DB.Where("name = ?", dn).First(&d).Error; err != nil {
+	if err := DB.Where("name = ?", name).First(&d).Error; err != nil {
+		return nil
+	}
+	return &d
+}
+
+// GetDeviceWithID _
+func GetDeviceWithID(id int) *Device {
+	var d Device
+	if err := DB.Where("id = ?", id).First(&d).Error; err != nil {
 		return nil
 	}
 	return &d
 }
 
 // GetSizeWithMaterialIDSizeName _
-func GetSizeWithMaterialIDSizeName(sn, mn string) *Size {
+func GetSizeWithMaterialIDSizeName(sn string, materialID int) *Size {
 	var s Size
-	if err := DB.Where("name = ? AND material_id = ?", sn, mn).First(&s).Error; err != nil {
+	if err := DB.Where("name = ? AND material_id = ?", sn, materialID).First(&s).Error; err != nil {
+		return nil
+	}
+	return &s
+}
+
+func GetSizeWithID(id int) *Size {
+	var s Size
+	if err := DB.Where("id = ?", id).Find(&s).Error; err != nil {
 		return nil
 	}
 	return &s

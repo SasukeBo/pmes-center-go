@@ -119,41 +119,10 @@ func (xr *XLSXReader) Read(path string) error {
 	if err != nil {
 		return err
 	}
-	var dimSet, USLSet, LSLSet *[]string
 	for i := 0; i < len(dataSheet); i++ {
-		if dataSheet[i][0] == "Dim" {
-			dimSet = &dataSheet[i]
-			continue
-		}
-
-		if dataSheet[i][0] == "USL" {
-			USLSet = &dataSheet[i]
-			continue
-		}
-
-		if dataSheet[i][0] == "LSL" {
-			LSLSet = &dataSheet[i]
-			continue
-		}
-
 		if _, err := strconv.ParseInt(dataSheet[i][0], 10, 64); err == nil {
 			xr.DateSet = dataSheet[i:]
 			break
-		}
-	}
-
-	if dimSet == nil || USLSet == nil || LSLSet == nil {
-		return errors.New("xlsx文件格式有误。")
-	}
-
-	for i, k := range *dimSet {
-		if k == "" || k == "TEMP" || k == "Dim" {
-			continue
-		}
-		xr.DimSL[k] = SL{
-			USL: parseFloat((*USLSet)[i]),
-			LSL: parseFloat((*LSLSet)[i]),
-			Index: i,
 		}
 	}
 

@@ -42,23 +42,25 @@ type Material struct {
 type Device struct {
 	ID         int    `gorm:"column:id;primary_key"`
 	Name       string `gorm:"not null;unique_index"`
-	MaterialID string `gorm:"column:material_id;not null;index"`
+	MaterialID int    `gorm:"column:material_id;not null;index"`
 }
 
 // Product 产品表
 type Product struct {
 	ID         int    `gorm:"column:id;primary_key"`
 	UUID       string `gorm:"column:product_uuid;unique_index;not null"`
-	MaterialID string `gorm:"column:material_id;not null;index"`
+	MaterialID int    `gorm:"column:material_id;not null;index"`
 	DeviceID   int    `gorm:"column:device_id;not null"`
 	Qualified  bool   `gorm:"column:qualified;default:false"`
+	CreatedAt  time.Time
 }
 
 // Size 尺寸
 type Size struct {
 	ID         int    `gorm:"column:id;primary_key"`
 	Name       string `gorm:"index;not null"`
-	MaterialID string `gorm:"column:material_id;not null;index"`
+	Index      int    `gorm:"column:index;not null"`
+	MaterialID int    `gorm:"column:material_id;not null;index"`
 	UpperLimit float64
 	LowerLimit float64
 }
@@ -66,15 +68,17 @@ type Size struct {
 // SizeValue 检测值
 type SizeValue struct {
 	ID          int
-	SizeName    string `gorm:"column:size_name;index; not null"`
+	SizeID      int    `gorm:"column:size_id;index; not null"`
+	DeviceID    int    `gorm:"column:device_id; not null"`
 	ProductUUID string `gorm:"column:product_uuid;not null"`
 	Value       float64
 	Qualified   bool `gorm:"column:qualified;default:false"`
+	CreatedAt   time.Time
 }
 
 // FileList 存储已加载数据的文件路径
 type FileList struct {
-	ID int
+	ID   int
 	Path string
 }
 

@@ -17,3 +17,11 @@ func TestFetchMaterialDatas(t *testing.T) {
 	t2, _ := time.Parse(time.RFC3339, "2020-03-20T00:00:00+08:00")
 	FetchMaterialDatas("1765", &t1, &t2)
 }
+
+func TestRMSError(t *testing.T) {
+	data := []float64{200, 50, 100, 200}
+	r := RMSError(data)
+	if r != 75 {
+		t.Fatalf("expect 75, but got %v", r)
+	}
+}

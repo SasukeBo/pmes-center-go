@@ -75,27 +75,27 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 	}, nil
 }
 
-func (r *mutationResolver) AddMaterial(ctx context.Context, materialID string) (string, error) {
+func (r *mutationResolver) AddMaterial(ctx context.Context, materialName string) (string, error) {
 	if err := logic.Authenticate(ctx); err != nil {
 		return "error", err
 	}
 
-	if !logic.IsMaterialExist(materialID) {
+	if !logic.IsMaterialExist(materialName) {
 		return "error", NewGQLError("FTP服务器现在没有该料号的数据。", "IsMaterialExist false")
 	}
 
-	material := orm.GetMaterialWithID(materialID)
+	material := orm.GetMaterialWithName(materialName)
 	if material != nil {
 		return "error", NewGQLError("料号已经存在，请确认你的输入。", "find material, can't create another one.")
 	}
 
-	m := orm.Material{Name: materialID}
+	m := orm.Material{Name: materialName}
 	if err := orm.DB.Create(&m).Error; err != nil {
 		return "error", NewGQLError("创建料号失败", err.Error())
 	}
 
-	if err := logic.FetchMaterialDatas(materialID, nil, nil); err != nil {
-		return "error", NewGQLError(err.Error(), fmt.Sprintf("logic.FetchMaterialDatas(%s, nil, nil)", materialID))
+	if err := logic.FetchMaterialDatas(m, nil, nil); err != nil {
+		return "error", NewGQLError(err.Error(), fmt.Sprintf("logic.FetchMaterialDatas(%s, nil, nil)", materialName))
 	}
 
 	return "success", nil
@@ -126,13 +126,13 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search) 
 	cond := "WHERE (1=1)"
 	vals := make([]interface{}, 0)
 	var products []orm.Product
-	material := orm.GetMaterialWithID(searchInput.MaterialID)
+	material := orm.GetMaterialWithID(*searchInput.MaterialID)
 	if material != nil {
 		cond = cond + "AND material_id = ?"
 		vals = append(vals, material.ID)
 	}
 
-	device := orm.GetDeviceWithName(*searchInput.DeviceName)
+	device := orm.GetDeviceWithID(*searchInput.DeviceID)
 	if device != nil {
 		cond = cond + "AND device_id = ?"
 		vals = append(vals, device.ID)
@@ -155,7 +155,7 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search) 
 				return nil, NewGQLError("没有找到产品数据，请确认FTP服务器是否有数据文件", err.Error())
 			}
 
-			err := logic.FetchMaterialDatas(material.Name, searchInput.BeginTime, searchInput.EndTime)
+			err := logic.FetchMaterialDatas(*material, searchInput.BeginTime, searchInput.EndTime)
 			if err != nil {
 				return nil, NewGQLError(err.Error(), fmt.Sprintf("logic.FetchMaterialDatas(%s, nil, nil)", material.Name))
 			}
@@ -167,8 +167,83 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search) 
 	return nil, nil
 }
 
-func (r *queryResolver) Sizes(ctx context.Context, searchInput model.Search) (*model.AnalysisResult, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Search) (*model.SizeResult, error) {
+	if searchInput.SizeID == nil {
+		return nil, NewGQLError("尺寸ID不能为空", "")
+	}
+	size := orm.GetSizeWithID(*searchInput.SizeID)
+	if size == nil {
+		return nil, NewGQLError("没有在数据库找到改尺寸", "")
+	}
+
+	var sizeValues []orm.SizeValue
+	cond := "size_id = ?"
+	vals := []interface{}{*searchInput.SizeID}
+
+	if searchInput.DeviceID != nil {
+		cond = cond + "AND device_id = ?"
+		vals = append(vals, *searchInput.DeviceID)
+	}
+
+	if searchInput.BeginTime != nil {
+		cond = cond + "AND created_at > ?"
+		vals = append(vals, *searchInput.BeginTime)
+	}
+
+	if searchInput.EndTime != nil {
+		cond = cond + "AND created_at < ?"
+		vals = append(vals, *searchInput.EndTime)
+	}
+
+	if err := orm.DB.Model(&orm.SizeValue{}).Where(cond, vals...).Find(&sizeValues).Error; err != nil {
+		return nil, NewGQLError("获取数据失败", err.Error())
+	}
+
+	total := len(sizeValues)
+	if total == 0 {
+		return &model.SizeResult{}, nil
+	}
+	ok := 0
+	valueSet := make([]float64, 0)
+	for _, v := range sizeValues {
+		if v.Qualified {
+			valueSet = append(valueSet, v.Value)
+			ok++
+		}
+	}
+	s := logic.RMSError(valueSet)
+	cp := logic.Cp(size.UpperLimit, size.LowerLimit, s)
+
+	freqs := make([]int, 0)
+	values := make([]float64, 0)
+
+	rows, err := orm.DB.Model(&orm.SizeValue{}).Where("size_id = ? and qualified = 1", size.ID).Group("value").Select("COUNT(value) as freq, value").Rows()
+	defer rows.Close()
+	if err == nil {
+		for rows.Next() {
+			var freq int
+			var value float64
+			rows.Scan(&freq, &value)
+			freqs = append(freqs, freq)
+			values = append(values, value)
+		}
+	}
+
+	normal := logic.Normal(values, freqs)
+	cpk := logic.Cpk(size.UpperLimit, size.LowerLimit, normal, s)
+
+	return &model.SizeResult{
+		Total:   total,
+		Ok:      ok,
+		Ng:      total - ok,
+		Cp:      cp,
+		Cpk:     cpk,
+		Normal:  normal,
+		Dataset: map[string]interface{}{
+			"values": values,
+			"freqs": freqs,
+		},
+	}, nil
 }
 
 func (r *queryResolver) Materials(ctx context.Context, searchInput model.Search) ([]*model.AnalysisResult, error) {
