@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // CSVDecoder csv decoder object
@@ -41,22 +42,24 @@ func (cd *CSVDecoder) Decode(data []byte) error {
 
 type SL struct {
 	Index int
-	USL float64
-	LSL float64
+	USL   float64
+	LSL   float64
 }
 
 type XLSXReader struct {
-	DateSet [][]string           // only cache data of sheet 1
-	DimSL   map[string]SL // map cache key (dim) and value([uSL, lSL])
-	MaterialID string
-	DeviceName string
+	DateSet           [][]string    // only cache data of sheet 1
+	DimSL             map[string]SL // map cache key (dim) and value([uSL, lSL])
+	MaterialID        string
+	DeviceName        string
 	ProductUUIDPrefix string
+	ProductAt         *time.Time
+	PathID            int // 读取文件路径id
 }
 
 func NewXLSXReader() *XLSXReader {
 	return &XLSXReader{
 		DateSet: make([][]string, 0),
-		DimSL: make(map[string]SL),
+		DimSL:   make(map[string]SL),
 	}
 }
 
@@ -94,8 +97,8 @@ func (xr *XLSXReader) ReadSize(path string) error {
 			continue
 		}
 		xr.DimSL[k] = SL{
-			USL: parseFloat((*USLSet)[i]),
-			LSL: parseFloat((*LSLSet)[i]),
+			USL:   parseFloat((*USLSet)[i]),
+			LSL:   parseFloat((*LSLSet)[i]),
 			Index: i,
 		}
 	}
@@ -106,6 +109,13 @@ func (xr *XLSXReader) ReadSize(path string) error {
 func (xr *XLSXReader) Read(path string) error {
 	result := reg.FindAllStringSubmatch(filepath.Base(path), -1)
 	if len(result) > 0 && len(result[0]) > 3 {
+		dateStr := result[0][3]
+		year, _ := strconv.Atoi(dateStr[:4])
+		month, _ := strconv.Atoi(dateStr[4:6])
+		day, _ := strconv.Atoi(dateStr[6:])
+		productAt := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+
+		xr.ProductAt = &productAt
 		xr.MaterialID = result[0][1]
 		xr.DeviceName = fmt.Sprintf("%s设备%s", xr.MaterialID, result[0][2])
 	} else {
@@ -158,4 +168,3 @@ func read(path string) ([][]string, error) {
 
 	return originData[0], nil
 }
-

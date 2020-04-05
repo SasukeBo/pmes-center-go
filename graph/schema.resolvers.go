@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/SasukeBo/ftpviewer/graph/generated"
 	"github.com/SasukeBo/ftpviewer/graph/model"
@@ -75,30 +76,33 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 	}, nil
 }
 
-func (r *mutationResolver) AddMaterial(ctx context.Context, materialName string) (string, error) {
+func (r *mutationResolver) AddMaterial(ctx context.Context, materialName string) (*model.Material, error) {
 	if err := logic.Authenticate(ctx); err != nil {
-		return "error", err
+		return nil, err
 	}
 
 	if !logic.IsMaterialExist(materialName) {
-		return "error", NewGQLError("FTP服务器现在没有该料号的数据。", "IsMaterialExist false")
+		return nil, NewGQLError("FTP服务器现在没有该料号的数据。", "IsMaterialExist false")
 	}
 
 	material := orm.GetMaterialWithName(materialName)
 	if material != nil {
-		return "error", NewGQLError("料号已经存在，请确认你的输入。", "find material, can't create another one.")
+		return nil, NewGQLError("料号已经存在，请确认你的输入。", "find material, can't create another one.")
 	}
 
 	m := orm.Material{Name: materialName}
 	if err := orm.DB.Create(&m).Error; err != nil {
-		return "error", NewGQLError("创建料号失败", err.Error())
+		return nil, NewGQLError("创建料号失败", err.Error())
 	}
 
 	if err := logic.FetchMaterialDatas(m, nil, nil); err != nil {
-		return "error", NewGQLError(err.Error(), fmt.Sprintf("logic.FetchMaterialDatas(%s, nil, nil)", materialName))
+		return nil, NewGQLError(err.Error(), fmt.Sprintf("logic.FetchMaterialDatas(%s, nil, nil)", materialName))
 	}
 
-	return "success", nil
+	return &model.Material{
+		ID:   m.ID,
+		Name: m.Name,
+	}, nil
 }
 
 func (r *mutationResolver) Active(ctx context.Context, accessToken string) (string, error) {
@@ -233,25 +237,91 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 	cpk := logic.Cpk(size.UpperLimit, size.LowerLimit, normal, s)
 
 	return &model.SizeResult{
-		Total:   total,
-		Ok:      ok,
-		Ng:      total - ok,
-		Cp:      cp,
-		Cpk:     cpk,
-		Normal:  normal,
+		Total:  total,
+		Ok:     ok,
+		Ng:     total - ok,
+		Cp:     cp,
+		Cpk:    cpk,
+		Normal: normal,
 		Dataset: map[string]interface{}{
 			"values": values,
-			"freqs": freqs,
+			"freqs":  freqs,
 		},
 	}, nil
 }
 
-func (r *queryResolver) Materials(ctx context.Context, searchInput model.Search) ([]*model.AnalysisResult, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *queryResolver) Materials(ctx context.Context, page int, limit int) ([]*model.Material, error) {
+	var materials []orm.Material
+	if page < 1 {
+		return nil, NewGQLError("页数不能小于1", "page < 1")
+	}
+	offset := (page - 1) * limit
+	if err := orm.DB.Order("id desc").Limit(limit).Offset(offset).Find(&materials).Error; err != nil {
+		return nil, NewGQLError("获取料号信息失败", err.Error())
+	}
+	var outs []*model.Material
+	for _, v := range materials {
+		outs = append(outs, &model.Material{
+			ID:   v.ID,
+			Name: v.Name,
+		})
+	}
+	return outs, nil
 }
 
 func (r *queryResolver) Devices(ctx context.Context, searchInput model.Search) ([]*model.AnalysisResult, error) {
 	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error) {
+	if searchInput.MaterialID == nil {
+		return nil, NewGQLError("料号ID不能为空", "searchInput.ID can't be empty")
+	}
+	beginTime := searchInput.BeginTime
+	endTime := searchInput.EndTime
+	if endTime == nil {
+		t := time.Now()
+		endTime = &t
+	}
+	if beginTime == nil {
+		t := endTime.AddDate(0, -1, 0)
+		beginTime = &t
+	}
+
+	var ok int
+	var ng int
+	orm.DB.Model(&orm.Product{}).Where(
+		"material_id = ? and created_at < ? and created_at > ? and qualified = 1",
+		searchInput.MaterialID, endTime, beginTime,
+	).Count(&ok)
+	orm.DB.Model(&orm.Product{}).Where(
+		"material_id = ? and created_at < ? and created_at > ? and qualified = 0",
+		searchInput.MaterialID, endTime, beginTime,
+	).Count(&ng)
+	material := orm.GetMaterialWithID(*searchInput.MaterialID)
+	out := model.Material{
+		ID:   material.ID,
+		Name: material.Name,
+	}
+
+	return &model.MaterialResult{
+		Material: &out,
+		Ok:       ok,
+		Ng:       ng,
+	}, nil
+}
+
+func (r *queryResolver) DataFetchFinishPercent(ctx context.Context, materialID int) (float64, error) {
+	var finished int
+	var unfinished int
+	orm.DB.Model(&orm.FileList{}).Where("material_id = ? and finished = 1", materialID).Count(&finished)
+	orm.DB.Model(&orm.FileList{}).Where("material_id = ? and finished = 0", materialID).Count(&unfinished)
+
+	if finished == 0 && unfinished == 0 {
+		return 0, nil
+	}
+
+	return float64(finished / (unfinished + finished)), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

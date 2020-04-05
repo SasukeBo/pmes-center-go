@@ -22,6 +22,18 @@ type LoginInput struct {
 	Password string `json:"password"`
 }
 
+type Material struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type MaterialResult struct {
+	Material *Material              `json:"material"`
+	Ok       int                    `json:"ok"`
+	Ng       int                    `json:"ng"`
+	Dataset  map[string]interface{} `json:"dataset"`
+}
+
 type Product struct {
 	ID         int                    `json:"id"`
 	UUID       string                 `json:"uuid"`

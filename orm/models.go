@@ -78,8 +78,10 @@ type SizeValue struct {
 
 // FileList 存储已加载数据的文件路径
 type FileList struct {
-	ID   int
-	Path string
+	ID         int
+	Path       string
+	MaterialID int
+	Finished   bool `gorm:"default:false"`
 }
 
 func init() {

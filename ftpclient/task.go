@@ -94,16 +94,17 @@ func Store(xr *XLSXReader) {
 				qp = false
 				qs = false
 			}
-			sv := []interface{}{device.ID, v.ID, puuid, value, qs, time.Now()}
+			sv := []interface{}{device.ID, v.ID, puuid, value, qs, *xr.ProductAt}
 			sizeValues = append(sizeValues, sv...)
 		}
 
-		pv := []interface{}{puuid, material.ID, device.ID, qp, time.Now()}
+		pv := []interface{}{puuid, material.ID, device.ID, qp, *xr.ProductAt}
 		products = append(products, pv...)
 	}
 
 	execInsert(products, 5, insertProductsTpl, productValueFieldTpl)
 	execInsert(sizeValues, 6, insertSizeValuesTpl, sizeValueFieldTpl)
+	orm.DB.Model(&orm.FileList{}).Where("id = ?", xr.PathID).Update("finished", true)
 }
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {

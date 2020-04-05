@@ -104,7 +104,9 @@ func FetchMaterialDatas(material orm.Material, begin, end *time.Time) error {
 					if err != nil {
 						return
 					}
-					orm.DB.Create(&orm.FileList{Path: path})
+					fileList := orm.FileList{Path: path, MaterialID: material.ID}
+					orm.DB.Create(&fileList)
+					xr.PathID = fileList.ID
 					ftpclient.PushStore(xr)
 				}()
 			}

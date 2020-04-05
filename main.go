@@ -7,7 +7,9 @@ import (
 	"github.com/SasukeBo/ftpviewer/ftpclient"
 	"github.com/SasukeBo/ftpviewer/graph"
 	"github.com/SasukeBo/ftpviewer/graph/generated"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 func graphqlHandler() gin.HandlerFunc {
@@ -38,9 +40,20 @@ func GinContextToContextMiddleware() gin.HandlerFunc {
 func main() {
 	go ftpclient.FTPWorker()
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:8080"},
+		AllowMethods:     []string{"POST"},
+		AllowHeaders:     []string{"Origin", "content-type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		AllowOriginFunc: func(origin string) bool {
+			return origin == "http://localhost:44761"
+		},
+		MaxAge: 12 * time.Hour,
+	}))
 	r.Use(GinContextToContextMiddleware())
 	r.Use(gin.Recovery())
-	r.POST("/query", graphqlHandler())
+	r.POST("/api", graphqlHandler())
 	r.GET("/", gin.BasicAuth(gin.Accounts{
 		"sasuke": "Wb922149@...S",
 	}), playgroundHandler())

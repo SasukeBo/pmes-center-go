@@ -14,20 +14,30 @@ type Query {
   """
   获取料号数据
   """
-  materials(searchInput: Search!): [AnalysisResult]!
+  materials(page: Int!, limit: Int!): [Material]!
   """
   获取设备生产数据
   """
   devices(searchInput: Search!): [AnalysisResult]!
+  """
+  分析料号数据
+  """
+  analyzeMaterial(searchInput: Search!): MaterialResult!
+  dataFetchFinishPercent(materialID: Int!): Float!
 }
-
-
 
 type Mutation {
   login(loginInput: LoginInput!): User!
   setting(settingInput: SettingInput!): SystemConfig!
-  addMaterial(materialName: String!): String!
+  addMaterial(materialName: String!): Material!
   active(accessToken: String!): String!
+}
+
+type MaterialResult {
+  material: Material!
+  ok: Int!
+  ng: Int!
+  dataset: Map
 }
 
 type SizeResult {
@@ -51,17 +61,10 @@ type AnalysisResult {
   dataset: Map!
 }
 
-input Search {
-  "料号，指定料号"
-  materialID: Int
-  "设备名称，如果不为空则指定该设备生产"
-  deviceID: Int
-  "尺寸，如果不为空则指定改尺寸数据"
-  sizeID: Int
-  "查询时间范围起始时间"
-  beginTime: Time
-  "查询时间范围结束时间"
-  endTime: Time
+
+type Material {
+  id: Int!
+  name: String!
 }
 
 input SettingInput {
@@ -103,6 +106,19 @@ type ProductWrap {
   products: [Product]!
   count: Int!
   qualifiedRate: Float!
+}
+
+input Search {
+  "料号，指定料号"
+  materialID: Int
+  "设备名称，如果不为空则指定该设备生产"
+  deviceID: Int
+  "尺寸，如果不为空则指定改尺寸数据"
+  sizeID: Int
+  "查询时间范围起始时间"
+  beginTime: Time
+  "查询时间范围结束时间"
+  endTime: Time
 }
 
 scalar Time
