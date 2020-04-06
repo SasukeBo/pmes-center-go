@@ -31,10 +31,8 @@ func IsMaterialExist(materialID string) bool {
 }
 
 // FetchMaterialDatas 根据料号从FTP服务器获取时间范围内数据
-func FetchMaterialDatas(material orm.Material, begin, end *time.Time) error {
-	//deviceName := make(map[string]bool)
-	//fetchList := make([]string)
-
+func FetchMaterialDatas(material orm.Material, begin, end *time.Time) ([]int, error) {
+	var fileIDs []int
 	cacheDays := 30
 	config := orm.GetSystemConfig("cache_days")
 	if config != nil {
@@ -48,19 +46,19 @@ func FetchMaterialDatas(material orm.Material, begin, end *time.Time) error {
 
 	if begin != nil && end != nil {
 		if begin.After(*end) {
-			return errors.New("获取数据的开始时间不能在结束时间之后")
+			return fileIDs, errors.New("获取数据的开始时间不能在结束时间之后")
 		}
 	} else if begin == nil && end == nil {
 		begin = &cacheBegin
 		end = &today
 	} else if begin != nil && end == nil {
 		if begin.After(today) {
-			return errors.New("获取数据时间范围不正确")
+			return fileIDs, errors.New("获取数据时间范围不正确")
 		}
 		end = &today
 	} else if begin == nil && end != nil {
 		if end.Before(cacheBegin) {
-			return errors.New("获取数据时间范围不正确")
+			return fileIDs, errors.New("获取数据时间范围不正确")
 		}
 		begin = &cacheBegin
 	}
@@ -68,7 +66,7 @@ func FetchMaterialDatas(material orm.Material, begin, end *time.Time) error {
 	fileList, err := ftpclient.GetList("./" + material.Name)
 	if fe, ok := err.(*ftpclient.FTPError); ok {
 		fe.Logger()
-		return errors.New(fe.Message)
+		return fileIDs, errors.New(fe.Message)
 	}
 
 	reg := regexp.MustCompile(fileNamePattern)
@@ -88,10 +86,6 @@ func FetchMaterialDatas(material orm.Material, begin, end *time.Time) error {
 		}
 	}
 
-	//if !preHandleSize {
-	//	return fmt.Errorf("无法为料号%s创建尺寸数据，请检查FTP服务器下料号数据文件格式是否正确！", materialID)
-	//}
-
 	for _, filename := range fileList {
 		matched := reg.FindAllStringSubmatch(filename, -1)
 		if len(matched) > 0 && len(matched[0]) > 4 {
@@ -99,13 +93,14 @@ func FetchMaterialDatas(material orm.Material, begin, end *time.Time) error {
 			if fileIsNeed(path, matched[0][3], begin, end) {
 				createDeviceIfNotExist(matched[0][2], material)
 				xr := ftpclient.NewXLSXReader()
+				fileList := orm.FileList{Path: path, MaterialID: material.ID}
+				orm.DB.Create(&fileList)
+				fileIDs = append(fileIDs, fileList.ID)
 				go func() {
 					err := xr.Read(path)
 					if err != nil {
 						return
 					}
-					fileList := orm.FileList{Path: path, MaterialID: material.ID}
-					orm.DB.Create(&fileList)
 					xr.PathID = fileList.ID
 					ftpclient.PushStore(xr)
 				}()
@@ -113,7 +108,7 @@ func FetchMaterialDatas(material orm.Material, begin, end *time.Time) error {
 		}
 	}
 
-	return nil
+	return fileIDs, nil
 }
 
 func createDeviceIfNotExist(id string, material orm.Material) {

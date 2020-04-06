@@ -6,8 +6,8 @@ require (
 	github.com/99designs/gqlgen v0.11.3
 	github.com/chfenger/goNum v0.0.0-20191211064013-a00d841c1e7b // indirect
 	github.com/dgryski/trifles v0.0.0-20191129005055-5a6159895336 // indirect
-	github.com/gin-contrib/cors v1.3.1 // indirect
-	github.com/gin-gonic/gin v1.5.0
+	github.com/gin-contrib/cors v1.3.1
+	github.com/gin-gonic/gin v1.6.2
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jinzhu/gorm v1.9.12
@@ -19,8 +19,7 @@ require (
 	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/tealeg/xlsx v1.0.5
 	github.com/vektah/gqlparser/v2 v2.0.1
-	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect
+	golang.org/x/crypto v0.0.0-20200403201458-baeed622b8d8 // indirect
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
-	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

@@ -1,43 +1,50 @@
 type Query {
-  """
-  获取当前用户
-  """
+  "获取当前用户"
   currentUser: User!
-  """
-  获取产品数据
-  """
-  products(searchInput: Search!): ProductWrap!
-  """
-  分析尺寸数据
-  """
+  "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
+  products(searchInput: Search!, page: Int!, limit: Int!): ProductWrap!
+  "分析尺寸数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeSize(searchInput: Search!): SizeResult!
-  """
-  获取料号数据
-  """
-  materials(page: Int!, limit: Int!): [Material]!
-  """
-  获取设备生产数据
-  """
-  devices(searchInput: Search!): [AnalysisResult]!
-  """
-  分析料号数据
-  """
+  "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeMaterial(searchInput: Search!): MaterialResult!
-  dataFetchFinishPercent(materialID: Int!): Float!
+  "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
+  analyzeDevice(searchInput: Search!): DeviceResult!
+  "获取尺寸数据"
+  sizes(page: Int!, limit: Int!, materialID: Int!): [Size]
+  "获取料号数据"
+  materials(page: Int!, limit: Int!): [Material]!
+  "获取设备生产数据"
+  devices(page: Int!, limit: Int!, materialID: Int!): [Device]!
+  "数据获取完成百分比"
+  dataFetchFinishPercent(fileIDs: [Int]!): Float!
 }
 
 type Mutation {
   login(loginInput: LoginInput!): User!
   setting(settingInput: SettingInput!): SystemConfig!
-  addMaterial(materialName: String!): Material!
+  "增加料号，需要返回pending: true和fileListIDs"
+  addMaterial(materialName: String!): AddMaterialResponse!
   active(accessToken: String!): String!
+}
+
+type fetchStatus {
+  message: String!
+  pending: Boolean!
+  fileIDs: [Int!]!
+}
+
+type DeviceResult {
+  device: Device!
+  ok: Int!
+  ng: Int!
+  status: fetchStatus!
 }
 
 type MaterialResult {
   material: Material!
   ok: Int!
   ng: Int!
-  dataset: Map
+  status: fetchStatus!
 }
 
 type SizeResult {
@@ -48,23 +55,29 @@ type SizeResult {
   cpk: Float!
   normal: Float!
   dataset: Map
+  status: fetchStatus!
 }
 
-type AnalysisResult {
+type Size {
   id: Int!
   name: String!
-  cp: Float!
-  cpk: Float!
-  ok: Int!
-  ng: Int!
-  normal: Float!
-  dataset: Map!
+  upperLimit: Float!
+  lowerLimit: Float!
 }
 
+type Device {
+  id: Int!
+  name: String!
+}
 
 type Material {
   id: Int!
   name: String!
+}
+
+type AddMaterialResponse {
+  material: Material!
+  status: fetchStatus!
 }
 
 input SettingInput {
@@ -94,7 +107,7 @@ input LoginInput {
 type Product {
   id: Int!
   uuid: String!
-  materialID: String!
+  materialID: Int!
   deviceID: Int!
   qualified: Boolean!
   sizeValue: Map!
@@ -102,10 +115,10 @@ type Product {
 }
 
 type ProductWrap {
-  tableHeader: [String]!
+  tableHeader: [String!]!
   products: [Product]!
-  count: Int!
-  qualifiedRate: Float!
+  status: fetchStatus!
+  total: Int!
 }
 
 input Search {

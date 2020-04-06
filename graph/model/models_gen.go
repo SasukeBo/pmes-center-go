@@ -6,15 +6,21 @@ import (
 	"time"
 )
 
-type AnalysisResult struct {
-	ID      int                    `json:"id"`
-	Name    string                 `json:"name"`
-	Cp      float64                `json:"cp"`
-	Cpk     float64                `json:"cpk"`
-	Ok      int                    `json:"ok"`
-	Ng      int                    `json:"ng"`
-	Normal  float64                `json:"normal"`
-	Dataset map[string]interface{} `json:"dataset"`
+type AddMaterialResponse struct {
+	Material *Material    `json:"material"`
+	Status   *FetchStatus `json:"status"`
+}
+
+type Device struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type DeviceResult struct {
+	Device *Device      `json:"device"`
+	Ok     int          `json:"ok"`
+	Ng     int          `json:"ng"`
+	Status *FetchStatus `json:"status"`
 }
 
 type LoginInput struct {
@@ -28,16 +34,16 @@ type Material struct {
 }
 
 type MaterialResult struct {
-	Material *Material              `json:"material"`
-	Ok       int                    `json:"ok"`
-	Ng       int                    `json:"ng"`
-	Dataset  map[string]interface{} `json:"dataset"`
+	Material *Material    `json:"material"`
+	Ok       int          `json:"ok"`
+	Ng       int          `json:"ng"`
+	Status   *FetchStatus `json:"status"`
 }
 
 type Product struct {
 	ID         int                    `json:"id"`
 	UUID       string                 `json:"uuid"`
-	MaterialID string                 `json:"materialID"`
+	MaterialID int                    `json:"materialID"`
 	DeviceID   int                    `json:"deviceID"`
 	Qualified  bool                   `json:"qualified"`
 	SizeValue  map[string]interface{} `json:"sizeValue"`
@@ -45,10 +51,10 @@ type Product struct {
 }
 
 type ProductWrap struct {
-	TableHeader   []*string  `json:"tableHeader"`
-	Products      []*Product `json:"products"`
-	Count         int        `json:"count"`
-	QualifiedRate float64    `json:"qualifiedRate"`
+	TableHeader []string     `json:"tableHeader"`
+	Products    []*Product   `json:"products"`
+	Status      *FetchStatus `json:"status"`
+	Total       int          `json:"total"`
 }
 
 type Search struct {
@@ -69,6 +75,13 @@ type SettingInput struct {
 	Value string `json:"value"`
 }
 
+type Size struct {
+	ID         int     `json:"id"`
+	Name       string  `json:"name"`
+	UpperLimit float64 `json:"upperLimit"`
+	LowerLimit float64 `json:"lowerLimit"`
+}
+
 type SizeResult struct {
 	Total   int                    `json:"total"`
 	Ok      int                    `json:"ok"`
@@ -77,6 +90,7 @@ type SizeResult struct {
 	Cpk     float64                `json:"cpk"`
 	Normal  float64                `json:"normal"`
 	Dataset map[string]interface{} `json:"dataset"`
+	Status  *FetchStatus           `json:"status"`
 }
 
 type SystemConfig struct {
@@ -91,4 +105,10 @@ type User struct {
 	ID      int    `json:"id"`
 	Account string `json:"account"`
 	Admin   bool   `json:"admin"`
+}
+
+type FetchStatus struct {
+	Message string `json:"message"`
+	Pending bool   `json:"pending"`
+	FileIDs []int  `json:"fileIDs"`
 }

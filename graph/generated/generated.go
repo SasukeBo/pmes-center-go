@@ -44,15 +44,21 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	AnalysisResult struct {
-		Cp      func(childComplexity int) int
-		Cpk     func(childComplexity int) int
-		Dataset func(childComplexity int) int
-		ID      func(childComplexity int) int
-		Name    func(childComplexity int) int
-		Ng      func(childComplexity int) int
-		Normal  func(childComplexity int) int
-		Ok      func(childComplexity int) int
+	AddMaterialResponse struct {
+		Material func(childComplexity int) int
+		Status   func(childComplexity int) int
+	}
+
+	Device struct {
+		ID   func(childComplexity int) int
+		Name func(childComplexity int) int
+	}
+
+	DeviceResult struct {
+		Device func(childComplexity int) int
+		Ng     func(childComplexity int) int
+		Ok     func(childComplexity int) int
+		Status func(childComplexity int) int
 	}
 
 	Material struct {
@@ -61,10 +67,10 @@ type ComplexityRoot struct {
 	}
 
 	MaterialResult struct {
-		Dataset  func(childComplexity int) int
 		Material func(childComplexity int) int
 		Ng       func(childComplexity int) int
 		Ok       func(childComplexity int) int
+		Status   func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -85,20 +91,29 @@ type ComplexityRoot struct {
 	}
 
 	ProductWrap struct {
-		Count         func(childComplexity int) int
-		Products      func(childComplexity int) int
-		QualifiedRate func(childComplexity int) int
-		TableHeader   func(childComplexity int) int
+		Products    func(childComplexity int) int
+		Status      func(childComplexity int) int
+		TableHeader func(childComplexity int) int
+		Total       func(childComplexity int) int
 	}
 
 	Query struct {
+		AnalyzeDevice          func(childComplexity int, searchInput model.Search) int
 		AnalyzeMaterial        func(childComplexity int, searchInput model.Search) int
 		AnalyzeSize            func(childComplexity int, searchInput model.Search) int
 		CurrentUser            func(childComplexity int) int
-		DataFetchFinishPercent func(childComplexity int, materialID int) int
-		Devices                func(childComplexity int, searchInput model.Search) int
+		DataFetchFinishPercent func(childComplexity int, fileIDs []*int) int
+		Devices                func(childComplexity int, page int, limit int, materialID int) int
 		Materials              func(childComplexity int, page int, limit int) int
-		Products               func(childComplexity int, searchInput model.Search) int
+		Products               func(childComplexity int, searchInput model.Search, page int, limit int) int
+		Sizes                  func(childComplexity int, page int, limit int, materialID int) int
+	}
+
+	Size struct {
+		ID         func(childComplexity int) int
+		LowerLimit func(childComplexity int) int
+		Name       func(childComplexity int) int
+		UpperLimit func(childComplexity int) int
 	}
 
 	SizeResult struct {
@@ -108,6 +123,7 @@ type ComplexityRoot struct {
 		Ng      func(childComplexity int) int
 		Normal  func(childComplexity int) int
 		Ok      func(childComplexity int) int
+		Status  func(childComplexity int) int
 		Total   func(childComplexity int) int
 	}
 
@@ -124,22 +140,30 @@ type ComplexityRoot struct {
 		Admin   func(childComplexity int) int
 		ID      func(childComplexity int) int
 	}
+
+	FetchStatus struct {
+		FileIDs func(childComplexity int) int
+		Message func(childComplexity int) int
+		Pending func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
 	Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error)
 	Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error)
-	AddMaterial(ctx context.Context, materialName string) (*model.Material, error)
+	AddMaterial(ctx context.Context, materialName string) (*model.AddMaterialResponse, error)
 	Active(ctx context.Context, accessToken string) (string, error)
 }
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
-	Products(ctx context.Context, searchInput model.Search) (*model.ProductWrap, error)
+	Products(ctx context.Context, searchInput model.Search, page int, limit int) (*model.ProductWrap, error)
 	AnalyzeSize(ctx context.Context, searchInput model.Search) (*model.SizeResult, error)
-	Materials(ctx context.Context, page int, limit int) ([]*model.Material, error)
-	Devices(ctx context.Context, searchInput model.Search) ([]*model.AnalysisResult, error)
 	AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error)
-	DataFetchFinishPercent(ctx context.Context, materialID int) (float64, error)
+	AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.DeviceResult, error)
+	Sizes(ctx context.Context, page int, limit int, materialID int) ([]*model.Size, error)
+	Materials(ctx context.Context, page int, limit int) ([]*model.Material, error)
+	Devices(ctx context.Context, page int, limit int, materialID int) ([]*model.Device, error)
+	DataFetchFinishPercent(ctx context.Context, fileIDs []*int) (float64, error)
 }
 
 type executableSchema struct {
@@ -157,61 +181,61 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "AnalysisResult.cp":
-		if e.complexity.AnalysisResult.Cp == nil {
+	case "AddMaterialResponse.material":
+		if e.complexity.AddMaterialResponse.Material == nil {
 			break
 		}
 
-		return e.complexity.AnalysisResult.Cp(childComplexity), true
+		return e.complexity.AddMaterialResponse.Material(childComplexity), true
 
-	case "AnalysisResult.cpk":
-		if e.complexity.AnalysisResult.Cpk == nil {
+	case "AddMaterialResponse.status":
+		if e.complexity.AddMaterialResponse.Status == nil {
 			break
 		}
 
-		return e.complexity.AnalysisResult.Cpk(childComplexity), true
+		return e.complexity.AddMaterialResponse.Status(childComplexity), true
 
-	case "AnalysisResult.dataset":
-		if e.complexity.AnalysisResult.Dataset == nil {
+	case "Device.id":
+		if e.complexity.Device.ID == nil {
 			break
 		}
 
-		return e.complexity.AnalysisResult.Dataset(childComplexity), true
+		return e.complexity.Device.ID(childComplexity), true
 
-	case "AnalysisResult.id":
-		if e.complexity.AnalysisResult.ID == nil {
+	case "Device.name":
+		if e.complexity.Device.Name == nil {
 			break
 		}
 
-		return e.complexity.AnalysisResult.ID(childComplexity), true
+		return e.complexity.Device.Name(childComplexity), true
 
-	case "AnalysisResult.name":
-		if e.complexity.AnalysisResult.Name == nil {
+	case "DeviceResult.device":
+		if e.complexity.DeviceResult.Device == nil {
 			break
 		}
 
-		return e.complexity.AnalysisResult.Name(childComplexity), true
+		return e.complexity.DeviceResult.Device(childComplexity), true
 
-	case "AnalysisResult.ng":
-		if e.complexity.AnalysisResult.Ng == nil {
+	case "DeviceResult.ng":
+		if e.complexity.DeviceResult.Ng == nil {
 			break
 		}
 
-		return e.complexity.AnalysisResult.Ng(childComplexity), true
+		return e.complexity.DeviceResult.Ng(childComplexity), true
 
-	case "AnalysisResult.normal":
-		if e.complexity.AnalysisResult.Normal == nil {
+	case "DeviceResult.ok":
+		if e.complexity.DeviceResult.Ok == nil {
 			break
 		}
 
-		return e.complexity.AnalysisResult.Normal(childComplexity), true
+		return e.complexity.DeviceResult.Ok(childComplexity), true
 
-	case "AnalysisResult.ok":
-		if e.complexity.AnalysisResult.Ok == nil {
+	case "DeviceResult.status":
+		if e.complexity.DeviceResult.Status == nil {
 			break
 		}
 
-		return e.complexity.AnalysisResult.Ok(childComplexity), true
+		return e.complexity.DeviceResult.Status(childComplexity), true
 
 	case "Material.id":
 		if e.complexity.Material.ID == nil {
@@ -226,13 +250,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Material.Name(childComplexity), true
-
-	case "MaterialResult.dataset":
-		if e.complexity.MaterialResult.Dataset == nil {
-			break
-		}
-
-		return e.complexity.MaterialResult.Dataset(childComplexity), true
 
 	case "MaterialResult.material":
 		if e.complexity.MaterialResult.Material == nil {
@@ -254,6 +271,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MaterialResult.Ok(childComplexity), true
+
+	case "MaterialResult.status":
+		if e.complexity.MaterialResult.Status == nil {
+			break
+		}
+
+		return e.complexity.MaterialResult.Status(childComplexity), true
 
 	case "Mutation.active":
 		if e.complexity.Mutation.Active == nil {
@@ -352,13 +376,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Product.UUID(childComplexity), true
 
-	case "ProductWrap.count":
-		if e.complexity.ProductWrap.Count == nil {
-			break
-		}
-
-		return e.complexity.ProductWrap.Count(childComplexity), true
-
 	case "ProductWrap.products":
 		if e.complexity.ProductWrap.Products == nil {
 			break
@@ -366,12 +383,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProductWrap.Products(childComplexity), true
 
-	case "ProductWrap.qualifiedRate":
-		if e.complexity.ProductWrap.QualifiedRate == nil {
+	case "ProductWrap.status":
+		if e.complexity.ProductWrap.Status == nil {
 			break
 		}
 
-		return e.complexity.ProductWrap.QualifiedRate(childComplexity), true
+		return e.complexity.ProductWrap.Status(childComplexity), true
 
 	case "ProductWrap.tableHeader":
 		if e.complexity.ProductWrap.TableHeader == nil {
@@ -379,6 +396,25 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ProductWrap.TableHeader(childComplexity), true
+
+	case "ProductWrap.total":
+		if e.complexity.ProductWrap.Total == nil {
+			break
+		}
+
+		return e.complexity.ProductWrap.Total(childComplexity), true
+
+	case "Query.analyzeDevice":
+		if e.complexity.Query.AnalyzeDevice == nil {
+			break
+		}
+
+		args, err := ec.field_Query_analyzeDevice_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AnalyzeDevice(childComplexity, args["searchInput"].(model.Search)), true
 
 	case "Query.analyzeMaterial":
 		if e.complexity.Query.AnalyzeMaterial == nil {
@@ -421,7 +457,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.DataFetchFinishPercent(childComplexity, args["materialID"].(int)), true
+		return e.complexity.Query.DataFetchFinishPercent(childComplexity, args["fileIDs"].([]*int)), true
 
 	case "Query.devices":
 		if e.complexity.Query.Devices == nil {
@@ -433,7 +469,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Devices(childComplexity, args["searchInput"].(model.Search)), true
+		return e.complexity.Query.Devices(childComplexity, args["page"].(int), args["limit"].(int), args["materialID"].(int)), true
 
 	case "Query.materials":
 		if e.complexity.Query.Materials == nil {
@@ -457,7 +493,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Products(childComplexity, args["searchInput"].(model.Search)), true
+		return e.complexity.Query.Products(childComplexity, args["searchInput"].(model.Search), args["page"].(int), args["limit"].(int)), true
+
+	case "Query.sizes":
+		if e.complexity.Query.Sizes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_sizes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Sizes(childComplexity, args["page"].(int), args["limit"].(int), args["materialID"].(int)), true
+
+	case "Size.id":
+		if e.complexity.Size.ID == nil {
+			break
+		}
+
+		return e.complexity.Size.ID(childComplexity), true
+
+	case "Size.lowerLimit":
+		if e.complexity.Size.LowerLimit == nil {
+			break
+		}
+
+		return e.complexity.Size.LowerLimit(childComplexity), true
+
+	case "Size.name":
+		if e.complexity.Size.Name == nil {
+			break
+		}
+
+		return e.complexity.Size.Name(childComplexity), true
+
+	case "Size.upperLimit":
+		if e.complexity.Size.UpperLimit == nil {
+			break
+		}
+
+		return e.complexity.Size.UpperLimit(childComplexity), true
 
 	case "SizeResult.cp":
 		if e.complexity.SizeResult.Cp == nil {
@@ -500,6 +576,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SizeResult.Ok(childComplexity), true
+
+	case "SizeResult.status":
+		if e.complexity.SizeResult.Status == nil {
+			break
+		}
+
+		return e.complexity.SizeResult.Status(childComplexity), true
 
 	case "SizeResult.total":
 		if e.complexity.SizeResult.Total == nil {
@@ -563,6 +646,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.ID(childComplexity), true
+
+	case "fetchStatus.fileIDs":
+		if e.complexity.FetchStatus.FileIDs == nil {
+			break
+		}
+
+		return e.complexity.FetchStatus.FileIDs(childComplexity), true
+
+	case "fetchStatus.message":
+		if e.complexity.FetchStatus.Message == nil {
+			break
+		}
+
+		return e.complexity.FetchStatus.Message(childComplexity), true
+
+	case "fetchStatus.pending":
+		if e.complexity.FetchStatus.Pending == nil {
+			break
+		}
+
+		return e.complexity.FetchStatus.Pending(childComplexity), true
 
 	}
 	return 0, false
@@ -629,45 +733,52 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	&ast.Source{Name: "graph/schema.graphql", Input: `type Query {
-  """
-  获取当前用户
-  """
+  "获取当前用户"
   currentUser: User!
-  """
-  获取产品数据
-  """
-  products(searchInput: Search!): ProductWrap!
-  """
-  分析尺寸数据
-  """
+  "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
+  products(searchInput: Search!, page: Int!, limit: Int!): ProductWrap!
+  "分析尺寸数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeSize(searchInput: Search!): SizeResult!
-  """
-  获取料号数据
-  """
-  materials(page: Int!, limit: Int!): [Material]!
-  """
-  获取设备生产数据
-  """
-  devices(searchInput: Search!): [AnalysisResult]!
-  """
-  分析料号数据
-  """
+  "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeMaterial(searchInput: Search!): MaterialResult!
-  dataFetchFinishPercent(materialID: Int!): Float!
+  "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
+  analyzeDevice(searchInput: Search!): DeviceResult!
+  "获取尺寸数据"
+  sizes(page: Int!, limit: Int!, materialID: Int!): [Size]
+  "获取料号数据"
+  materials(page: Int!, limit: Int!): [Material]!
+  "获取设备生产数据"
+  devices(page: Int!, limit: Int!, materialID: Int!): [Device]!
+  "数据获取完成百分比"
+  dataFetchFinishPercent(fileIDs: [Int]!): Float!
 }
 
 type Mutation {
   login(loginInput: LoginInput!): User!
   setting(settingInput: SettingInput!): SystemConfig!
-  addMaterial(materialName: String!): Material!
+  "增加料号，需要返回pending: true和fileListIDs"
+  addMaterial(materialName: String!): AddMaterialResponse!
   active(accessToken: String!): String!
+}
+
+type fetchStatus {
+  message: String!
+  pending: Boolean!
+  fileIDs: [Int!]!
+}
+
+type DeviceResult {
+  device: Device!
+  ok: Int!
+  ng: Int!
+  status: fetchStatus!
 }
 
 type MaterialResult {
   material: Material!
   ok: Int!
   ng: Int!
-  dataset: Map
+  status: fetchStatus!
 }
 
 type SizeResult {
@@ -678,23 +789,29 @@ type SizeResult {
   cpk: Float!
   normal: Float!
   dataset: Map
+  status: fetchStatus!
 }
 
-type AnalysisResult {
+type Size {
   id: Int!
   name: String!
-  cp: Float!
-  cpk: Float!
-  ok: Int!
-  ng: Int!
-  normal: Float!
-  dataset: Map!
+  upperLimit: Float!
+  lowerLimit: Float!
 }
 
+type Device {
+  id: Int!
+  name: String!
+}
 
 type Material {
   id: Int!
   name: String!
+}
+
+type AddMaterialResponse {
+  material: Material!
+  status: fetchStatus!
 }
 
 input SettingInput {
@@ -724,7 +841,7 @@ input LoginInput {
 type Product {
   id: Int!
   uuid: String!
-  materialID: String!
+  materialID: Int!
   deviceID: Int!
   qualified: Boolean!
   sizeValue: Map!
@@ -732,10 +849,10 @@ type Product {
 }
 
 type ProductWrap {
-  tableHeader: [String]!
+  tableHeader: [String!]!
   products: [Product]!
-  count: Int!
-  qualifiedRate: Float!
+  status: fetchStatus!
+  total: Int!
 }
 
 input Search {
@@ -831,6 +948,20 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_analyzeDevice_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.Search
+	if tmp, ok := rawArgs["searchInput"]; ok {
+		arg0, err = ec.unmarshalNSearch2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSearch(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["searchInput"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_analyzeMaterial_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -862,28 +993,44 @@ func (ec *executionContext) field_Query_analyzeSize_args(ctx context.Context, ra
 func (ec *executionContext) field_Query_dataFetchFinishPercent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["materialID"]; ok {
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+	var arg0 []*int
+	if tmp, ok := rawArgs["fileIDs"]; ok {
+		arg0, err = ec.unmarshalNInt2ᚕᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["materialID"] = arg0
+	args["fileIDs"] = arg0
 	return args, nil
 }
 
 func (ec *executionContext) field_Query_devices_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.Search
-	if tmp, ok := rawArgs["searchInput"]; ok {
-		arg0, err = ec.unmarshalNSearch2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSearch(ctx, tmp)
+	var arg0 int
+	if tmp, ok := rawArgs["page"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["searchInput"] = arg0
+	args["page"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["limit"]; ok {
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["materialID"]; ok {
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["materialID"] = arg2
 	return args, nil
 }
 
@@ -920,6 +1067,52 @@ func (ec *executionContext) field_Query_products_args(ctx context.Context, rawAr
 		}
 	}
 	args["searchInput"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["page"]; ok {
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["limit"]; ok {
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_sizes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["page"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["limit"]; ok {
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["materialID"]; ok {
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["materialID"] = arg2
 	return args, nil
 }
 
@@ -959,7 +1152,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _AnalysisResult_id(ctx context.Context, field graphql.CollectedField, obj *model.AnalysisResult) (ret graphql.Marshaler) {
+func (ec *executionContext) _AddMaterialResponse_material(ctx context.Context, field graphql.CollectedField, obj *model.AddMaterialResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -967,7 +1160,75 @@ func (ec *executionContext) _AnalysisResult_id(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "AnalysisResult",
+		Object:   "AddMaterialResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Material, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Material)
+	fc.Result = res
+	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterial(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _AddMaterialResponse_status(ctx context.Context, field graphql.CollectedField, obj *model.AddMaterialResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "AddMaterialResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.FetchStatus)
+	fc.Result = res
+	return ec.marshalNfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Device_id(ctx context.Context, field graphql.CollectedField, obj *model.Device) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Device",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -993,7 +1254,7 @@ func (ec *executionContext) _AnalysisResult_id(ctx context.Context, field graphq
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AnalysisResult_name(ctx context.Context, field graphql.CollectedField, obj *model.AnalysisResult) (ret graphql.Marshaler) {
+func (ec *executionContext) _Device_name(ctx context.Context, field graphql.CollectedField, obj *model.Device) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1001,7 +1262,7 @@ func (ec *executionContext) _AnalysisResult_name(ctx context.Context, field grap
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "AnalysisResult",
+		Object:   "Device",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1027,7 +1288,7 @@ func (ec *executionContext) _AnalysisResult_name(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AnalysisResult_cp(ctx context.Context, field graphql.CollectedField, obj *model.AnalysisResult) (ret graphql.Marshaler) {
+func (ec *executionContext) _DeviceResult_device(ctx context.Context, field graphql.CollectedField, obj *model.DeviceResult) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1035,7 +1296,7 @@ func (ec *executionContext) _AnalysisResult_cp(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "AnalysisResult",
+		Object:   "DeviceResult",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1044,7 +1305,7 @@ func (ec *executionContext) _AnalysisResult_cp(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Cp, nil
+		return obj.Device, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1056,12 +1317,12 @@ func (ec *executionContext) _AnalysisResult_cp(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(*model.Device)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalNDevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AnalysisResult_cpk(ctx context.Context, field graphql.CollectedField, obj *model.AnalysisResult) (ret graphql.Marshaler) {
+func (ec *executionContext) _DeviceResult_ok(ctx context.Context, field graphql.CollectedField, obj *model.DeviceResult) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1069,41 +1330,7 @@ func (ec *executionContext) _AnalysisResult_cpk(ctx context.Context, field graph
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "AnalysisResult",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Cpk, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _AnalysisResult_ok(ctx context.Context, field graphql.CollectedField, obj *model.AnalysisResult) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "AnalysisResult",
+		Object:   "DeviceResult",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1129,7 +1356,7 @@ func (ec *executionContext) _AnalysisResult_ok(ctx context.Context, field graphq
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AnalysisResult_ng(ctx context.Context, field graphql.CollectedField, obj *model.AnalysisResult) (ret graphql.Marshaler) {
+func (ec *executionContext) _DeviceResult_ng(ctx context.Context, field graphql.CollectedField, obj *model.DeviceResult) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1137,7 +1364,7 @@ func (ec *executionContext) _AnalysisResult_ng(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "AnalysisResult",
+		Object:   "DeviceResult",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1163,7 +1390,7 @@ func (ec *executionContext) _AnalysisResult_ng(ctx context.Context, field graphq
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AnalysisResult_normal(ctx context.Context, field graphql.CollectedField, obj *model.AnalysisResult) (ret graphql.Marshaler) {
+func (ec *executionContext) _DeviceResult_status(ctx context.Context, field graphql.CollectedField, obj *model.DeviceResult) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1171,7 +1398,7 @@ func (ec *executionContext) _AnalysisResult_normal(ctx context.Context, field gr
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "AnalysisResult",
+		Object:   "DeviceResult",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1180,7 +1407,7 @@ func (ec *executionContext) _AnalysisResult_normal(ctx context.Context, field gr
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Normal, nil
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1192,43 +1419,9 @@ func (ec *executionContext) _AnalysisResult_normal(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(*model.FetchStatus)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _AnalysisResult_dataset(ctx context.Context, field graphql.CollectedField, obj *model.AnalysisResult) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "AnalysisResult",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Dataset, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(map[string]interface{})
-	fc.Result = res
-	return ec.marshalNMap2map(ctx, field.Selections, res)
+	return ec.marshalNfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Material_id(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
@@ -1401,7 +1594,7 @@ func (ec *executionContext) _MaterialResult_ng(ctx context.Context, field graphq
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MaterialResult_dataset(ctx context.Context, field graphql.CollectedField, obj *model.MaterialResult) (ret graphql.Marshaler) {
+func (ec *executionContext) _MaterialResult_status(ctx context.Context, field graphql.CollectedField, obj *model.MaterialResult) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1418,18 +1611,21 @@ func (ec *executionContext) _MaterialResult_dataset(ctx context.Context, field g
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Dataset, nil
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(map[string]interface{})
+	res := resTmp.(*model.FetchStatus)
 	fc.Result = res
-	return ec.marshalOMap2map(ctx, field.Selections, res)
+	return ec.marshalNfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1550,9 +1746,9 @@ func (ec *executionContext) _Mutation_addMaterial(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Material)
+	res := resTmp.(*model.AddMaterialResponse)
 	fc.Result = res
-	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterial(ctx, field.Selections, res)
+	return ec.marshalNAddMaterialResponse2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAddMaterialResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_active(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1693,9 +1889,9 @@ func (ec *executionContext) _Product_materialID(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Product_deviceID(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
@@ -1863,9 +2059,9 @@ func (ec *executionContext) _ProductWrap_tableHeader(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProductWrap_products(ctx context.Context, field graphql.CollectedField, obj *model.ProductWrap) (ret graphql.Marshaler) {
@@ -1902,7 +2098,7 @@ func (ec *executionContext) _ProductWrap_products(ctx context.Context, field gra
 	return ec.marshalNProduct2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐProduct(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProductWrap_count(ctx context.Context, field graphql.CollectedField, obj *model.ProductWrap) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProductWrap_status(ctx context.Context, field graphql.CollectedField, obj *model.ProductWrap) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1919,7 +2115,41 @@ func (ec *executionContext) _ProductWrap_count(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Count, nil
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.FetchStatus)
+	fc.Result = res
+	return ec.marshalNfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProductWrap_total(ctx context.Context, field graphql.CollectedField, obj *model.ProductWrap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProductWrap",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1934,40 +2164,6 @@ func (ec *executionContext) _ProductWrap_count(ctx context.Context, field graphq
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProductWrap_qualifiedRate(ctx context.Context, field graphql.CollectedField, obj *model.ProductWrap) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ProductWrap",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.QualifiedRate, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2028,7 +2224,7 @@ func (ec *executionContext) _Query_products(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Products(rctx, args["searchInput"].(model.Search))
+		return ec.resolvers.Query().Products(rctx, args["searchInput"].(model.Search), args["page"].(int), args["limit"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2084,6 +2280,126 @@ func (ec *executionContext) _Query_analyzeSize(ctx context.Context, field graphq
 	res := resTmp.(*model.SizeResult)
 	fc.Result = res
 	return ec.marshalNSizeResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSizeResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_analyzeMaterial(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_analyzeMaterial_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AnalyzeMaterial(rctx, args["searchInput"].(model.Search))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MaterialResult)
+	fc.Result = res
+	return ec.marshalNMaterialResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_analyzeDevice(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_analyzeDevice_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AnalyzeDevice(rctx, args["searchInput"].(model.Search))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.DeviceResult)
+	fc.Result = res
+	return ec.marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDeviceResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_sizes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_sizes_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Sizes(rctx, args["page"].(int), args["limit"].(int), args["materialID"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Size)
+	fc.Result = res
+	return ec.marshalOSize2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_materials(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2151,7 +2467,7 @@ func (ec *executionContext) _Query_devices(ctx context.Context, field graphql.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Devices(rctx, args["searchInput"].(model.Search))
+		return ec.resolvers.Query().Devices(rctx, args["page"].(int), args["limit"].(int), args["materialID"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2163,50 +2479,9 @@ func (ec *executionContext) _Query_devices(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.AnalysisResult)
+	res := resTmp.([]*model.Device)
 	fc.Result = res
-	return ec.marshalNAnalysisResult2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAnalysisResult(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_analyzeMaterial(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_analyzeMaterial_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AnalyzeMaterial(rctx, args["searchInput"].(model.Search))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.MaterialResult)
-	fc.Result = res
-	return ec.marshalNMaterialResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialResult(ctx, field.Selections, res)
+	return ec.marshalNDevice2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_dataFetchFinishPercent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2233,7 +2508,7 @@ func (ec *executionContext) _Query_dataFetchFinishPercent(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().DataFetchFinishPercent(rctx, args["materialID"].(int))
+		return ec.resolvers.Query().DataFetchFinishPercent(rctx, args["fileIDs"].([]*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2317,6 +2592,142 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Size_id(ctx context.Context, field graphql.CollectedField, obj *model.Size) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Size",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Size_name(ctx context.Context, field graphql.CollectedField, obj *model.Size) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Size",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Size_upperLimit(ctx context.Context, field graphql.CollectedField, obj *model.Size) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Size",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpperLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Size_lowerLimit(ctx context.Context, field graphql.CollectedField, obj *model.Size) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Size",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LowerLimit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SizeResult_total(ctx context.Context, field graphql.CollectedField, obj *model.SizeResult) (ret graphql.Marshaler) {
@@ -2552,6 +2963,40 @@ func (ec *executionContext) _SizeResult_dataset(ctx context.Context, field graph
 	res := resTmp.(map[string]interface{})
 	fc.Result = res
 	return ec.marshalOMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SizeResult_status(ctx context.Context, field graphql.CollectedField, obj *model.SizeResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SizeResult",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.FetchStatus)
+	fc.Result = res
+	return ec.marshalNfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SystemConfig_id(ctx context.Context, field graphql.CollectedField, obj *model.SystemConfig) (ret graphql.Marshaler) {
@@ -3877,6 +4322,108 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	return ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _fetchStatus_message(ctx context.Context, field graphql.CollectedField, obj *model.FetchStatus) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "fetchStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _fetchStatus_pending(ctx context.Context, field graphql.CollectedField, obj *model.FetchStatus) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "fetchStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Pending, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _fetchStatus_fileIDs(ctx context.Context, field graphql.CollectedField, obj *model.FetchStatus) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "fetchStatus",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileIDs, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]int)
+	fc.Result = res
+	return ec.marshalNInt2ᚕintᚄ(ctx, field.Selections, res)
+}
+
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -3979,54 +4526,98 @@ func (ec *executionContext) unmarshalInputSettingInput(ctx context.Context, obj 
 
 // region    **************************** object.gotpl ****************************
 
-var analysisResultImplementors = []string{"AnalysisResult"}
+var addMaterialResponseImplementors = []string{"AddMaterialResponse"}
 
-func (ec *executionContext) _AnalysisResult(ctx context.Context, sel ast.SelectionSet, obj *model.AnalysisResult) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, analysisResultImplementors)
+func (ec *executionContext) _AddMaterialResponse(ctx context.Context, sel ast.SelectionSet, obj *model.AddMaterialResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, addMaterialResponseImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("AnalysisResult")
+			out.Values[i] = graphql.MarshalString("AddMaterialResponse")
+		case "material":
+			out.Values[i] = ec._AddMaterialResponse_material(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "status":
+			out.Values[i] = ec._AddMaterialResponse_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var deviceImplementors = []string{"Device"}
+
+func (ec *executionContext) _Device(ctx context.Context, sel ast.SelectionSet, obj *model.Device) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, deviceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Device")
 		case "id":
-			out.Values[i] = ec._AnalysisResult_id(ctx, field, obj)
+			out.Values[i] = ec._Device_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "name":
-			out.Values[i] = ec._AnalysisResult_name(ctx, field, obj)
+			out.Values[i] = ec._Device_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "cp":
-			out.Values[i] = ec._AnalysisResult_cp(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "cpk":
-			out.Values[i] = ec._AnalysisResult_cpk(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var deviceResultImplementors = []string{"DeviceResult"}
+
+func (ec *executionContext) _DeviceResult(ctx context.Context, sel ast.SelectionSet, obj *model.DeviceResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, deviceResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeviceResult")
+		case "device":
+			out.Values[i] = ec._DeviceResult_device(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "ok":
-			out.Values[i] = ec._AnalysisResult_ok(ctx, field, obj)
+			out.Values[i] = ec._DeviceResult_ok(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
 		case "ng":
-			out.Values[i] = ec._AnalysisResult_ng(ctx, field, obj)
+			out.Values[i] = ec._DeviceResult_ng(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "normal":
-			out.Values[i] = ec._AnalysisResult_normal(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "dataset":
-			out.Values[i] = ec._AnalysisResult_dataset(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._DeviceResult_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4099,8 +4690,11 @@ func (ec *executionContext) _MaterialResult(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "dataset":
-			out.Values[i] = ec._MaterialResult_dataset(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._MaterialResult_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4236,13 +4830,13 @@ func (ec *executionContext) _ProductWrap(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "count":
-			out.Values[i] = ec._ProductWrap_count(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._ProductWrap_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "qualifiedRate":
-			out.Values[i] = ec._ProductWrap_qualifiedRate(ctx, field, obj)
+		case "total":
+			out.Values[i] = ec._ProductWrap_total(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -4314,6 +4908,45 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "analyzeMaterial":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_analyzeMaterial(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "analyzeDevice":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_analyzeDevice(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "sizes":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_sizes(ctx, field)
+				return res
+			})
 		case "materials":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -4342,20 +4975,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "analyzeMaterial":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_analyzeMaterial(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "dataFetchFinishPercent":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -4374,6 +4993,48 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var sizeImplementors = []string{"Size"}
+
+func (ec *executionContext) _Size(ctx context.Context, sel ast.SelectionSet, obj *model.Size) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sizeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Size")
+		case "id":
+			out.Values[i] = ec._Size_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Size_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "upperLimit":
+			out.Values[i] = ec._Size_upperLimit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lowerLimit":
+			out.Values[i] = ec._Size_lowerLimit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4428,6 +5089,11 @@ func (ec *executionContext) _SizeResult(ctx context.Context, sel ast.SelectionSe
 			}
 		case "dataset":
 			out.Values[i] = ec._SizeResult_dataset(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._SizeResult_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4764,11 +5430,80 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var fetchStatusImplementors = []string{"fetchStatus"}
+
+func (ec *executionContext) _fetchStatus(ctx context.Context, sel ast.SelectionSet, obj *model.FetchStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, fetchStatusImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("fetchStatus")
+		case "message":
+			out.Values[i] = ec._fetchStatus_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pending":
+			out.Values[i] = ec._fetchStatus_pending(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "fileIDs":
+			out.Values[i] = ec._fetchStatus_fileIDs(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) marshalNAnalysisResult2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAnalysisResult(ctx context.Context, sel ast.SelectionSet, v []*model.AnalysisResult) graphql.Marshaler {
+func (ec *executionContext) marshalNAddMaterialResponse2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAddMaterialResponse(ctx context.Context, sel ast.SelectionSet, v model.AddMaterialResponse) graphql.Marshaler {
+	return ec._AddMaterialResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAddMaterialResponse2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAddMaterialResponse(ctx context.Context, sel ast.SelectionSet, v *model.AddMaterialResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AddMaterialResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
+	return graphql.UnmarshalBoolean(v)
+}
+
+func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
+	res := graphql.MarshalBoolean(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNDevice2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v model.Device) graphql.Marshaler {
+	return ec._Device(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDevice2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v []*model.Device) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -4792,7 +5527,7 @@ func (ec *executionContext) marshalNAnalysisResult2ᚕᚖgithubᚗcomᚋSasukeBo
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOAnalysisResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAnalysisResult(ctx, sel, v[i])
+			ret[i] = ec.marshalODevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -4805,18 +5540,28 @@ func (ec *executionContext) marshalNAnalysisResult2ᚕᚖgithubᚗcomᚋSasukeBo
 	return ret
 }
 
-func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
-	return graphql.UnmarshalBoolean(v)
-}
-
-func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
-	res := graphql.MarshalBoolean(v)
-	if res == graphql.Null {
+func (ec *executionContext) marshalNDevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v *model.Device) graphql.Marshaler {
+	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
+		return graphql.Null
 	}
-	return res
+	return ec._Device(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNDeviceResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v model.DeviceResult) graphql.Marshaler {
+	return ec._DeviceResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v *model.DeviceResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._DeviceResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
@@ -4845,6 +5590,64 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNInt2ᚕᚖint(ctx context.Context, v interface{}) ([]*int, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*int, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOInt2ᚖint(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNInt2ᚕᚖint(ctx context.Context, sel ast.SelectionSet, v []*int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOInt2ᚖint(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNLoginInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐLoginInput(ctx context.Context, v interface{}) (model.LoginInput, error) {
@@ -5026,7 +5829,7 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -5036,9 +5839,9 @@ func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v
 		}
 	}
 	var err error
-	res := make([]*string, len(vSlice))
+	res := make([]string, len(vSlice))
 	for i := range vSlice {
-		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -5046,10 +5849,10 @@ func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v
 	return res, nil
 }
 
-func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	for i := range v {
-		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
 	}
 
 	return ret
@@ -5323,15 +6126,18 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) marshalOAnalysisResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAnalysisResult(ctx context.Context, sel ast.SelectionSet, v model.AnalysisResult) graphql.Marshaler {
-	return ec._AnalysisResult(ctx, sel, &v)
+func (ec *executionContext) marshalNfetchStatus2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx context.Context, sel ast.SelectionSet, v model.FetchStatus) graphql.Marshaler {
+	return ec._fetchStatus(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOAnalysisResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAnalysisResult(ctx context.Context, sel ast.SelectionSet, v *model.AnalysisResult) graphql.Marshaler {
+func (ec *executionContext) marshalNfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx context.Context, sel ast.SelectionSet, v *model.FetchStatus) graphql.Marshaler {
 	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	return ec._AnalysisResult(ctx, sel, v)
+	return ec._fetchStatus(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
@@ -5355,6 +6161,17 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalODevice2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v model.Device) graphql.Marshaler {
+	return ec._Device(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalODevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v *model.Device) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Device(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
@@ -5414,6 +6231,57 @@ func (ec *executionContext) marshalOProduct2ᚖgithubᚗcomᚋSasukeBoᚋftpview
 		return graphql.Null
 	}
 	return ec._Product(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSize2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx context.Context, sel ast.SelectionSet, v model.Size) graphql.Marshaler {
+	return ec._Size(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOSize2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx context.Context, sel ast.SelectionSet, v []*model.Size) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOSize2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOSize2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx context.Context, sel ast.SelectionSet, v *model.Size) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Size(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
