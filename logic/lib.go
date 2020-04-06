@@ -171,5 +171,6 @@ func NeedFetch(m *orm.Material, begin, end *time.Time) bool {
 
 	// orm.
 	// TODO: finish it
+	// TODO: 抓取FTP文件列表，对比数据库当前文件列表，然后抓取
 	return false
 }
