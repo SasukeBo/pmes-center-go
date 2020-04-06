@@ -146,7 +146,6 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	if page < 1 {
 		return nil, NewGQLError("页数不能小于1", "")
 	}
-
 	offset := (page - 1) * limit
 
 	var conditions []string
@@ -155,6 +154,20 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	if material == nil {
 		return nil, NewGQLError("您所查找的料号不存在", fmt.Sprintf("get material with id = %v failed", *searchInput.MaterialID))
 	}
+
+	if logic.NeedFetch(material, searchInput.BeginTime, searchInput.EndTime) {
+		fileIDs, _ := logic.FetchMaterialDatas(*material, searchInput.BeginTime, searchInput.EndTime)
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: false}
+		if len(fileIDs) == 0 {
+			status.Message = "抱歉，未能在FTP服务器中查找到此料号在该时间段内的数据"
+			return &model.ProductWrap{Status: status}, nil
+		}
+
+		status.Message = "需要从FTP服务器获取该时间段内料号数据"
+		status.Pending = true
+		return &model.ProductWrap{Status: status}, nil
+	}
+
 	conditions = append(conditions, "material_id = ?")
 	vars = append(vars, material.ID)
 
@@ -209,7 +222,7 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	rows, err := orm.DB.Raw(`
 	SELECT sv.product_uuid, s.name, sv.value FROM size_values AS sv
 	JOIN sizes AS s ON sv.size_id = s.id
-	WHERE sv.product_uuid in (?)
+	WHERE sv.product_uuid IN (?)
 	ORDER BY sv.product_uuid, s.index
 	`, productUUIDs).Rows()
 	if err != nil {
@@ -267,32 +280,50 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 		return nil, NewGQLError("没有在数据库找到改尺寸", "")
 	}
 
-	var sizeValues []orm.SizeValue
-	cond := "size_id = ?"
-	vals := []interface{}{*searchInput.SizeID}
+	material := orm.GetMaterialWithID(size.MaterialID)
+	if material == nil {
+		return nil, NewGQLError("没有找到该尺寸所属的料号", "")
+	}
+
+	var conds []string
+	var vars []interface{}
+
+	conds = append(conds, "size_id = ?")
+	vars = append(vars, *searchInput.SizeID)
 
 	if searchInput.DeviceID != nil {
-		cond = cond + "AND device_id = ?"
-		vals = append(vals, *searchInput.DeviceID)
+		conds = append(conds, "device_id = ?")
+		vars = append(vars, *searchInput.DeviceID)
 	}
 
 	if searchInput.BeginTime != nil {
-		cond = cond + "AND created_at > ?"
-		vals = append(vals, *searchInput.BeginTime)
+		conds = append(conds, "created_at > ?")
+		vars = append(vars, *searchInput.BeginTime)
 	}
 
 	if searchInput.EndTime != nil {
-		cond = cond + "AND created_at < ?"
-		vals = append(vals, *searchInput.EndTime)
+		conds = append(conds, "created_at < ?")
+		vars = append(vars, *searchInput.EndTime)
 	}
 
-	if err := orm.DB.Model(&orm.SizeValue{}).Where(cond, vals...).Find(&sizeValues).Error; err != nil {
+	var sizeValues []orm.SizeValue
+	cond := strings.Join(conds, " AND ")
+	if err := orm.DB.Model(&orm.SizeValue{}).Where(cond, vars...).Find(&sizeValues).Error; err != nil {
 		return nil, NewGQLError("获取数据失败", err.Error())
 	}
 
 	total := len(sizeValues)
 	if total == 0 {
-		return &model.SizeResult{}, nil
+		fileIDs, _ := logic.FetchMaterialDatas(*material, searchInput.BeginTime, searchInput.EndTime)
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: false}
+		if len(fileIDs) == 0 {
+			status.Message = "抱歉，未能在FTP服务器中查找到此尺寸在该时间段内的数据"
+			return &model.SizeResult{Status: status}, nil
+		}
+
+		status.Message = "需要从FTP服务器获取该时间段内尺寸数据"
+		status.Pending = true
+		return &model.SizeResult{Status: status}, nil
 	}
 	ok := 0
 	valueSet := make([]float64, 0)
@@ -334,6 +365,7 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 			"values": values,
 			"freqs":  freqs,
 		},
+		Status: &model.FetchStatus{Pending: false},
 	}, nil
 }
 

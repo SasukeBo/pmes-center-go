@@ -90,10 +90,12 @@ func FetchMaterialDatas(material orm.Material, begin, end *time.Time) ([]int, er
 		matched := reg.FindAllStringSubmatch(filename, -1)
 		if len(matched) > 0 && len(matched[0]) > 4 {
 			path := "./" + material.Name + "/" + filename
-			if fileIsNeed(path, matched[0][3], begin, end) {
+			dateStr := matched[0][3]
+			fileDate, _ := time.Parse(time.RFC3339, fmt.Sprintf("%s-%s-%sT00:00:00+08:00", dateStr[:4], dateStr[4:6], dateStr[6:]))
+			if fileIsNeed(path, &fileDate, begin, end) {
 				createDeviceIfNotExist(matched[0][2], material)
 				xr := ftpclient.NewXLSXReader()
-				fileList := orm.FileList{Path: path, MaterialID: material.ID}
+				fileList := orm.FileList{Path: path, MaterialID: material.ID, FileDate: fileDate}
 				orm.DB.Create(&fileList)
 				fileIDs = append(fileIDs, fileList.ID)
 				go func() {
@@ -123,15 +125,14 @@ func createDeviceIfNotExist(id string, material orm.Material) {
 	}
 }
 
-func fileIsNeed(path, name string, begin, end *time.Time) bool {
+func fileIsNeed(path string, fileDate, begin, end *time.Time) bool {
 	if fl := orm.GetFileListWithPath(path); fl != nil {
 		return false
 	}
 	if begin == nil || end == nil {
 		return true
 	}
-	t, _ := time.Parse(time.RFC3339, fmt.Sprintf("%s-%s-%sT00:00:00+08:00", name[:4], name[4:6], name[6:]))
-	return begin.Before(t) && end.After(t)
+	return begin.Before(*fileDate) && end.After(*fileDate)
 }
 
 func handleSize(dimSet map[string]ftpclient.SL, materialID int) {
@@ -152,4 +153,23 @@ func handleSize(dimSet map[string]ftpclient.SL, materialID int) {
 		}
 	}
 	tx.Commit()
+}
+
+func NeedFetch(m *orm.Material, begin, end *time.Time) bool {
+	var conds []string
+	var vars []interface{}
+	conds = append(conds, "LIKE " + "%" + fmt.Sprint(m.ID) + "%")
+	if begin != nil {
+		conds = append(conds, "file_date > ?")
+		vars = append(vars, *begin)
+	}
+
+	if end != nil {
+		conds = append(conds, "file_date < ?")
+		vars = append(vars, *end)
+	}
+
+	// orm.
+	// TODO: finish it
+	return false
 }

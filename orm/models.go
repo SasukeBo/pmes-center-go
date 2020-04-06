@@ -82,6 +82,7 @@ type FileList struct {
 	Path       string
 	MaterialID int
 	Finished   bool `gorm:"default:false"`
+	FileDate   time.Time
 }
 
 func init() {
