@@ -101,13 +101,18 @@ func NeedFetch(m *orm.Material, begin, end *time.Time) ([]int, error) {
 	var vars []interface{}
 	var files []FetchFile
 	var fileIDs []int
-	conds = append(conds, "LIKE "+"%"+fmt.Sprint(m.ID)+"%")
 	conds = append(conds, "finished = 1")
+	conds = append(conds, "material_id = ?")
+	vars = append(vars, m.ID)
+	if begin != nil && end != nil {
+		if begin.After(*end) {
+			return fileIDs, errors.New("时间范围不正确，开始时间不能晚于结束时间")
+		}
+	}
 	if begin != nil {
 		conds = append(conds, "file_date > ?")
 		vars = append(vars, *begin)
 	}
-
 	if end != nil {
 		conds = append(conds, "file_date < ?")
 		vars = append(vars, *end)

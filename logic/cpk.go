@@ -41,5 +41,8 @@ func Cp(tu, tl, s float64) float64 {
 
 // Cpk 计算公式
 func Cpk(tu, tl, u, s float64) float64 {
+	if u == 0 || s == 0 {
+		return 0
+	}
 	return math.Min(tu-u, u-tl) / (3 * s)
 }

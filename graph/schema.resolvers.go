@@ -96,7 +96,9 @@ func (r *mutationResolver) AddMaterial(ctx context.Context, materialName string)
 		return nil, NewGQLError("创建料号失败", err.Error())
 	}
 
-	fileIDs, _ := logic.NeedFetch(&m, nil, nil)
+	end := time.Now()
+	begin := end.AddDate(0, 0, -30)
+	fileIDs, _ := logic.NeedFetch(&m, &begin, &end)
 	var status = model.FetchStatus{
 		Message: "创建料号成功",
 		Pending: true,
@@ -155,7 +157,18 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 		return nil, NewGQLError("您所查找的料号不存在", fmt.Sprintf("get material with id = %v failed", *searchInput.MaterialID))
 	}
 
-	fileIDs, err := logic.NeedFetch(material, searchInput.BeginTime, searchInput.EndTime)
+	end := searchInput.EndTime
+	if end == nil {
+		t := time.Now()
+		end = &t
+	}
+	begin := searchInput.BeginTime
+	if begin == nil {
+		t := end.AddDate(0, -1, 0)
+		begin = &t
+	}
+
+	fileIDs, err := logic.NeedFetch(material, begin, end)
 	if err != nil {
 		status := &model.FetchStatus{FileIDs: fileIDs, Pending: false, Message: err.Error()}
 		return &model.ProductWrap{Status: status}, nil
@@ -168,7 +181,6 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 
 	conditions = append(conditions, "material_id = ?")
 	vars = append(vars, material.ID)
-
 	if searchInput.DeviceID != nil {
 		device := orm.GetDeviceWithID(*searchInput.DeviceID)
 		if device != nil {
@@ -176,16 +188,10 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 			vars = append(vars, device.ID)
 		}
 	}
-
-	if searchInput.BeginTime != nil {
-		conditions = append(conditions, "created_at > ?")
-		vars = append(vars, searchInput.BeginTime)
-	}
-
-	if searchInput.EndTime != nil {
-		conditions = append(conditions, "created_at < ?")
-		vars = append(vars, searchInput.EndTime)
-	}
+	conditions = append(conditions, "created_at < ?")
+	vars = append(vars, end)
+	conditions = append(conditions, "created_at > ?")
+	vars = append(vars, begin)
 
 	fmt.Println(conditions)
 	cond := strings.Join(conditions, " AND ")
@@ -271,7 +277,7 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 	}
 	size := orm.GetSizeWithID(*searchInput.SizeID)
 	if size == nil {
-		return nil, NewGQLError("没有在数据库找到改尺寸", "")
+		return nil, NewGQLError("没有在数据库找到该尺寸", "")
 	}
 
 	material := orm.GetMaterialWithID(size.MaterialID)
@@ -279,11 +285,21 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 		return nil, NewGQLError("没有找到该尺寸所属的料号", "")
 	}
 
-	fileIDs, err := logic.NeedFetch(material, searchInput.BeginTime, searchInput.EndTime)
+	end := searchInput.EndTime
+	if end == nil {
+		t := time.Now()
+		end = &t
+	}
+	begin := searchInput.BeginTime
+	if begin == nil {
+		t := end.AddDate(0, -1, 0)
+		begin = &t
+	}
+
+	fileIDs, err := logic.NeedFetch(material, begin, end)
 	if err != nil {
 		return nil, err
 	}
-
 	if len(fileIDs) > 0 {
 		status := &model.FetchStatus{FileIDs: fileIDs, Pending: true, Message: "需要从FTP服务器获取该时间段内尺寸数据"}
 		return &model.SizeResult{Status: status}, nil
@@ -300,15 +316,10 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 		vars = append(vars, *searchInput.DeviceID)
 	}
 
-	if searchInput.BeginTime != nil {
-		conds = append(conds, "created_at > ?")
-		vars = append(vars, *searchInput.BeginTime)
-	}
-
-	if searchInput.EndTime != nil {
-		conds = append(conds, "created_at < ?")
-		vars = append(vars, *searchInput.EndTime)
-	}
+	conds = append(conds, "created_at > ?")
+	vars = append(vars, *begin)
+	conds = append(conds, "created_at < ?")
+	vars = append(vars, *end)
 
 	var sizeValues []orm.SizeValue
 	cond := strings.Join(conds, " AND ")
@@ -331,7 +342,8 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 	freqs := make([]int, 0)
 	values := make([]float64, 0)
 
-	rows, err := orm.DB.Model(&orm.SizeValue{}).Where("size_id = ? and qualified = 1", size.ID).Group("value").Select("COUNT(value) as freq, value").Rows()
+	conds = append(conds, "qualified = 1")
+	rows, err := orm.DB.Model(&orm.SizeValue{}).Where(strings.Join(conds, " AND "), vars...).Group("value").Select("COUNT(value) as freq, value").Rows()
 	defer rows.Close()
 	if err == nil {
 		for rows.Next() {
@@ -380,6 +392,15 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 		beginTime = &t
 	}
 
+	fileIDs, err := logic.NeedFetch(material, beginTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+	if len(fileIDs) > 0 {
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: true, Message: "需要从FTP服务器获取该时间段内料号数据"}
+		return &model.MaterialResult{Status: status}, nil
+	}
+
 	var ok int
 	var ng int
 	orm.DB.Model(&orm.Product{}).Where(
@@ -410,6 +431,11 @@ func (r *queryResolver) AnalyzeDevice(ctx context.Context, searchInput model.Sea
 	if device == nil {
 		return nil, NewGQLError("设备不存在", fmt.Sprintf("get device with id = %v failed", *searchInput.DeviceID))
 	}
+	material := orm.GetMaterialWithID(device.MaterialID)
+	if material == nil {
+		return nil, NewGQLError("设备生产的料号不存在", fmt.Sprintf("get material with id = %v failed", device.MaterialID))
+	}
+
 	beginTime := searchInput.BeginTime
 	endTime := searchInput.EndTime
 	if endTime == nil {
@@ -419,6 +445,15 @@ func (r *queryResolver) AnalyzeDevice(ctx context.Context, searchInput model.Sea
 	if beginTime == nil {
 		t := endTime.AddDate(0, -1, 0)
 		beginTime = &t
+	}
+
+	fileIDs, err := logic.NeedFetch(material, beginTime, endTime)
+	if err != nil {
+		return nil, err
+	}
+	if len(fileIDs) > 0 {
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: true, Message: "需要从FTP服务器获取该时间段内设备数据"}
+		return &model.DeviceResult{Status: status}, nil
 	}
 
 	var ok int
