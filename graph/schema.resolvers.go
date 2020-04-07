@@ -96,7 +96,7 @@ func (r *mutationResolver) AddMaterial(ctx context.Context, materialName string)
 		return nil, NewGQLError("创建料号失败", err.Error())
 	}
 
-	fileIDs, _ := logic.FetchMaterialDatas(m, nil, nil)
+	fileIDs, _ := logic.NeedFetch(&m, nil, nil)
 	var status = model.FetchStatus{
 		Message: "创建料号成功",
 		Pending: true,
@@ -155,16 +155,14 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 		return nil, NewGQLError("您所查找的料号不存在", fmt.Sprintf("get material with id = %v failed", *searchInput.MaterialID))
 	}
 
-	if logic.NeedFetch(material, searchInput.BeginTime, searchInput.EndTime) {
-		fileIDs, _ := logic.FetchMaterialDatas(*material, searchInput.BeginTime, searchInput.EndTime)
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: false}
-		if len(fileIDs) == 0 {
-			status.Message = "抱歉，未能在FTP服务器中查找到此料号在该时间段内的数据"
-			return &model.ProductWrap{Status: status}, nil
-		}
+	fileIDs, err := logic.NeedFetch(material, searchInput.BeginTime, searchInput.EndTime)
+	if err != nil {
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: false, Message: err.Error()}
+		return &model.ProductWrap{Status: status}, nil
+	}
 
-		status.Message = "需要从FTP服务器获取该时间段内料号数据"
-		status.Pending = true
+	if len(fileIDs) > 0 {
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: true, Message: "需要从FTP服务器获取该时间段内料号数据"}
 		return &model.ProductWrap{Status: status}, nil
 	}
 
@@ -193,17 +191,13 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	cond := strings.Join(conditions, " AND ")
 	var products []orm.Product
 	if err := orm.DB.Model(&orm.Product{}).Where(cond, vars...).Order("created_at desc").Offset(offset).Limit(limit).Find(&products).Error; err != nil {
-		if err == gorm.ErrRecordNotFound { // 数据未找到，需要去FTP拉取
-			fileIDs, _ := logic.FetchMaterialDatas(*material, nil, nil)
-			status := &model.FetchStatus{FileIDs: fileIDs, Pending: false}
-			if len(fileIDs) == 0 {
-				status.Message = "抱歉，未能在FTP服务器中查找到此料号在该时间段内的数据"
-				return &model.ProductWrap{Status: status}, nil
-			}
-
-			status.Message = "需要从FTP服务器获取该时间段内料号数据"
-			status.Pending = true
-			return &model.ProductWrap{Status: status}, nil
+		if err == gorm.ErrRecordNotFound { // 无数据
+			return &model.ProductWrap{
+				TableHeader: nil,
+				Products:    nil,
+				Status:      nil,
+				Total:       0,
+			}, nil
 		}
 
 		return nil, NewGQLError("获取数据失败，请重试", err.Error())
@@ -285,6 +279,16 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 		return nil, NewGQLError("没有找到该尺寸所属的料号", "")
 	}
 
+	fileIDs, err := logic.NeedFetch(material, searchInput.BeginTime, searchInput.EndTime)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(fileIDs) > 0 {
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: true, Message: "需要从FTP服务器获取该时间段内尺寸数据"}
+		return &model.SizeResult{Status: status}, nil
+	}
+
 	var conds []string
 	var vars []interface{}
 
@@ -313,18 +317,6 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 	}
 
 	total := len(sizeValues)
-	if total == 0 {
-		fileIDs, _ := logic.FetchMaterialDatas(*material, searchInput.BeginTime, searchInput.EndTime)
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: false}
-		if len(fileIDs) == 0 {
-			status.Message = "抱歉，未能在FTP服务器中查找到此尺寸在该时间段内的数据"
-			return &model.SizeResult{Status: status}, nil
-		}
-
-		status.Message = "需要从FTP服务器获取该时间段内尺寸数据"
-		status.Pending = true
-		return &model.SizeResult{Status: status}, nil
-	}
 	ok := 0
 	valueSet := make([]float64, 0)
 	for _, v := range sizeValues {
