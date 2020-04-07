@@ -14,7 +14,7 @@ func TestReadFile(t *testing.T) {
 }
 
 func TestGetList(t *testing.T) {
-	nameList, err := GetList("/")
+	nameList, err := GetList("/1828")
 	if err != nil {
 		t.Fatal(err)
 	}
