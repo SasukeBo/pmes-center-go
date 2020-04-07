@@ -478,14 +478,14 @@ func (r *queryResolver) AnalyzeDevice(ctx context.Context, searchInput model.Sea
 	}, nil
 }
 
-func (r *queryResolver) Sizes(ctx context.Context, page int, limit int, materialID int) ([]*model.Size, error) {
+func (r *queryResolver) Sizes(ctx context.Context, page int, limit int, materialID int) (*model.SizeWrap, error) {
 	var sizes []orm.Size
 	if page < 1 {
 		return nil, NewGQLError("页数不能小于1", "page < 1")
 	}
 	offset := (page - 1) * limit
 	if err := orm.DB.Where("material_id = ?", materialID).Order("sizes.index asc").Limit(limit).Offset(offset).Find(&sizes).Error; err != nil {
-		return nil, NewGQLError("获取料号信息失败", err.Error())
+		return nil, NewGQLError("获取尺寸信息失败", err.Error())
 	}
 	var outs []*model.Size
 	for _, v := range sizes {
@@ -496,10 +496,18 @@ func (r *queryResolver) Sizes(ctx context.Context, page int, limit int, material
 			LowerLimit: v.LowerLimit,
 		})
 	}
-	return outs, nil
+	var count int
+	if err := orm.DB.Model(&orm.Size{}).Where("material_id = ?", materialID).Count(&count).Error; err != nil {
+		return nil, NewGQLError("统计尺寸数量失败", err.Error())
+	}
+
+	return &model.SizeWrap{
+		Total: count,
+		Sizes: outs,
+	}, nil
 }
 
-func (r *queryResolver) Materials(ctx context.Context, page int, limit int) ([]*model.Material, error) {
+func (r *queryResolver) Materials(ctx context.Context, page int, limit int) (*model.MaterialWrap, error) {
 	var materials []orm.Material
 	if page < 1 {
 		return nil, NewGQLError("页数不能小于1", "page < 1")
@@ -515,7 +523,14 @@ func (r *queryResolver) Materials(ctx context.Context, page int, limit int) ([]*
 			Name: v.Name,
 		})
 	}
-	return outs, nil
+	var count int
+	if err := orm.DB.Model(&orm.Material{}).Count(&count).Error; err != nil {
+		return nil, NewGQLError("统计料号数量失败", err.Error())
+	}
+	return &model.MaterialWrap{
+		Total:     count,
+		Materials: outs,
+	}, nil
 }
 
 func (r *queryResolver) Devices(ctx context.Context, page int, limit int, materialID int) ([]*model.Device, error) {
@@ -543,7 +558,7 @@ func (r *queryResolver) DataFetchFinishPercent(ctx context.Context, fileIDs []*i
 		return 0, nil
 	}
 	var finished int
-	orm.DB.Model(&orm.FileList{}).Where("id in ? and finished = 1", fileIDs).Count(&finished)
+	orm.DB.Model(&orm.FileList{}).Where("id in (?) and finished = 1", fileIDs).Count(&finished)
 
 	return float64(finished / total), nil
 }

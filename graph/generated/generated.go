@@ -73,6 +73,11 @@ type ComplexityRoot struct {
 		Status   func(childComplexity int) int
 	}
 
+	MaterialWrap struct {
+		Materials func(childComplexity int) int
+		Total     func(childComplexity int) int
+	}
+
 	Mutation struct {
 		Active      func(childComplexity int, accessToken string) int
 		AddMaterial func(childComplexity int, materialName string) int
@@ -127,6 +132,11 @@ type ComplexityRoot struct {
 		Total   func(childComplexity int) int
 	}
 
+	SizeWrap struct {
+		Sizes func(childComplexity int) int
+		Total func(childComplexity int) int
+	}
+
 	SystemConfig struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
@@ -160,8 +170,8 @@ type QueryResolver interface {
 	AnalyzeSize(ctx context.Context, searchInput model.Search) (*model.SizeResult, error)
 	AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error)
 	AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.DeviceResult, error)
-	Sizes(ctx context.Context, page int, limit int, materialID int) ([]*model.Size, error)
-	Materials(ctx context.Context, page int, limit int) ([]*model.Material, error)
+	Sizes(ctx context.Context, page int, limit int, materialID int) (*model.SizeWrap, error)
+	Materials(ctx context.Context, page int, limit int) (*model.MaterialWrap, error)
 	Devices(ctx context.Context, page int, limit int, materialID int) ([]*model.Device, error)
 	DataFetchFinishPercent(ctx context.Context, fileIDs []*int) (float64, error)
 }
@@ -278,6 +288,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MaterialResult.Status(childComplexity), true
+
+	case "MaterialWrap.materials":
+		if e.complexity.MaterialWrap.Materials == nil {
+			break
+		}
+
+		return e.complexity.MaterialWrap.Materials(childComplexity), true
+
+	case "MaterialWrap.total":
+		if e.complexity.MaterialWrap.Total == nil {
+			break
+		}
+
+		return e.complexity.MaterialWrap.Total(childComplexity), true
 
 	case "Mutation.active":
 		if e.complexity.Mutation.Active == nil {
@@ -591,6 +615,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SizeResult.Total(childComplexity), true
 
+	case "SizeWrap.sizes":
+		if e.complexity.SizeWrap.Sizes == nil {
+			break
+		}
+
+		return e.complexity.SizeWrap.Sizes(childComplexity), true
+
+	case "SizeWrap.total":
+		if e.complexity.SizeWrap.Total == nil {
+			break
+		}
+
+		return e.complexity.SizeWrap.Total(childComplexity), true
+
 	case "SystemConfig.createdAt":
 		if e.complexity.SystemConfig.CreatedAt == nil {
 			break
@@ -744,9 +782,9 @@ var sources = []*ast.Source{
   "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeDevice(searchInput: Search!): DeviceResult!
   "获取尺寸数据"
-  sizes(page: Int!, limit: Int!, materialID: Int!): [Size]
+  sizes(page: Int!, limit: Int!, materialID: Int!): SizeWrap!
   "获取料号数据"
-  materials(page: Int!, limit: Int!): [Material]!
+  materials(page: Int!, limit: Int!): MaterialWrap!
   "获取设备生产数据"
   devices(page: Int!, limit: Int!, materialID: Int!): [Device]!
   "数据获取完成百分比"
@@ -799,9 +837,19 @@ type Size {
   lowerLimit: Float!
 }
 
+type SizeWrap {
+  total: Int!
+  sizes: [Size!]!
+}
+
 type Device {
   id: Int!
   name: String!
+}
+
+type MaterialWrap {
+  total: Int!
+  materials: [Material!]!
 }
 
 type Material {
@@ -1628,6 +1676,74 @@ func (ec *executionContext) _MaterialResult_status(ctx context.Context, field gr
 	return ec.marshalNfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _MaterialWrap_total(ctx context.Context, field graphql.CollectedField, obj *model.MaterialWrap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialWrap",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MaterialWrap_materials(ctx context.Context, field graphql.CollectedField, obj *model.MaterialWrap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialWrap",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Materials, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Material)
+	fc.Result = res
+	return ec.marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2395,11 +2511,14 @@ func (ec *executionContext) _Query_sizes(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Size)
+	res := resTmp.(*model.SizeWrap)
 	fc.Result = res
-	return ec.marshalOSize2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx, field.Selections, res)
+	return ec.marshalNSizeWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSizeWrap(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_materials(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2438,9 +2557,9 @@ func (ec *executionContext) _Query_materials(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Material)
+	res := resTmp.(*model.MaterialWrap)
 	fc.Result = res
-	return ec.marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterial(ctx, field.Selections, res)
+	return ec.marshalNMaterialWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialWrap(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_devices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2997,6 +3116,74 @@ func (ec *executionContext) _SizeResult_status(ctx context.Context, field graphq
 	res := resTmp.(*model.FetchStatus)
 	fc.Result = res
 	return ec.marshalNfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SizeWrap_total(ctx context.Context, field graphql.CollectedField, obj *model.SizeWrap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SizeWrap",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SizeWrap_sizes(ctx context.Context, field graphql.CollectedField, obj *model.SizeWrap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SizeWrap",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sizes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Size)
+	fc.Result = res
+	return ec.marshalNSize2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSizeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SystemConfig_id(ctx context.Context, field graphql.CollectedField, obj *model.SystemConfig) (ret graphql.Marshaler) {
@@ -4706,6 +4893,38 @@ func (ec *executionContext) _MaterialResult(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var materialWrapImplementors = []string{"MaterialWrap"}
+
+func (ec *executionContext) _MaterialWrap(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialWrap) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialWrapImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialWrap")
+		case "total":
+			out.Values[i] = ec._MaterialWrap_total(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "materials":
+			out.Values[i] = ec._MaterialWrap_materials(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -4945,6 +5164,9 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_sizes(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "materials":
@@ -5091,6 +5313,38 @@ func (ec *executionContext) _SizeResult(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._SizeResult_dataset(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._SizeResult_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var sizeWrapImplementors = []string{"SizeWrap"}
+
+func (ec *executionContext) _SizeWrap(ctx context.Context, sel ast.SelectionSet, obj *model.SizeWrap) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, sizeWrapImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SizeWrap")
+		case "total":
+			out.Values[i] = ec._SizeWrap_total(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "sizes":
+			out.Values[i] = ec._SizeWrap_sizes(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -5681,7 +5935,7 @@ func (ec *executionContext) marshalNMaterial2githubᚗcomᚋSasukeBoᚋftpviewer
 	return ec._Material(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterial(ctx context.Context, sel ast.SelectionSet, v []*model.Material) graphql.Marshaler {
+func (ec *executionContext) marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Material) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -5705,7 +5959,7 @@ func (ec *executionContext) marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋftp
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterial(ctx, sel, v[i])
+			ret[i] = ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterial(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -5740,6 +5994,20 @@ func (ec *executionContext) marshalNMaterialResult2ᚖgithubᚗcomᚋSasukeBoᚋ
 		return graphql.Null
 	}
 	return ec._MaterialResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMaterialWrap2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialWrap(ctx context.Context, sel ast.SelectionSet, v model.MaterialWrap) graphql.Marshaler {
+	return ec._MaterialWrap(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMaterialWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialWrap(ctx context.Context, sel ast.SelectionSet, v *model.MaterialWrap) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MaterialWrap(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNProduct2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐProduct(ctx context.Context, sel ast.SelectionSet, v []*model.Product) graphql.Marshaler {
@@ -5801,6 +6069,57 @@ func (ec *executionContext) unmarshalNSettingInput2githubᚗcomᚋSasukeBoᚋftp
 	return ec.unmarshalInputSettingInput(ctx, v)
 }
 
+func (ec *executionContext) marshalNSize2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx context.Context, sel ast.SelectionSet, v model.Size) graphql.Marshaler {
+	return ec._Size(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSize2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSizeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Size) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNSize2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNSize2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx context.Context, sel ast.SelectionSet, v *model.Size) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Size(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNSizeResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSizeResult(ctx context.Context, sel ast.SelectionSet, v model.SizeResult) graphql.Marshaler {
 	return ec._SizeResult(ctx, sel, &v)
 }
@@ -5813,6 +6132,20 @@ func (ec *executionContext) marshalNSizeResult2ᚖgithubᚗcomᚋSasukeBoᚋftpv
 		return graphql.Null
 	}
 	return ec._SizeResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSizeWrap2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSizeWrap(ctx context.Context, sel ast.SelectionSet, v model.SizeWrap) graphql.Marshaler {
+	return ec._SizeWrap(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSizeWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSizeWrap(ctx context.Context, sel ast.SelectionSet, v *model.SizeWrap) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._SizeWrap(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -6211,17 +6544,6 @@ func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.Selecti
 	return graphql.MarshalMap(v)
 }
 
-func (ec *executionContext) marshalOMaterial2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterial(ctx context.Context, sel ast.SelectionSet, v model.Material) graphql.Marshaler {
-	return ec._Material(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterial(ctx context.Context, sel ast.SelectionSet, v *model.Material) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Material(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalOProduct2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐProduct(ctx context.Context, sel ast.SelectionSet, v model.Product) graphql.Marshaler {
 	return ec._Product(ctx, sel, &v)
 }
@@ -6231,57 +6553,6 @@ func (ec *executionContext) marshalOProduct2ᚖgithubᚗcomᚋSasukeBoᚋftpview
 		return graphql.Null
 	}
 	return ec._Product(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOSize2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx context.Context, sel ast.SelectionSet, v model.Size) graphql.Marshaler {
-	return ec._Size(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOSize2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx context.Context, sel ast.SelectionSet, v []*model.Size) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOSize2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalOSize2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSize(ctx context.Context, sel ast.SelectionSet, v *model.Size) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Size(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

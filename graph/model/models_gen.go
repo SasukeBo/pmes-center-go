@@ -40,6 +40,11 @@ type MaterialResult struct {
 	Status   *FetchStatus `json:"status"`
 }
 
+type MaterialWrap struct {
+	Total     int         `json:"total"`
+	Materials []*Material `json:"materials"`
+}
+
 type Product struct {
 	ID         int                    `json:"id"`
 	UUID       string                 `json:"uuid"`
@@ -91,6 +96,11 @@ type SizeResult struct {
 	Normal  float64                `json:"normal"`
 	Dataset map[string]interface{} `json:"dataset"`
 	Status  *FetchStatus           `json:"status"`
+}
+
+type SizeWrap struct {
+	Total int     `json:"total"`
+	Sizes []*Size `json:"sizes"`
 }
 
 type SystemConfig struct {

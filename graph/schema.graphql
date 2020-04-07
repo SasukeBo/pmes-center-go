@@ -10,9 +10,9 @@ type Query {
   "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeDevice(searchInput: Search!): DeviceResult!
   "获取尺寸数据"
-  sizes(page: Int!, limit: Int!, materialID: Int!): [Size]
+  sizes(page: Int!, limit: Int!, materialID: Int!): SizeWrap!
   "获取料号数据"
-  materials(page: Int!, limit: Int!): [Material]!
+  materials(page: Int!, limit: Int!): MaterialWrap!
   "获取设备生产数据"
   devices(page: Int!, limit: Int!, materialID: Int!): [Device]!
   "数据获取完成百分比"
@@ -65,9 +65,19 @@ type Size {
   lowerLimit: Float!
 }
 
+type SizeWrap {
+  total: Int!
+  sizes: [Size!]!
+}
+
 type Device {
   id: Int!
   name: String!
+}
+
+type MaterialWrap {
+  total: Int!
+  materials: [Material!]!
 }
 
 type Material {
