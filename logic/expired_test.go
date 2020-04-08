@@ -6,5 +6,5 @@ import (
 )
 
 func TestGenActiveToken(t *testing.T) {
-	fmt.Println(genActiveToken("unlimited"))
+	fmt.Println(genActiveToken("month"))
 }
