@@ -7,6 +7,7 @@ import (
 	"github.com/SasukeBo/ftpviewer/ftpclient"
 	"github.com/SasukeBo/ftpviewer/graph"
 	"github.com/SasukeBo/ftpviewer/graph/generated"
+	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"time"
@@ -39,6 +40,7 @@ func GinContextToContextMiddleware() gin.HandlerFunc {
 
 func main() {
 	go ftpclient.FTPWorker()
+	go logic.ClearUp()
 	r := gin.Default()
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:8080"},

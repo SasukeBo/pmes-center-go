@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -16,10 +15,7 @@ func RMSError(datas []float64) float64 {
 	for _, v := range datas {
 		sum = sum + v
 	}
-	fmt.Println("总和为：", sum)
-	fmt.Println("长度为：", n)
 	avg := sum / float64(n)
-	fmt.Println("平均值为：", avg)
 
 	var subPowSum float64
 	for _, v := range datas {
