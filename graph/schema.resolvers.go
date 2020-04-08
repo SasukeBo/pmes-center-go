@@ -120,10 +120,6 @@ func (r *mutationResolver) AddMaterial(ctx context.Context, materialName string)
 	}, nil
 }
 
-func (r *mutationResolver) Active(ctx context.Context, accessToken string) (string, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
 func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
 	if err := logic.Authenticate(ctx); err != nil {
 		return nil, err

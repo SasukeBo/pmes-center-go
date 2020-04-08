@@ -79,7 +79,6 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		Active      func(childComplexity int, accessToken string) int
 		AddMaterial func(childComplexity int, materialName string) int
 		Login       func(childComplexity int, loginInput model.LoginInput) int
 		Setting     func(childComplexity int, settingInput model.SettingInput) int
@@ -162,7 +161,6 @@ type MutationResolver interface {
 	Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error)
 	Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error)
 	AddMaterial(ctx context.Context, materialName string) (*model.AddMaterialResponse, error)
-	Active(ctx context.Context, accessToken string) (string, error)
 }
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
@@ -302,18 +300,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MaterialWrap.Total(childComplexity), true
-
-	case "Mutation.active":
-		if e.complexity.Mutation.Active == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_active_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.Active(childComplexity, args["accessToken"].(string)), true
 
 	case "Mutation.addMaterial":
 		if e.complexity.Mutation.AddMaterial == nil {
@@ -796,7 +782,6 @@ type Mutation {
   setting(settingInput: SettingInput!): SystemConfig!
   "增加料号，需要返回pending: true和fileListIDs"
   addMaterial(materialName: String!): AddMaterialResponse!
-  active(accessToken: String!): String!
 }
 
 type fetchStatus {
@@ -925,20 +910,6 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
-
-func (ec *executionContext) field_Mutation_active_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["accessToken"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["accessToken"] = arg0
-	return args, nil
-}
 
 func (ec *executionContext) field_Mutation_addMaterial_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -1865,47 +1836,6 @@ func (ec *executionContext) _Mutation_addMaterial(ctx context.Context, field gra
 	res := resTmp.(*model.AddMaterialResponse)
 	fc.Result = res
 	return ec.marshalNAddMaterialResponse2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAddMaterialResponse(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_active(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_active_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Active(rctx, args["accessToken"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Product_id(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
@@ -4952,11 +4882,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "addMaterial":
 			out.Values[i] = ec._Mutation_addMaterial(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "active":
-			out.Values[i] = ec._Mutation_active(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

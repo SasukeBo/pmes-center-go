@@ -24,7 +24,6 @@ type Mutation {
   setting(settingInput: SettingInput!): SystemConfig!
   "增加料号，需要返回pending: true和fileListIDs"
   addMaterial(materialName: String!): AddMaterialResponse!
-  active(accessToken: String!): String!
 }
 
 type fetchStatus {

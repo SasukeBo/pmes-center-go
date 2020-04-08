@@ -35,6 +35,41 @@ func GetGinContext(ctx context.Context) *gin.Context {
 	return gc
 }
 
+func ValidateExpired() error {
+	expiredConfig := orm.GetSystemConfig("expired_at")
+	if expiredConfig == nil {
+		return &gqlerror.Error{
+			Message: "System not active.",
+			Extensions: map[string]interface{}{
+				"originErr": "expired config not found.",
+			},
+		}
+	}
+
+	if expiredConfig.Value != "unlimited" {
+		expiredAt, err := time.Parse(time.RFC3339, expiredConfig.Value)
+		if err != nil {
+			return &gqlerror.Error{
+				Message: "System not active.",
+				Extensions: map[string]interface{}{
+					"originErr": err.Error(),
+				},
+			}
+		}
+
+		if time.Now().After(expiredAt) {
+			return &gqlerror.Error{
+				Message: "System not active.",
+				Extensions: map[string]interface{}{
+					"originErr": "system expired at " + expiredConfig.Value,
+				},
+			}
+		}
+	}
+
+	return nil
+}
+
 // Authenticate _
 func Authenticate(ctx context.Context) error {
 	gc := GetGinContext(ctx)

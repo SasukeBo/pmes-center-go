@@ -11,6 +11,9 @@ func GetSystemConfig(key string) *SystemConfig {
 
 // GetUserWithToken 获取缓存
 func GetUserWithToken(token string) *User {
+	if token == "" {
+		return nil
+	}
 	var user User
 	if err := DB.Where("access_token = ?", token).Find(&user).Error; err != nil {
 		return nil
