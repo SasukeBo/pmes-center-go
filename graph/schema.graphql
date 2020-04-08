@@ -14,7 +14,7 @@ type Query {
   "获取料号数据"
   materials(page: Int!, limit: Int!): MaterialWrap!
   "获取设备生产数据"
-  devices(page: Int!, limit: Int!, materialID: Int!): [Device]!
+  devices(materialID: Int!): [Device]!
   "数据获取完成百分比"
   dataFetchFinishPercent(fileIDs: [Int]!): Float!
 }

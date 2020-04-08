@@ -107,7 +107,7 @@ type ComplexityRoot struct {
 		AnalyzeSize            func(childComplexity int, searchInput model.Search) int
 		CurrentUser            func(childComplexity int) int
 		DataFetchFinishPercent func(childComplexity int, fileIDs []*int) int
-		Devices                func(childComplexity int, page int, limit int, materialID int) int
+		Devices                func(childComplexity int, materialID int) int
 		Materials              func(childComplexity int, page int, limit int) int
 		Products               func(childComplexity int, searchInput model.Search, page int, limit int) int
 		Sizes                  func(childComplexity int, page int, limit int, materialID int) int
@@ -170,7 +170,7 @@ type QueryResolver interface {
 	AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.DeviceResult, error)
 	Sizes(ctx context.Context, page int, limit int, materialID int) (*model.SizeWrap, error)
 	Materials(ctx context.Context, page int, limit int) (*model.MaterialWrap, error)
-	Devices(ctx context.Context, page int, limit int, materialID int) ([]*model.Device, error)
+	Devices(ctx context.Context, materialID int) ([]*model.Device, error)
 	DataFetchFinishPercent(ctx context.Context, fileIDs []*int) (float64, error)
 }
 
@@ -479,7 +479,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Devices(childComplexity, args["page"].(int), args["limit"].(int), args["materialID"].(int)), true
+		return e.complexity.Query.Devices(childComplexity, args["materialID"].(int)), true
 
 	case "Query.materials":
 		if e.complexity.Query.Materials == nil {
@@ -772,7 +772,7 @@ var sources = []*ast.Source{
   "获取料号数据"
   materials(page: Int!, limit: Int!): MaterialWrap!
   "获取设备生产数据"
-  devices(page: Int!, limit: Int!, materialID: Int!): [Device]!
+  devices(materialID: Int!): [Device]!
   "数据获取完成百分比"
   dataFetchFinishPercent(fileIDs: [Int]!): Float!
 }
@@ -1027,29 +1027,13 @@ func (ec *executionContext) field_Query_devices_args(ctx context.Context, rawArg
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
-	if tmp, ok := rawArgs["page"]; ok {
+	if tmp, ok := rawArgs["materialID"]; ok {
 		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["page"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["limit"]; ok {
-		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["limit"] = arg1
-	var arg2 int
-	if tmp, ok := rawArgs["materialID"]; ok {
-		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["materialID"] = arg2
+	args["materialID"] = arg0
 	return args, nil
 }
 
@@ -2516,7 +2500,7 @@ func (ec *executionContext) _Query_devices(ctx context.Context, field graphql.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Devices(rctx, args["page"].(int), args["limit"].(int), args["materialID"].(int))
+		return ec.resolvers.Query().Devices(rctx, args["materialID"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
