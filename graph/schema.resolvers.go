@@ -37,10 +37,11 @@ func (r *mutationResolver) Login(ctx context.Context, loginInput model.LoginInpu
 		gc.Header("Access-Token", token)
 	}
 
+	userID := int(user.ID)
 	return &model.User{
-		ID:      int(user.ID),
-		Account: user.Username,
-		Admin:   user.Admin,
+		ID:      &userID,
+		Account: &user.Username,
+		Admin:   &user.Admin,
 	}, nil
 }
 
@@ -68,12 +69,13 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 		return nil, NewGQLError("添加系统配置失败", err.Error())
 	}
 
+	confID := int(conf.ID)
 	return &model.SystemConfig{
-		ID:        int(conf.ID),
-		Key:       conf.Key,
-		Value:     conf.Value,
-		CreatedAt: conf.CreatedAt,
-		UpdatedAt: conf.UpdatedAt,
+		ID:        &confID,
+		Key:       &conf.Key,
+		Value:     &conf.Value,
+		CreatedAt: &conf.CreatedAt,
+		UpdatedAt: &conf.UpdatedAt,
 	}, nil
 }
 
@@ -99,19 +101,20 @@ func (r *mutationResolver) AddMaterial(ctx context.Context, materialName string)
 	end := time.Now()
 	begin := end.AddDate(0, 0, -30)
 	fileIDs, _ := logic.NeedFetch(&m, &begin, &end)
+	message := "创建料号成功"
 	var status = model.FetchStatus{
-		Message: "创建料号成功",
-		Pending: true,
+		Message: &message,
+		Pending: boolP(true),
 		FileIDs: fileIDs,
 	}
 	if len(fileIDs) == 0 {
-		status.Pending = false
-		status.Message = "已为您创建料号，但FTP服务器暂无该料号最近一个月的数据"
+		status.Pending = boolP(false)
+		status.Message = stringP("已为您创建料号，但FTP服务器暂无该料号最近一个月的数据")
 	}
 
 	materialOut := model.Material{
-		ID:   m.ID,
-		Name: m.Name,
+		ID:   &m.ID,
+		Name: &m.Name,
 	}
 
 	return &model.AddMaterialResponse{
@@ -131,9 +134,9 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
 	}
 
 	return &model.User{
-		ID:      int(user.ID),
-		Account: user.Username,
-		Admin:   user.Admin,
+		ID:      intP(int(user.ID)),
+		Account: &user.Username,
+		Admin:   &user.Admin,
 	}, nil
 }
 
@@ -166,12 +169,12 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 
 	fileIDs, err := logic.NeedFetch(material, begin, end)
 	if err != nil {
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: false, Message: err.Error()}
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(false), Message: stringP(err.Error())}
 		return &model.ProductWrap{Status: status}, nil
 	}
 
 	if len(fileIDs) > 0 {
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: true, Message: "需要从FTP服务器获取该时间段内料号数据"}
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(true), Message: stringP("需要从FTP服务器获取该时间段内料号数据")}
 		return &model.ProductWrap{Status: status}, nil
 	}
 
@@ -198,7 +201,7 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 				TableHeader: nil,
 				Products:    nil,
 				Status:      nil,
-				Total:       0,
+				Total:       intP(0),
 			}, nil
 		}
 
@@ -242,12 +245,12 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	var outProducts []*model.Product
 	for _, p := range products {
 		op := &model.Product{
-			ID:         p.ID,
-			UUID:       p.UUID,
-			MaterialID: p.MaterialID,
-			DeviceID:   p.DeviceID,
-			Qualified:  p.Qualified,
-			CreatedAt:  p.CreatedAt,
+			ID:         &p.ID,
+			UUID:       &p.UUID,
+			MaterialID: &p.MaterialID,
+			DeviceID:   &p.DeviceID,
+			Qualified:  &p.Qualified,
+			CreatedAt:  &p.CreatedAt,
 		}
 		if mp, ok := productSizeValueMap[p.UUID]; ok {
 			op.SizeValue = mp
@@ -258,12 +261,12 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	var sizeNames []string
 	orm.DB.Model(&orm.Size{}).Where("material_id = ?", material.ID).Order("sizes.index asc").Pluck("name", &sizeNames)
 
-	status := model.FetchStatus{Pending: false}
+	status := model.FetchStatus{Pending: boolP(false)}
 	return &model.ProductWrap{
 		TableHeader: sizeNames,
 		Products:    outProducts,
 		Status:      &status,
-		Total:       total,
+		Total:       &total,
 	}, nil
 }
 
@@ -297,7 +300,7 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 		return nil, err
 	}
 	if len(fileIDs) > 0 {
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: true, Message: "需要从FTP服务器获取该时间段内尺寸数据"}
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(true), Message: stringP("需要从FTP服务器获取该时间段内尺寸数据")}
 		return &model.SizeResult{Status: status}, nil
 	}
 
@@ -355,17 +358,17 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 	cpk := logic.Cpk(size.UpperLimit, size.LowerLimit, normal, s)
 
 	return &model.SizeResult{
-		Total:  total,
-		Ok:     ok,
-		Ng:     total - ok,
-		Cp:     cp,
-		Cpk:    cpk,
-		Normal: normal,
+		Total:  &total,
+		Ok:     &ok,
+		Ng:     intP(total - ok),
+		Cp:     &cp,
+		Cpk:    &cpk,
+		Normal: &normal,
 		Dataset: map[string]interface{}{
 			"values": values,
 			"freqs":  freqs,
 		},
-		Status: &model.FetchStatus{Pending: false},
+		Status: &model.FetchStatus{Pending: boolP(false)},
 	}, nil
 }
 
@@ -393,7 +396,7 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 		return nil, err
 	}
 	if len(fileIDs) > 0 {
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: true, Message: "需要从FTP服务器获取该时间段内料号数据"}
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(true), Message: stringP("需要从FTP服务器获取该时间段内料号数据")}
 		return &model.MaterialResult{Status: status}, nil
 	}
 
@@ -408,14 +411,14 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 		searchInput.MaterialID, endTime, beginTime,
 	).Count(&ng)
 	out := model.Material{
-		ID:   material.ID,
-		Name: material.Name,
+		ID:   &material.ID,
+		Name: &material.Name,
 	}
 
 	return &model.MaterialResult{
 		Material: &out,
-		Ok:       ok,
-		Ng:       ng,
+		Ok:       &ok,
+		Ng:       &ng,
 	}, nil
 }
 
@@ -443,13 +446,17 @@ func (r *queryResolver) AnalyzeDevice(ctx context.Context, searchInput model.Sea
 		beginTime = &t
 	}
 
+	out := model.Device{
+		ID:   &device.ID,
+		Name: &device.Name,
+	}
 	fileIDs, err := logic.NeedFetch(material, beginTime, endTime)
 	if err != nil {
 		return nil, err
 	}
 	if len(fileIDs) > 0 {
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: true, Message: "需要从FTP服务器获取该时间段内设备数据"}
-		return &model.DeviceResult{Status: status}, nil
+		status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(true), Message: stringP("需要从FTP服务器获取该时间段内设备数据")}
+		return &model.DeviceResult{Status: status, Device: &out}, nil
 	}
 
 	var ok int
@@ -462,15 +469,11 @@ func (r *queryResolver) AnalyzeDevice(ctx context.Context, searchInput model.Sea
 		"device_id = ? and created_at < ? and created_at > ? and qualified = 0",
 		searchInput.DeviceID, endTime, beginTime,
 	).Count(&ng)
-	out := model.Device{
-		ID:   device.ID,
-		Name: device.Name,
-	}
 
 	return &model.DeviceResult{
 		Device: &out,
-		Ok:     ok,
-		Ng:     ng,
+		Ok:     &ok,
+		Ng:     &ng,
 	}, nil
 }
 
@@ -486,10 +489,10 @@ func (r *queryResolver) Sizes(ctx context.Context, page int, limit int, material
 	var outs []*model.Size
 	for _, v := range sizes {
 		outs = append(outs, &model.Size{
-			ID:         v.ID,
-			Name:       v.Name,
-			UpperLimit: v.UpperLimit,
-			LowerLimit: v.LowerLimit,
+			ID:         &v.ID,
+			Name:       &v.Name,
+			UpperLimit: &v.UpperLimit,
+			LowerLimit: &v.LowerLimit,
 		})
 	}
 	var count int
@@ -498,7 +501,7 @@ func (r *queryResolver) Sizes(ctx context.Context, page int, limit int, material
 	}
 
 	return &model.SizeWrap{
-		Total: count,
+		Total: &count,
 		Sizes: outs,
 	}, nil
 }
@@ -515,8 +518,8 @@ func (r *queryResolver) Materials(ctx context.Context, page int, limit int) (*mo
 	var outs []*model.Material
 	for _, v := range materials {
 		outs = append(outs, &model.Material{
-			ID:   v.ID,
-			Name: v.Name,
+			ID:   &v.ID,
+			Name: &v.Name,
 		})
 	}
 	var count int
@@ -524,7 +527,7 @@ func (r *queryResolver) Materials(ctx context.Context, page int, limit int) (*mo
 		return nil, NewGQLError("统计料号数量失败", err.Error())
 	}
 	return &model.MaterialWrap{
-		Total:     count,
+		Total:     &count,
 		Materials: outs,
 	}, nil
 }
@@ -537,8 +540,8 @@ func (r *queryResolver) Devices(ctx context.Context, materialID int) ([]*model.D
 	var outs []*model.Device
 	for _, v := range devices {
 		outs = append(outs, &model.Device{
-			ID:   v.ID,
-			Name: v.Name,
+			ID:   &v.ID,
+			Name: &v.Name,
 		})
 	}
 	return outs, nil
@@ -563,3 +566,15 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+func stringP(s string) *string {
+	return &s
+}
+
+func boolP(b bool) *bool {
+	return &b
+}
+
+func intP(i int) *int {
+	return &i
+}

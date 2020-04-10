@@ -12,14 +12,14 @@ type AddMaterialResponse struct {
 }
 
 type Device struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID   *int    `json:"id"`
+	Name *string `json:"name"`
 }
 
 type DeviceResult struct {
 	Device *Device      `json:"device"`
-	Ok     int          `json:"ok"`
-	Ng     int          `json:"ng"`
+	Ok     *int         `json:"ok"`
+	Ng     *int         `json:"ng"`
 	Status *FetchStatus `json:"status"`
 }
 
@@ -29,37 +29,37 @@ type LoginInput struct {
 }
 
 type Material struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID   *int    `json:"id"`
+	Name *string `json:"name"`
 }
 
 type MaterialResult struct {
 	Material *Material    `json:"material"`
-	Ok       int          `json:"ok"`
-	Ng       int          `json:"ng"`
+	Ok       *int         `json:"ok"`
+	Ng       *int         `json:"ng"`
 	Status   *FetchStatus `json:"status"`
 }
 
 type MaterialWrap struct {
-	Total     int         `json:"total"`
+	Total     *int        `json:"total"`
 	Materials []*Material `json:"materials"`
 }
 
 type Product struct {
-	ID         int                    `json:"id"`
-	UUID       string                 `json:"uuid"`
-	MaterialID int                    `json:"materialID"`
-	DeviceID   int                    `json:"deviceID"`
-	Qualified  bool                   `json:"qualified"`
+	ID         *int                   `json:"id"`
+	UUID       *string                `json:"uuid"`
+	MaterialID *int                   `json:"materialID"`
+	DeviceID   *int                   `json:"deviceID"`
+	Qualified  *bool                  `json:"qualified"`
 	SizeValue  map[string]interface{} `json:"sizeValue"`
-	CreatedAt  time.Time              `json:"createdAt"`
+	CreatedAt  *time.Time             `json:"createdAt"`
 }
 
 type ProductWrap struct {
 	TableHeader []string     `json:"tableHeader"`
 	Products    []*Product   `json:"products"`
 	Status      *FetchStatus `json:"status"`
-	Total       int          `json:"total"`
+	Total       *int         `json:"total"`
 }
 
 type Search struct {
@@ -81,44 +81,44 @@ type SettingInput struct {
 }
 
 type Size struct {
-	ID         int     `json:"id"`
-	Name       string  `json:"name"`
-	UpperLimit float64 `json:"upperLimit"`
-	LowerLimit float64 `json:"lowerLimit"`
+	ID         *int     `json:"id"`
+	Name       *string  `json:"name"`
+	UpperLimit *float64 `json:"upperLimit"`
+	LowerLimit *float64 `json:"lowerLimit"`
 }
 
 type SizeResult struct {
-	Total   int                    `json:"total"`
-	Ok      int                    `json:"ok"`
-	Ng      int                    `json:"ng"`
-	Cp      float64                `json:"cp"`
-	Cpk     float64                `json:"cpk"`
-	Normal  float64                `json:"normal"`
+	Total   *int                   `json:"total"`
+	Ok      *int                   `json:"ok"`
+	Ng      *int                   `json:"ng"`
+	Cp      *float64               `json:"cp"`
+	Cpk     *float64               `json:"cpk"`
+	Normal  *float64               `json:"normal"`
 	Dataset map[string]interface{} `json:"dataset"`
 	Status  *FetchStatus           `json:"status"`
 }
 
 type SizeWrap struct {
-	Total int     `json:"total"`
+	Total *int    `json:"total"`
 	Sizes []*Size `json:"sizes"`
 }
 
 type SystemConfig struct {
-	ID        int       `json:"id"`
-	Key       string    `json:"key"`
-	Value     string    `json:"value"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID        *int       `json:"id"`
+	Key       *string    `json:"key"`
+	Value     *string    `json:"value"`
+	CreatedAt *time.Time `json:"createdAt"`
+	UpdatedAt *time.Time `json:"updatedAt"`
 }
 
 type User struct {
-	ID      int    `json:"id"`
-	Account string `json:"account"`
-	Admin   bool   `json:"admin"`
+	ID      *int    `json:"id"`
+	Account *string `json:"account"`
+	Admin   *bool   `json:"admin"`
 }
 
 type FetchStatus struct {
-	Message string `json:"message"`
-	Pending bool   `json:"pending"`
-	FileIDs []int  `json:"fileIDs"`
+	Message *string `json:"message"`
+	Pending *bool   `json:"pending"`
+	FileIDs []int   `json:"fileIDs"`
 }

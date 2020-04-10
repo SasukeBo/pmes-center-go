@@ -27,85 +27,97 @@ type Mutation {
 }
 
 type fetchStatus {
-  message: String!
-  pending: Boolean!
-  fileIDs: [Int!]!
+  message: String
+  pending: Boolean
+  fileIDs: [Int!]
 }
 
 type DeviceResult {
-  device: Device!
-  ok: Int!
-  ng: Int!
-  status: fetchStatus!
+  device: Device
+  ok: Int
+  ng: Int
+  status: fetchStatus
 }
 
 type MaterialResult {
-  material: Material!
-  ok: Int!
-  ng: Int!
-  status: fetchStatus!
+  material: Material
+  ok: Int
+  ng: Int
+  status: fetchStatus
 }
 
 type SizeResult {
-  total: Int!
-  ok: Int!
-  ng: Int!
-  cp: Float!
-  cpk: Float!
-  normal: Float!
+  total: Int
+  ok: Int
+  ng: Int
+  cp: Float
+  cpk: Float
+  normal: Float
   dataset: Map
-  status: fetchStatus!
+  status: fetchStatus
 }
 
 type Size {
-  id: Int!
-  name: String!
-  upperLimit: Float!
-  lowerLimit: Float!
+  id: Int
+  name: String
+  upperLimit: Float
+  lowerLimit: Float
 }
 
 type SizeWrap {
-  total: Int!
-  sizes: [Size!]!
+  total: Int
+  sizes: [Size!]
 }
 
 type Device {
-  id: Int!
-  name: String!
+  id: Int
+  name: String
 }
 
 type MaterialWrap {
-  total: Int!
-  materials: [Material!]!
+  total: Int
+  materials: [Material!]
 }
 
 type Material {
-  id: Int!
-  name: String!
+  id: Int
+  name: String
 }
 
 type AddMaterialResponse {
-  material: Material!
-  status: fetchStatus!
-}
-
-input SettingInput {
-  key: String!
-  value: String!
+  material: Material
+  status: fetchStatus
 }
 
 type SystemConfig {
-  id: Int!
-  key: String!
-  value: String!
-  createdAt: Time!
-  updatedAt: Time!
+  id: Int
+  key: String
+  value: String
+  createdAt: Time
+  updatedAt: Time
 }
 
 type User {
-  id: Int!
-  account: String!
-  admin: Boolean!
+  id: Int
+  account: String
+  admin: Boolean
+}
+
+type Product {
+  id: Int
+  uuid: String
+  materialID: Int
+  deviceID: Int
+  qualified: Boolean
+  sizeValue: Map
+  createdAt: Time
+}
+
+type ProductWrap {
+  tableHeader: [String!]
+  products: [Product!]
+  status: fetchStatus
+  total: Int
 }
 
 input LoginInput {
@@ -113,21 +125,9 @@ input LoginInput {
   password: String!
 }
 
-type Product {
-  id: Int!
-  uuid: String!
-  materialID: Int!
-  deviceID: Int!
-  qualified: Boolean!
-  sizeValue: Map!
-  createdAt: Time!
-}
-
-type ProductWrap {
-  tableHeader: [String!]!
-  products: [Product]!
-  status: fetchStatus!
-  total: Int!
+input SettingInput {
+  key: String!
+  value: String!
 }
 
 input Search {
