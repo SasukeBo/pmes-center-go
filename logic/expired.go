@@ -83,7 +83,7 @@ func Active(token string) error {
 }
 
 func genActiveToken(duration string) string {
-	t := time.Now()
+	t := time.Now().UTC()
 	// 加上时间戳，精确到小时，一小时内有效，必须是UTC时间
 	date := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), 0, 0, 0, time.UTC)
 	gt := base64.StdEncoding.EncodeToString([]byte(date.String() + duration))

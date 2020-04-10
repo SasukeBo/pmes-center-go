@@ -10,6 +10,4 @@ WORKDIR /go/src/github.com/SasukeBo/ftpviewer
 
 COPY . .
 
-EXPOSE 44761
-
 CMD [ "go", "run", "main.go"]

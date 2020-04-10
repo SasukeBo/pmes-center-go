@@ -1,0 +1,30 @@
+version: "3.7"
+services:
+  db:
+    image: mysql:5.7
+    networks:
+      - ftpviewer
+    ports:
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: "ftpviewer"
+
+  backend:
+    image: ftpviewer-go:0.0.4
+    depends_on:
+      - db
+    networks:
+      - ftpviewer
+    ports:
+
+  gateway:
+    image: ftpviewer-nginx:0.0.2
+    depends_on:
+      - backend
+    networks:
+      - ftpviewer
+    ports:
+    - "80:80"
+
+networks:
+  ftpviewer:
