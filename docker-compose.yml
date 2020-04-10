@@ -9,14 +9,14 @@ services:
       MYSQL_DATABASE: "ftpviewer"
 
   backend:
-    image: ftpviewer-go:0.0.4
+    image: sasukebo1229/ftpviewer-go:0.0.4
     depends_on:
       - db
     networks:
       - ftpviewer
 
   gateway:
-    image: ftpviewer-nginx:0.0.2
+    image: sasukebo1229/ftpviewer-nginx:0.0.2
     depends_on:
       - backend
     networks:
