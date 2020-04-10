@@ -10,4 +10,4 @@ WORKDIR /go/src/github.com/SasukeBo/ftpviewer
 
 COPY . .
 
-CMD [ "go", "run", "main.go"]
+CMD [ "go", "run", "main.go" ]
