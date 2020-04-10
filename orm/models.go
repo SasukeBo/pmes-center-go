@@ -117,6 +117,18 @@ func init() {
 }
 
 func generateDefaultConfig() {
+	if conf.GetEnv() != "TEST" {
+		DB.Exec("SET collation_connection = 'utf8_general_ci'")
+		DB.Exec("ALTER DATABASE ftpviewer CHARACTER SET utf8 COLLATE utf8_general_ci")
+		DB.Exec("ALTER TABLE devices CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+		DB.Exec("ALTER TABLE file_lists CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+		DB.Exec("ALTER TABLE materials CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+		DB.Exec("ALTER TABLE products CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+		DB.Exec("ALTER TABLE size_values CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+		DB.Exec("ALTER TABLE sizes CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+		DB.Exec("ALTER TABLE system_configs CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+		DB.Exec("ALTER TABLE users CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+	}
 	if conf.GetEnv() == "TEST" {
 		DB.Exec("DELETE FROM system_configs WHERE 1 = 1")
 	}
