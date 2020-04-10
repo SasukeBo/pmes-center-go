@@ -2,5 +2,3 @@
 FROM nginx
 
 COPY ftpviewer.conf /etc/nginx/conf.d/default.conf
-
-
