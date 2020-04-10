@@ -529,13 +529,9 @@ func (r *queryResolver) Materials(ctx context.Context, page int, limit int) (*mo
 	}, nil
 }
 
-func (r *queryResolver) Devices(ctx context.Context, page int, limit int, materialID int) ([]*model.Device, error) {
+func (r *queryResolver) Devices(ctx context.Context, materialID int) ([]*model.Device, error) {
 	var devices []orm.Device
-	if page < 1 {
-		return nil, NewGQLError("页数不能小于1", "page < 1")
-	}
-	offset := (page - 1) * limit
-	if err := orm.DB.Where("material_id = ?", materialID).Order("id desc").Limit(limit).Offset(offset).Find(&devices).Error; err != nil {
+	if err := orm.DB.Where("material_id = ?", materialID).Find(&devices).Error; err != nil {
 		return nil, NewGQLError("获取设备信息失败", err.Error())
 	}
 	var outs []*model.Device

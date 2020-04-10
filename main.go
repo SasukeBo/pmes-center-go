@@ -25,7 +25,7 @@ func graphqlHandler() gin.HandlerFunc {
 }
 
 func playgroundHandler() gin.HandlerFunc {
-	h := playground.Handler("GraphQL", "/query")
+	h := playground.Handler("GraphQL", "/api")
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)
 	}
@@ -37,7 +37,7 @@ func GinContextToContextMiddleware() gin.HandlerFunc {
 		if err := logic.ValidateExpired(); err != nil {
 			e := err.(*gqlerror.Error)
 			c.Header("content-type", "application/json")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, e)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"errors": []interface{}{e}})
 			return
 		}
 		ctx := context.WithValue(c.Request.Context(), "GinContext", c)
@@ -71,7 +71,7 @@ func main() {
 		if err := logic.Active(token); err != nil {
 			c.Header("content-type", "application/json")
 			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]interface{}{
-				"status": "failed",
+				"status":  "failed",
 				"message": err.Error(),
 			})
 			return
@@ -79,7 +79,7 @@ func main() {
 
 		c.Header("content-type", "application/json")
 		c.AbortWithStatusJSON(http.StatusOK, map[string]interface{}{
-			"status": "ok",
+			"status":  "ok",
 			"message": "actived",
 		})
 	})
