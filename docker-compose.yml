@@ -18,7 +18,7 @@ services:
       - ftpviewer
 
   frontend:
-    image: sasuksbo1229/ftpviewer-vue:0.0.1
+    image: sasukebo1229/ftpviewer-vue:0.0.1
     depends_on:
       - backend
     networks:
