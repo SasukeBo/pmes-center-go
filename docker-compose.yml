@@ -28,6 +28,7 @@ services:
     image: sasukebo1229/ftpviewer-nginx:0.0.2
     depends_on:
       - backend
+      - frontend
     networks:
       - ftpviewer
     ports:
