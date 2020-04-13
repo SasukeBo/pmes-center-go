@@ -243,7 +243,8 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	}
 
 	var outProducts []*model.Product
-	for _, p := range products {
+	for _, i := range products {
+		p := i
 		op := &model.Product{
 			ID:         &p.ID,
 			UUID:       &p.UUID,
@@ -488,11 +489,12 @@ func (r *queryResolver) Sizes(ctx context.Context, page int, limit int, material
 	}
 	var outs []*model.Size
 	for _, v := range sizes {
+		s := v
 		outs = append(outs, &model.Size{
-			ID:         &v.ID,
-			Name:       &v.Name,
-			UpperLimit: &v.UpperLimit,
-			LowerLimit: &v.LowerLimit,
+			ID:         &s.ID,
+			Name:       &s.Name,
+			UpperLimit: &s.UpperLimit,
+			LowerLimit: &s.LowerLimit,
 		})
 	}
 	var count int
@@ -516,7 +518,8 @@ func (r *queryResolver) Materials(ctx context.Context, page int, limit int) (*mo
 		return nil, NewGQLError("获取料号信息失败", err.Error())
 	}
 	var outs []*model.Material
-	for _, v := range materials {
+	for _, i := range materials {
+		v := i
 		outs = append(outs, &model.Material{
 			ID:   &v.ID,
 			Name: &v.Name,
@@ -538,7 +541,8 @@ func (r *queryResolver) Devices(ctx context.Context, materialID int) ([]*model.D
 		return nil, NewGQLError("获取设备信息失败", err.Error())
 	}
 	var outs []*model.Device
-	for _, v := range devices {
+	for _, i := range devices {
+		v := i
 		outs = append(outs, &model.Device{
 			ID:   &v.ID,
 			Name: &v.Name,
