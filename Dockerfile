@@ -10,6 +10,4 @@ WORKDIR /go/src/github.com/SasukeBo/ftpviewer
 
 COPY . .
 
-RUN go build
-
-CMD [ "./ftpviewer" ]
+CMD ["go", "run", "main.go"]

@@ -1,0 +1,9 @@
+.gitignore
+方案书.pdf
+时间计划.pdf
+docker-compose.yml
+ftpviewer
+gqlgen.yml
+PLAN.md
+README.md
+.idea
