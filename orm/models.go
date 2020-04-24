@@ -87,16 +87,30 @@ type FileList struct {
 
 func init() {
 	var err error
+	var dbUrl string
 
 	if conf.GetEnv() == "TEST" {
-		DB, err = gorm.Open("mysql", conf.DBdnstest)
+		dbUrl = conf.DBdnstest
 	} else {
-		DB, err = gorm.Open("mysql", conf.DBdns)
+		dbUrl = conf.DBdns
+	}
+
+	reconnectLimit := 5
+	for {
+		DB, err = gorm.Open("mysql", dbUrl)
+		if err != nil && reconnectLimit > 0 {
+			reconnectLimit--
+			time.Sleep(time.Duration(5 - reconnectLimit) * 2 * time.Second)
+			fmt.Println("try to reconnect db again ...")
+			continue
+		}
+		break
 	}
 
 	if err != nil {
 		panic(fmt.Errorf("open connection to db error: \n%v", err.Error()))
 	}
+
 	DB.LogMode(true)
 	err = DB.AutoMigrate(
 		&SystemConfig{},
@@ -137,10 +151,10 @@ func generateDefaultConfig() {
 	INSERT INTO system_configs (system_configs.key, system_configs.value, created_at, updated_at)
 	VALUES (?, ?, ?, ?)
 	`
-	DB.Exec(sql, "ftp_password", "123456", t, t)
-	DB.Exec(sql, "ftp_username", "admin", t, t)
-	DB.Exec(sql, "ftp_host", "0.0.0.0", t, t)
-	DB.Exec(sql, "ftp_port", "44762", t, t)
+	DB.Exec(sql, "ftp_password", "abc1234.", t, t)
+	DB.Exec(sql, "ftp_username", "s17695", t, t)
+	DB.Exec(sql, "ftp_host", "192.168.2.18", t, t)
+	DB.Exec(sql, "ftp_port", "20", t, t)
 	DB.Exec(sql, "cache_days", "30", t, t)
 }
 

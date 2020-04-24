@@ -11,28 +11,28 @@ import (
 )
 
 // GetGinContext _
-func GetGinContext(ctx context.Context) *gin.Context {
+func GetGinContext(ctx context.Context) (*gin.Context, error) {
 	c := ctx.Value("GinContext")
 	if c == nil {
-		panic(&gqlerror.Error{
+		return nil, &gqlerror.Error{
 			Message: "用户验证失败",
 			Extensions: map[string]interface{}{
 				"originErr": "get GinContext from context.Context failed.",
 			},
-		})
+		}
 	}
 
 	gc, ok := c.(*gin.Context)
 	if !ok {
-		panic(&gqlerror.Error{
+		return nil, &gqlerror.Error{
 			Message: "用户验证失败",
 			Extensions: map[string]interface{}{
 				"originErr": "assert GinContext failed.",
 			},
-		})
+		}
 	}
 
-	return gc
+	return gc, nil
 }
 
 func ValidateExpired() error {
@@ -72,7 +72,11 @@ func ValidateExpired() error {
 
 // Authenticate _
 func Authenticate(ctx context.Context) error {
-	gc := GetGinContext(ctx)
+	return nil
+	gc, err := GetGinContext(ctx)
+	if err != nil {
+		return err
+	}
 
 	token := gc.GetHeader("Access-Token")
 	user := orm.GetUserWithToken(token)
@@ -92,7 +96,11 @@ func Authenticate(ctx context.Context) error {
 
 // CurrentUser _
 func CurrentUser(ctx context.Context) *orm.User {
-	gc := GetGinContext(ctx)
+	gc, err := GetGinContext(ctx)
+	if err != nil {
+		return nil
+	}
+
 	user, ok := gc.Get("current_user")
 	if !ok {
 		return nil

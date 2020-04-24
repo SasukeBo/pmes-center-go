@@ -19,7 +19,7 @@ var durations = map[string]int{
 	"unlimited": 0,
 }
 
-// ClearUp 清楚过期数据
+// ClearUp 清除过期数据
 func ClearUp() {
 	log.Println("[ClearUp] Begin clear up worker")
 	go func() {

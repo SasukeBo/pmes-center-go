@@ -32,7 +32,11 @@ func (r *mutationResolver) Login(ctx context.Context, loginInput model.LoginInpu
 		return nil, NewGQLError("登录失败", err.Error())
 	}
 
-	gc := logic.GetGinContext(ctx)
+	gc, err := logic.GetGinContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	if gc != nil {
 		gc.Header("Access-Token", token)
 	}
@@ -82,6 +86,10 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 func (r *mutationResolver) AddMaterial(ctx context.Context, materialName string) (*model.AddMaterialResponse, error) {
 	if err := logic.Authenticate(ctx); err != nil {
 		return nil, err
+	}
+
+	if materialName == "" {
+		return nil, NewGQLError("料号名称不能为空", "material name is empty string")
 	}
 
 	if !logic.IsMaterialExist(materialName) {
