@@ -19,14 +19,14 @@ services:
     networks:
       - ftpviewer
 
-  # gateway:
-  #   image: ftpviewer-nginx
-  #   depends_on:
-  #     - backend
-  #   networks:
-  #     - ftpviewer
-  #   ports:
-  #     - '80:80'
+  gateway:
+    image: ftpviewer-nginx
+    depends_on:
+      - backend
+    networks:
+      - ftpviewer
+    ports:
+      - '80:80'
 
 networks:
   ftpviewer:
