@@ -2,3 +2,4 @@
 .idea
 gateway-docker/dist
 conf/config.go
+ftpviewer
