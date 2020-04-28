@@ -117,15 +117,16 @@ type ComplexityRoot struct {
 		ID         func(childComplexity int) int
 		LowerLimit func(childComplexity int) int
 		Name       func(childComplexity int) int
+		Norminal   func(childComplexity int) int
 		UpperLimit func(childComplexity int) int
 	}
 
 	SizeResult struct {
+		Avg     func(childComplexity int) int
 		Cp      func(childComplexity int) int
 		Cpk     func(childComplexity int) int
 		Dataset func(childComplexity int) int
 		Ng      func(childComplexity int) int
-		Normal  func(childComplexity int) int
 		Ok      func(childComplexity int) int
 		Status  func(childComplexity int) int
 		Total   func(childComplexity int) int
@@ -538,12 +539,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Size.Name(childComplexity), true
 
+	case "Size.norminal":
+		if e.complexity.Size.Norminal == nil {
+			break
+		}
+
+		return e.complexity.Size.Norminal(childComplexity), true
+
 	case "Size.upperLimit":
 		if e.complexity.Size.UpperLimit == nil {
 			break
 		}
 
 		return e.complexity.Size.UpperLimit(childComplexity), true
+
+	case "SizeResult.avg":
+		if e.complexity.SizeResult.Avg == nil {
+			break
+		}
+
+		return e.complexity.SizeResult.Avg(childComplexity), true
 
 	case "SizeResult.cp":
 		if e.complexity.SizeResult.Cp == nil {
@@ -572,13 +587,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SizeResult.Ng(childComplexity), true
-
-	case "SizeResult.normal":
-		if e.complexity.SizeResult.Normal == nil {
-			break
-		}
-
-		return e.complexity.SizeResult.Normal(childComplexity), true
 
 	case "SizeResult.ok":
 		if e.complexity.SizeResult.Ok == nil {
@@ -810,7 +818,7 @@ type SizeResult {
   ng: Int
   cp: Float
   cpk: Float
-  normal: Float
+  avg: Float
   dataset: Map
   status: fetchStatus
 }
@@ -819,6 +827,7 @@ type Size {
   id: Int
   name: String
   upperLimit: Float
+  norminal: Float
   lowerLimit: Float
 }
 
@@ -2639,6 +2648,37 @@ func (ec *executionContext) _Size_upperLimit(ctx context.Context, field graphql.
 	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Size_norminal(ctx context.Context, field graphql.CollectedField, obj *model.Size) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Size",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Norminal, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Size_lowerLimit(ctx context.Context, field graphql.CollectedField, obj *model.Size) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2825,7 +2865,7 @@ func (ec *executionContext) _SizeResult_cpk(ctx context.Context, field graphql.C
 	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SizeResult_normal(ctx context.Context, field graphql.CollectedField, obj *model.SizeResult) (ret graphql.Marshaler) {
+func (ec *executionContext) _SizeResult_avg(ctx context.Context, field graphql.CollectedField, obj *model.SizeResult) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2842,7 +2882,7 @@ func (ec *executionContext) _SizeResult_normal(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Normal, nil
+		return obj.Avg, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4918,6 +4958,8 @@ func (ec *executionContext) _Size(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._Size_name(ctx, field, obj)
 		case "upperLimit":
 			out.Values[i] = ec._Size_upperLimit(ctx, field, obj)
+		case "norminal":
+			out.Values[i] = ec._Size_norminal(ctx, field, obj)
 		case "lowerLimit":
 			out.Values[i] = ec._Size_lowerLimit(ctx, field, obj)
 		default:
@@ -4952,8 +4994,8 @@ func (ec *executionContext) _SizeResult(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._SizeResult_cp(ctx, field, obj)
 		case "cpk":
 			out.Values[i] = ec._SizeResult_cpk(ctx, field, obj)
-		case "normal":
-			out.Values[i] = ec._SizeResult_normal(ctx, field, obj)
+		case "avg":
+			out.Values[i] = ec._SizeResult_avg(ctx, field, obj)
 		case "dataset":
 			out.Values[i] = ec._SizeResult_dataset(ctx, field, obj)
 		case "status":

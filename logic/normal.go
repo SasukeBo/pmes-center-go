@@ -1,18 +1,16 @@
 package logic
 
-func Normal(values []float64, freqs []int) float64 {
-	total := 0
-	for _, t := range freqs {
-		total = total + t
-	}
+func Average(values []float64) float64 {
+	total := len(values)
 	if total == 0 {
 		return 0
 	}
 
-	normal := float64(0)
-	for i, v := range values {
-		normal = normal + float64(freqs[i])/float64(total)*v
+	sum := float64(0)
+	for _, v := range values {
+		sum = sum + v
 	}
 
-	return normal
+	avg := sum / float64(total)
+	return avg
 }

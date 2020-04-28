@@ -83,6 +83,7 @@ func handleSize(dimSet map[string]ftpclient.SL, materialID int) {
 				Index:      v.Index,
 				MaterialID: materialID,
 				UpperLimit: v.USL,
+				Norminal:   v.Norminal,
 				LowerLimit: v.LSL,
 			}
 			tx.Create(size)

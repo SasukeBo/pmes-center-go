@@ -41,9 +41,10 @@ func (cd *CSVDecoder) Decode(data []byte) error {
 }
 
 type SL struct {
-	Index int
-	USL   float64
-	LSL   float64
+	Index    int
+	USL      float64
+	Norminal float64
+	LSL      float64
 }
 
 type XLSXReader struct {
@@ -70,23 +71,9 @@ func (xr *XLSXReader) ReadSize(path string) error {
 	}
 
 	var dimSet, USLSet, LSLSet *[]string
-	for i, row := range dataSheet {
-		if row[0] == "Dim" {
-			dimSet = &dataSheet[i]
-			continue
-		}
-		if row[0] == "USL" {
-			USLSet = &dataSheet[i]
-			continue
-		}
-		if row[0] == "LSL" {
-			LSLSet = &dataSheet[i]
-			continue
-		}
-		if dimSet != nil && USLSet != nil && LSLSet != nil {
-			break
-		}
-	}
+	dimSet = &dataSheet[2]
+	USLSet = &dataSheet[3]
+	LSLSet = &dataSheet[5]
 
 	if dimSet == nil || USLSet == nil || LSLSet == nil {
 		return errors.New("xlsx文件格式有误。")
@@ -96,10 +83,13 @@ func (xr *XLSXReader) ReadSize(path string) error {
 		if k == "" || k == "TEMP" || k == "Dim" {
 			continue
 		}
+		usl := parseFloat((*USLSet)[i])
+		lsl := parseFloat((*LSLSet)[i])
 		xr.DimSL[k] = SL{
-			USL:   parseFloat((*USLSet)[i]),
-			LSL:   parseFloat((*LSLSet)[i]),
-			Index: i,
+			USL:      usl,
+			Norminal: (usl + lsl) / 2,
+			LSL:      lsl,
+			Index:    i,
 		}
 	}
 
@@ -129,7 +119,7 @@ func (xr *XLSXReader) Read(path string) error {
 	if err != nil {
 		return err
 	}
-	xr.DateSet = dataSheet[14:]
+	xr.DateSet = dataSheet[15:]
 	return nil
 }
 
@@ -148,7 +138,12 @@ func read(path string) ([][]string, error) {
 		}
 	}
 
+	fmt.Printf("total size of content: %v\n", len(content))
 	file, err := xlsx.OpenBinary(content)
+	fmt.Printf("total sheets count: %v\n", len(file.Sheets))
+	for _, v := range file.Sheets {
+		fmt.Printf("sheet %s has %v rows\n", v.Name, len(v.Rows))
+	}
 	if err != nil {
 		return nil, fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
 	}

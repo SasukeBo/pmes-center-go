@@ -52,7 +52,7 @@ type SizeResult {
   ng: Int
   cp: Float
   cpk: Float
-  normal: Float
+  avg: Float
   dataset: Map
   status: fetchStatus
 }
@@ -61,6 +61,7 @@ type Size {
   id: Int
   name: String
   upperLimit: Float
+  norminal: Float
   lowerLimit: Float
 }
 

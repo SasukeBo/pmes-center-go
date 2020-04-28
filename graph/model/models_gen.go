@@ -84,6 +84,7 @@ type Size struct {
 	ID         *int     `json:"id"`
 	Name       *string  `json:"name"`
 	UpperLimit *float64 `json:"upperLimit"`
+	Norminal   *float64 `json:"norminal"`
 	LowerLimit *float64 `json:"lowerLimit"`
 }
 
@@ -93,7 +94,7 @@ type SizeResult struct {
 	Ng      *int                   `json:"ng"`
 	Cp      *float64               `json:"cp"`
 	Cpk     *float64               `json:"cpk"`
-	Normal  *float64               `json:"normal"`
+	Avg     *float64               `json:"avg"`
 	Dataset map[string]interface{} `json:"dataset"`
 	Status  *FetchStatus           `json:"status"`
 }

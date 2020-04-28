@@ -3,3 +3,4 @@
 gateway-docker/dist
 conf/config.go
 ftpviewer
+docker-compose.local.yml

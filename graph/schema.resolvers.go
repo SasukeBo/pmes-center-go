@@ -339,18 +339,22 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 	ok := 0
 	valueSet := make([]float64, 0)
 	for _, v := range sizeValues {
+		if size.Norminal > 0 && v.Value > size.Norminal*100 {
+			continue
+		}
+		valueSet = append(valueSet, v.Value)
 		if v.Qualified {
-			valueSet = append(valueSet, v.Value)
 			ok++
 		}
+	}
+	if size.ID == 2861 {
+		fmt.Println(valueSet)
 	}
 	s := logic.RMSError(valueSet)
 	cp := logic.Cp(size.UpperLimit, size.LowerLimit, s)
 
 	freqs := make([]int, 0)
 	values := make([]float64, 0)
-
-	conds = append(conds, "qualified = 1")
 	rows, err := orm.DB.Model(&orm.SizeValue{}).Where(strings.Join(conds, " AND "), vars...).Group("value").Select("COUNT(value) as freq, value").Rows()
 	defer rows.Close()
 	if err == nil {
@@ -358,21 +362,24 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 			var freq int
 			var value float64
 			rows.Scan(&freq, &value)
-			freqs = append(freqs, freq)
+			if size.Norminal > 0 && value > size.Norminal*100 {
+				continue
+			}
 			values = append(values, value)
+			freqs = append(freqs, freq)
 		}
 	}
 
-	normal := logic.Normal(values, freqs)
-	cpk := logic.Cpk(size.UpperLimit, size.LowerLimit, normal, s)
+	avg := logic.Average(valueSet)
+	cpk := logic.Cpk(size.UpperLimit, size.LowerLimit, avg, s)
 
 	return &model.SizeResult{
-		Total:  &total,
-		Ok:     &ok,
-		Ng:     intP(total - ok),
-		Cp:     &cp,
-		Cpk:    &cpk,
-		Normal: &normal,
+		Total: &total,
+		Ok:    &ok,
+		Ng:    intP(total - ok),
+		Cp:    &cp,
+		Cpk:   &cpk,
+		Avg:   &avg,
 		Dataset: map[string]interface{}{
 			"values": values,
 			"freqs":  freqs,
@@ -502,6 +509,7 @@ func (r *queryResolver) Sizes(ctx context.Context, page int, limit int, material
 			ID:         &s.ID,
 			Name:       &s.Name,
 			UpperLimit: &s.UpperLimit,
+			Norminal:   &s.Norminal,
 			LowerLimit: &s.LowerLimit,
 		})
 	}
@@ -582,11 +590,9 @@ type queryResolver struct{ *Resolver }
 func stringP(s string) *string {
 	return &s
 }
-
 func boolP(b bool) *bool {
 	return &b
 }
-
 func intP(i int) *int {
 	return &i
 }

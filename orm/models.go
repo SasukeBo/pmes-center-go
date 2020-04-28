@@ -62,6 +62,7 @@ type Size struct {
 	Index      int    `gorm:"column:index;not null"`
 	MaterialID int    `gorm:"column:material_id;not null;index"`
 	UpperLimit float64
+	Norminal   float64
 	LowerLimit float64
 }
 
@@ -100,7 +101,7 @@ func init() {
 		DB, err = gorm.Open("mysql", dbUrl)
 		if err != nil && reconnectLimit > 0 {
 			reconnectLimit--
-			time.Sleep(time.Duration(5 - reconnectLimit) * 2 * time.Second)
+			time.Sleep(time.Duration(5-reconnectLimit) * 2 * time.Second)
 			fmt.Println("try to reconnect db again ...")
 			continue
 		}
