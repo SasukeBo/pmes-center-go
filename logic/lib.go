@@ -123,7 +123,6 @@ func NeedFetch(m *orm.Material, begin, end *time.Time) ([]int, error) {
 		vars = append(vars, *end)
 	}
 	var fetchedFileList []orm.FileList
-	fmt.Println(conds)
 	if err := orm.DB.Model(&orm.FileList{}).Where(strings.Join(conds, " AND "), vars...).Find(&fetchedFileList).Error; err != nil {
 		return fileIDs, err
 	}

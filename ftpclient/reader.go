@@ -129,13 +129,7 @@ func (xr *XLSXReader) Read(path string) error {
 	if err != nil {
 		return err
 	}
-	for i := 0; i < len(dataSheet); i++ {
-		if _, err := strconv.ParseInt(dataSheet[i][0], 10, 64); err == nil {
-			xr.DateSet = dataSheet[i:]
-			break
-		}
-	}
-
+	xr.DateSet = dataSheet[14:]
 	return nil
 }
 
