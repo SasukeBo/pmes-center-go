@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"log"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -39,7 +40,7 @@ func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error)
 	}
 
 	xr := ftpclient.NewXLSXReader()
-	err := xr.ReadSize("./" + material.Name + "/" + files[0].File)
+	err := xr.ReadSize(resolvePath(material.Name, files[0].File))
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("读取数据文件%s失败", files[0].File))
 	}
@@ -47,7 +48,7 @@ func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error)
 
 	for _, file := range files {
 		xr := ftpclient.NewXLSXReader()
-		path := fmt.Sprintf("./%s/%s", material.Name, file.File)
+		path := resolvePath(material.Name, file.File)
 
 		fileList := orm.GetFileListWithPath(path)
 		if fileList == nil {
@@ -66,6 +67,10 @@ func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error)
 	}
 
 	return fileIDs, nil
+}
+
+func resolvePath(m, path string) string {
+	return fmt.Sprintf("./%s/%s", m, filepath.Base(path))
 }
 
 func handleSize(dimSet map[string]ftpclient.SL, materialID int) {

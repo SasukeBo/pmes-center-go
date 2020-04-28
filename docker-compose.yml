@@ -1,5 +1,27 @@
 version: '3.3'
 services:
+  frontend:
+    image: ftpviewer-vue
+    networks:
+      - ftpviewer
+
+  ftp:
+    image: fauria/vsftpd
+    networks:
+      - ftpviewer
+    ports:
+      - '20:20'
+      - '21:21'
+      - '21100-21110:21100-21110'
+    environment:
+      FTP_USER: 'ftpuploader'
+      FTP_PASS: 'abc1234.'
+      PASV_ADDRESS: '127.0.0.1'
+      PASV_MIN_PORT: '21100'
+      PASV_MAX_PORT: '21110'
+    volumes:
+      - "/home/sasukebo/ftproot:/home/vsftpd"
+
   db:
     image: mysql:5.7
     networks:
