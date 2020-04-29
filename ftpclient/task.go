@@ -85,6 +85,9 @@ func Store(xr *XLSXReader) {
 	products := make([]interface{}, 0)
 	sizeValues := make([]interface{}, 0)
 	for i, row := range xr.DateSet {
+		if row[0] == "" { // 过滤掉空行
+			continue
+		}
 		qp := true
 		puuid := fmt.Sprintf("%s%v", xr.ProductUUIDPrefix, i)
 		for _, v := range sizes {
