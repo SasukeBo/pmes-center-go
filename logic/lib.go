@@ -31,7 +31,7 @@ func IsMaterialExist(materialID string) bool {
 	return true
 }
 
-// FetchMaterialDatas 根据料号从FTP服务器获取时间范围内数据
+// FetchMaterialDatas 获取指定文件中的数据
 func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error) {
 	var fileIDs []int
 
@@ -59,6 +59,7 @@ func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error)
 		go func() {
 			err := xr.Read(path)
 			if err != nil {
+				log.Println(err)
 				return
 			}
 			xr.PathID = fileList.ID

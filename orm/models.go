@@ -115,7 +115,7 @@ func init() {
 		panic(fmt.Errorf("open connection to db error: \n%v", err.Error()))
 	}
 
-	DB.LogMode(true)
+	DB.LogMode(false)
 	err = DB.AutoMigrate(
 		&SystemConfig{},
 		&Device{},

@@ -586,13 +586,3 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-func stringP(s string) *string {
-	return &s
-}
-func boolP(b bool) *bool {
-	return &b
-}
-func intP(i int) *int {
-	return &i
-}

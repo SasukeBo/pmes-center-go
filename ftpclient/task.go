@@ -4,12 +4,10 @@ package ftpclient
 // 注册ftp获取文件队列，woker
 import (
 	"fmt"
+	"github.com/SasukeBo/ftpviewer/orm"
 	"log"
 	"regexp"
 	"strconv"
-	"time"
-
-	"github.com/SasukeBo/ftpviewer/orm"
 )
 
 var fetchQueue chan string
@@ -18,7 +16,7 @@ var cacheQueue chan *XLSXReader
 var (
 	reg               *regexp.Regexp
 	singleInsertLimit = 10000
-	filenamePattern   = `(\d+)-(\d+)-(\d+)-[w|b]\.xlsx`
+	filenamePattern   = `(.*)-(.*)-(.*)-([w|b])\.xlsx`
 	timePattern       = `(\d{4})/(\d{2})/(\d{2}) (\d{2}:\d{2}:\d{2})`
 	insertProductsTpl = `
 		INSERT INTO products (product_uuid, material_id, device_id, qualified, created_at)
@@ -38,22 +36,11 @@ var (
 func FTPWorker() {
 	for {
 		select {
-		case path := <-fetchQueue:
-			go fetchAndStore(path)
 		case xr := <-cacheQueue:
+			fmt.Println("--------------------------\nstart store task")
 			go Store(xr)
 		}
 	}
-}
-
-func fetchAndStore(path string) {
-	xr := NewXLSXReader()
-	if err := xr.Read(path); err != nil {
-		log.Println(err)
-		return
-	}
-
-	Store(xr)
 }
 
 // Store xlsx data into db
@@ -105,9 +92,12 @@ func Store(xr *XLSXReader) {
 		products = append(products, pv...)
 	}
 
+	fmt.Println("-----------------------------------\nbegin execInsert ....")
 	execInsert(products, 5, insertProductsTpl, productValueFieldTpl)
 	execInsert(sizeValues, 6, insertSizeValuesTpl, sizeValueFieldTpl)
+	fmt.Println("-----------------------------------\nfinish execInsert ....")
 	orm.DB.Model(&orm.FileList{}).Where("id = ?", xr.PathID).Update("finished", true)
+	fmt.Printf("-----------------------------------\nfinish udpate file id=%v finished=true\n", xr.PathID)
 }
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {
@@ -141,30 +131,12 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {
 	tx.Commit()
 }
 
-func timeFormat(t string) time.Time {
-	r := regexp.MustCompile(timePattern)
-	re := r.FindAllStringSubmatch(t, -1)
-	if len(re) > 0 && len(re[0]) == 5 {
-		match := re[0]
-		timeStr := fmt.Sprintf("%s-%s-%sT%s+08:00", match[1], match[2], match[3], match[4])
-		t, _ := time.Parse(time.RFC3339, timeStr)
-		return t
-	}
-
-	return time.Now()
-}
-
 func parseFloat(v string) float64 {
 	fv, err := strconv.ParseFloat(v, 64)
 	if err != nil {
 		return 0
 	}
 	return fv
-}
-
-// PushFetch _
-func PushFetch(path string) {
-	fetchQueue <- path
 }
 
 // PushStore _

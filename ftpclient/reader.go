@@ -138,12 +138,7 @@ func read(path string) ([][]string, error) {
 		}
 	}
 
-	fmt.Printf("total size of content: %v\n", len(content))
 	file, err := xlsx.OpenBinary(content)
-	fmt.Printf("total sheets count: %v\n", len(file.Sheets))
-	for _, v := range file.Sheets {
-		fmt.Printf("sheet %s has %v rows\n", v.Name, len(v.Rows))
-	}
 	if err != nil {
 		return nil, fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
 	}

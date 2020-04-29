@@ -13,3 +13,13 @@ func NewGQLError(message, originErr string) error {
 		},
 	}
 }
+
+func stringP(s string) *string {
+	return &s
+}
+func boolP(b bool) *bool {
+	return &b
+}
+func intP(i int) *int {
+	return &i
+}
