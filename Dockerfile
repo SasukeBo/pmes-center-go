@@ -12,4 +12,8 @@ COPY . .
 
 RUN go build
 
-CMD ["./ftpviewer"]
+RUN apt-get update
+
+RUN apt-get install lsof
+
+CMD ["nohup", "./ftpviewer", "&"]

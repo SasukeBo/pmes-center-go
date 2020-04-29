@@ -1,11 +1,14 @@
 version: '3.3'
 services:
   frontend:
-    image: ftpviewer-vue
+    image: vuejs/ci
     networks:
       - ftpviewer
     environment:
       VUE_APP_GRAPHQL_HTTP: 'http://192.168.13.156/api'
+    command: ["yarn", "prod"]
+    volumes:
+      - "/Users/sasuke/workspace/vue-projects/ftpviewer:/ftpviewer_frontend" # change to your local project location on your host machine
 
   ftp:
     image: fauria/vsftpd
@@ -22,7 +25,7 @@ services:
       PASV_MIN_PORT: '21100'
       PASV_MAX_PORT: '21110'
     volumes:
-      - "/home/sasukebo/ftproot:/home/vsftpd"
+      - "/home/sasukebo/ftproot:/home/vsftpd" # change to your local ftpservice data root directory on your host machine
 
   db:
     image: mysql:5.7
