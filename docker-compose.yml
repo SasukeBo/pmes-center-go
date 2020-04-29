@@ -1,14 +1,13 @@
 version: '3.3'
 services:
   frontend:
-    image: vuejs/ci
+    image: ftpviewer_frontend
     networks:
       - ftpviewer
     environment:
-      VUE_APP_GRAPHQL_HTTP: 'http://192.168.13.156/api'
-    command: ["yarn", "prod"]
+      PORT: '44761'
     volumes:
-      - "/Users/sasuke/workspace/vue-projects/ftpviewer:/ftpviewer_frontend" # change to your local project location on your host machine
+      - "/path/to/your/yarn/build/dist:/server"
 
   ftp:
     image: fauria/vsftpd
@@ -38,16 +37,18 @@ services:
       MYSQL_DATABASE: 'ftpviewer'
 
   backend:
-    image: ftpviewer-go
+    image: ftpviewer_backend
     depends_on:
       - db
     ports:
       - '44765:44761'
     networks:
       - ftpviewer
+    environment:
+      DB_DNS: 'root:123456@tcp(db:3306)/ftpviewer?charset=utf8mb4&parseTime=True&loc=Local'
 
   gateway:
-    image: ftpviewer-nginx
+    image: ftpviewer_gateway
     depends_on:
       - backend
     networks:

@@ -2,6 +2,7 @@ package orm
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/SasukeBo/ftpviewer/conf"
 	"github.com/jinzhu/gorm"
@@ -90,7 +91,9 @@ func init() {
 	var err error
 	var dbUrl string
 
-	if conf.GetEnv() == "TEST" {
+	if dbdns := os.Getenv("DB_DNS"); dbdns != "" {
+		dbUrl = dbdns
+	} else if conf.GetEnv() == "TEST" {
 		dbUrl = conf.DBdnstest
 	} else {
 		dbUrl = conf.DBdns
