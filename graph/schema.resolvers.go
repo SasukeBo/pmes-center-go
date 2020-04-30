@@ -338,10 +338,19 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 	total := len(sizeValues)
 	ok := 0
 	valueSet := make([]float64, 0)
+	var min, max float64
 	for _, v := range sizeValues {
 		if size.Norminal > 0 && v.Value > size.Norminal*100 {
 			continue
 		}
+		if v.Value > max {
+			max = v.Value
+		}
+
+		if v.Value < min {
+			min = v.Value
+		}
+
 		valueSet = append(valueSet, v.Value)
 		if v.Qualified {
 			ok++
@@ -375,11 +384,14 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 
 	return &model.SizeResult{
 		Total: &total,
+		S:     &s,
 		Ok:    &ok,
 		Ng:    intP(total - ok),
 		Cp:    &cp,
 		Cpk:   &cpk,
 		Avg:   &avg,
+		Max:   &max,
+		Min:   &min,
 		Dataset: map[string]interface{}{
 			"values": values,
 			"freqs":  freqs,

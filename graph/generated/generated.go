@@ -126,8 +126,11 @@ type ComplexityRoot struct {
 		Cp      func(childComplexity int) int
 		Cpk     func(childComplexity int) int
 		Dataset func(childComplexity int) int
+		Max     func(childComplexity int) int
+		Min     func(childComplexity int) int
 		Ng      func(childComplexity int) int
 		Ok      func(childComplexity int) int
+		S       func(childComplexity int) int
 		Status  func(childComplexity int) int
 		Total   func(childComplexity int) int
 	}
@@ -581,6 +584,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SizeResult.Dataset(childComplexity), true
 
+	case "SizeResult.max":
+		if e.complexity.SizeResult.Max == nil {
+			break
+		}
+
+		return e.complexity.SizeResult.Max(childComplexity), true
+
+	case "SizeResult.min":
+		if e.complexity.SizeResult.Min == nil {
+			break
+		}
+
+		return e.complexity.SizeResult.Min(childComplexity), true
+
 	case "SizeResult.ng":
 		if e.complexity.SizeResult.Ng == nil {
 			break
@@ -594,6 +611,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SizeResult.Ok(childComplexity), true
+
+	case "SizeResult.s":
+		if e.complexity.SizeResult.S == nil {
+			break
+		}
+
+		return e.complexity.SizeResult.S(childComplexity), true
 
 	case "SizeResult.status":
 		if e.complexity.SizeResult.Status == nil {
@@ -814,11 +838,14 @@ type MaterialResult {
 
 type SizeResult {
   total: Int
+  s: Float
   ok: Int
   ng: Int
   cp: Float
   cpk: Float
   avg: Float
+  max: Float
+  min: Float
   dataset: Map
   status: fetchStatus
 }
@@ -2741,6 +2768,37 @@ func (ec *executionContext) _SizeResult_total(ctx context.Context, field graphql
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _SizeResult_s(ctx context.Context, field graphql.CollectedField, obj *model.SizeResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SizeResult",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.S, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _SizeResult_ok(ctx context.Context, field graphql.CollectedField, obj *model.SizeResult) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2883,6 +2941,68 @@ func (ec *executionContext) _SizeResult_avg(ctx context.Context, field graphql.C
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Avg, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SizeResult_max(ctx context.Context, field graphql.CollectedField, obj *model.SizeResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SizeResult",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Max, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SizeResult_min(ctx context.Context, field graphql.CollectedField, obj *model.SizeResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "SizeResult",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Min, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4986,6 +5106,8 @@ func (ec *executionContext) _SizeResult(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = graphql.MarshalString("SizeResult")
 		case "total":
 			out.Values[i] = ec._SizeResult_total(ctx, field, obj)
+		case "s":
+			out.Values[i] = ec._SizeResult_s(ctx, field, obj)
 		case "ok":
 			out.Values[i] = ec._SizeResult_ok(ctx, field, obj)
 		case "ng":
@@ -4996,6 +5118,10 @@ func (ec *executionContext) _SizeResult(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._SizeResult_cpk(ctx, field, obj)
 		case "avg":
 			out.Values[i] = ec._SizeResult_avg(ctx, field, obj)
+		case "max":
+			out.Values[i] = ec._SizeResult_max(ctx, field, obj)
+		case "min":
+			out.Values[i] = ec._SizeResult_min(ctx, field, obj)
 		case "dataset":
 			out.Values[i] = ec._SizeResult_dataset(ctx, field, obj)
 		case "status":

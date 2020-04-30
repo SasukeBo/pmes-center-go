@@ -90,11 +90,14 @@ type Size struct {
 
 type SizeResult struct {
 	Total   *int                   `json:"total"`
+	S       *float64               `json:"s"`
 	Ok      *int                   `json:"ok"`
 	Ng      *int                   `json:"ng"`
 	Cp      *float64               `json:"cp"`
 	Cpk     *float64               `json:"cpk"`
 	Avg     *float64               `json:"avg"`
+	Max     *float64               `json:"max"`
+	Min     *float64               `json:"min"`
 	Dataset map[string]interface{} `json:"dataset"`
 	Status  *FetchStatus           `json:"status"`
 }

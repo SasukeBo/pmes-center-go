@@ -48,11 +48,14 @@ type MaterialResult {
 
 type SizeResult {
   total: Int
+  s: Float
   ok: Int
   ng: Int
   cp: Float
   cpk: Float
   avg: Float
+  max: Float
+  min: Float
   dataset: Map
   status: fetchStatus
 }
