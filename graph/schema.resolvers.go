@@ -328,9 +328,9 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 	vars = append(vars, *begin)
 	conds = append(conds, "created_at < ?")
 	vars = append(vars, *end)
+	cond := strings.Join(conds, " AND ")
 
 	var sizeValues []orm.SizeValue
-	cond := strings.Join(conds, " AND ")
 	if err := orm.DB.Model(&orm.SizeValue{}).Where(cond, vars...).Find(&sizeValues).Error; err != nil {
 		return nil, NewGQLError("获取数据失败", err.Error())
 	}
@@ -338,17 +338,9 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 	total := len(sizeValues)
 	ok := 0
 	valueSet := make([]float64, 0)
-	var min, max float64
 	for _, v := range sizeValues {
-		if size.Norminal > 0 && v.Value > size.Norminal*100 {
+		if size.NotValid(v.Value) {
 			continue
-		}
-		if v.Value > max {
-			max = v.Value
-		}
-
-		if v.Value < min {
-			min = v.Value
 		}
 
 		valueSet = append(valueSet, v.Value)
@@ -356,31 +348,39 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 			ok++
 		}
 	}
-	if size.ID == 2861 {
-		fmt.Println(valueSet)
-	}
-	s := logic.RMSError(valueSet)
-	cp := logic.Cp(size.UpperLimit, size.LowerLimit, s)
 
+	var min, max float64
 	freqs := make([]int, 0)
 	values := make([]float64, 0)
-	rows, err := orm.DB.Model(&orm.SizeValue{}).Where(strings.Join(conds, " AND "), vars...).Group("value").Select("COUNT(value) as freq, value").Rows()
+	rows, err := orm.DB.Model(&orm.SizeValue{}).Where(cond, vars...).Group("value").Select("COUNT(value) as freq, value").Rows()
 	defer rows.Close()
 	if err == nil {
 		for rows.Next() {
 			var freq int
 			var value float64
 			rows.Scan(&freq, &value)
-			if size.Norminal > 0 && value > size.Norminal*100 {
+			if size.NotValid(value) { // 过滤无效数据
 				continue
 			}
+
+			if value > max { // 获取最大值
+				max = value
+			}
+
+			if value < min { // 获取最小值
+				min = value
+			}
+
 			values = append(values, value)
 			freqs = append(freqs, freq)
 		}
 	}
 
+	s := logic.RMSError(valueSet)
+	cp := logic.Cp(size.UpperLimit, size.LowerLimit, s)
 	avg := logic.Average(valueSet)
 	cpk := logic.Cpk(size.UpperLimit, size.LowerLimit, avg, s)
+	distribution := logic.Distribute(s, avg, values)
 
 	return &model.SizeResult{
 		Total: &total,
@@ -393,8 +393,9 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 		Max:   &max,
 		Min:   &min,
 		Dataset: map[string]interface{}{
-			"values": values,
-			"freqs":  freqs,
+			"values":       values,
+			"freqs":        freqs,
+			"distribution": distribution,
 		},
 		Status: &model.FetchStatus{Pending: boolP(false)},
 	}, nil

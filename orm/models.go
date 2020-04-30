@@ -67,6 +67,11 @@ type Size struct {
 	LowerLimit float64
 }
 
+// Valid 校验数据有效性
+func (s *Size) NotValid(v float64) bool {
+	return s.Norminal > 0 && v > s.Norminal*100
+}
+
 // SizeValue 检测值
 type SizeValue struct {
 	ID          int
