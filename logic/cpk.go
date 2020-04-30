@@ -58,5 +58,5 @@ func distributeFunc(s, a, x float64) float64 {
 	part1 := 1 / (math.Sqrt(2*math.Pi) * s)
 	part2 := math.Exp((-1 * (x - a) * (x - a)) / (2 * s * s))
 
-	return math.Round(part1*part2*1000) / 1000
+	return math.Round(part1*part2*100) / 100
 }

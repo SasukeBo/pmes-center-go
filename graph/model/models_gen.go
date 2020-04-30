@@ -99,7 +99,6 @@ type SizeResult struct {
 	Max     *float64               `json:"max"`
 	Min     *float64               `json:"min"`
 	Dataset map[string]interface{} `json:"dataset"`
-	Status  *FetchStatus           `json:"status"`
 }
 
 type SizeWrap struct {

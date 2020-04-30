@@ -3,7 +3,7 @@ type Query {
   currentUser: User!
   "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   products(searchInput: Search!, page: Int!, limit: Int!): ProductWrap!
-  "分析尺寸数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
+  "分析尺寸数据"
   analyzeSize(searchInput: Search!): SizeResult!
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeMaterial(searchInput: Search!): MaterialResult!
@@ -57,7 +57,6 @@ type SizeResult {
   max: Float
   min: Float
   dataset: Map
-  status: fetchStatus
 }
 
 type Size {

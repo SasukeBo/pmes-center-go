@@ -131,7 +131,6 @@ type ComplexityRoot struct {
 		Ng      func(childComplexity int) int
 		Ok      func(childComplexity int) int
 		S       func(childComplexity int) int
-		Status  func(childComplexity int) int
 		Total   func(childComplexity int) int
 	}
 
@@ -619,13 +618,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SizeResult.S(childComplexity), true
 
-	case "SizeResult.status":
-		if e.complexity.SizeResult.Status == nil {
-			break
-		}
-
-		return e.complexity.SizeResult.Status(childComplexity), true
-
 	case "SizeResult.total":
 		if e.complexity.SizeResult.Total == nil {
 			break
@@ -793,7 +785,7 @@ var sources = []*ast.Source{
   currentUser: User!
   "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   products(searchInput: Search!, page: Int!, limit: Int!): ProductWrap!
-  "分析尺寸数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
+  "分析尺寸数据"
   analyzeSize(searchInput: Search!): SizeResult!
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeMaterial(searchInput: Search!): MaterialResult!
@@ -847,7 +839,6 @@ type SizeResult {
   max: Float
   min: Float
   dataset: Map
-  status: fetchStatus
 }
 
 type Size {
@@ -3047,37 +3038,6 @@ func (ec *executionContext) _SizeResult_dataset(ctx context.Context, field graph
 	return ec.marshalOMap2map(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SizeResult_status(ctx context.Context, field graphql.CollectedField, obj *model.SizeResult) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "SizeResult",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Status, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.FetchStatus)
-	fc.Result = res
-	return ec.marshalOfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _SizeWrap_total(ctx context.Context, field graphql.CollectedField, obj *model.SizeWrap) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5124,8 +5084,6 @@ func (ec *executionContext) _SizeResult(ctx context.Context, sel ast.SelectionSe
 			out.Values[i] = ec._SizeResult_min(ctx, field, obj)
 		case "dataset":
 			out.Values[i] = ec._SizeResult_dataset(ctx, field, obj)
-		case "status":
-			out.Values[i] = ec._SizeResult_status(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

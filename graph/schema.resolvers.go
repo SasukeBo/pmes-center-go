@@ -304,15 +304,6 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 		begin = &t
 	}
 
-	fileIDs, err := logic.NeedFetch(material, begin, end)
-	if err != nil {
-		return nil, err
-	}
-	if len(fileIDs) > 0 {
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(true), Message: stringP("需要从FTP服务器获取该时间段内尺寸数据")}
-		return &model.SizeResult{Status: status}, nil
-	}
-
 	var conds []string
 	var vars []interface{}
 
@@ -397,7 +388,6 @@ func (r *queryResolver) AnalyzeSize(ctx context.Context, searchInput model.Searc
 			"freqs":        freqs,
 			"distribution": distribution,
 		},
-		Status: &model.FetchStatus{Pending: boolP(false)},
 	}, nil
 }
 
@@ -448,6 +438,7 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 		Material: &out,
 		Ok:       &ok,
 		Ng:       &ng,
+		Status:   &model.FetchStatus{Pending: boolP(false)},
 	}, nil
 }
 
