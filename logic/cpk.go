@@ -46,6 +46,10 @@ func Cpk(tu, tl, u, s float64) float64 {
 // Distribute 计算正太分布点
 func Distribute(s, a float64, values []float64) []float64 {
 	results := make([]float64, 0)
+	if s == 0 {
+		return results
+	}
+
 	for _, v := range values {
 		r := distributeFunc(s, a, v)
 		results = append(results, r)
