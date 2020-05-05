@@ -44,7 +44,7 @@ func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("读取数据文件%s失败", files[0].File))
 	}
-	handleSize(xr.DimSL, material.ID)
+	handleSizePoint(xr.DimSL, material.ID)
 
 	for _, file := range files {
 		xr := ftpclient.NewXLSXReader()
@@ -74,25 +74,46 @@ func resolvePath(m, path string) string {
 	return fmt.Sprintf("./%s/%s", m, filepath.Base(path))
 }
 
-func handleSize(dimSet map[string]ftpclient.SL, materialID int) {
+func handleSizePoint(dimSet map[string]ftpclient.SL, materialID int) {
 	tx := orm.DB.Begin()
 	for k, v := range dimSet {
-		size := orm.GetSizeWithMaterialIDSizeName(k, materialID)
+		sizeName, pointName := parseSizePoint(k)
+
+		size := orm.GetSizeWithMaterialIDSizeName(sizeName, materialID, tx)
 		if size == nil {
 			size = &orm.Size{
-				Name:       k,
-				Index:      v.Index,
+				Name:       sizeName,
 				MaterialID: materialID,
-				UpperLimit: v.USL,
-				Norminal:   v.Norminal,
-				LowerLimit: v.LSL,
 			}
 			tx.Create(size)
-		} else if size.Index != v.Index {
-			tx.Model(size).Update("index", v.Index)
+		}
+
+		point := orm.GetPointWithSizeIDPointName(pointName, size.ID, tx)
+		if point == nil {
+			point = &orm.Point{
+				Name:       pointName,
+				SizeID:     size.ID,
+				Index:      v.Index,
+				UpperLimit: v.USL,
+				LowerLimit: v.LSL,
+				Norminal:   v.Norminal,
+			}
+			tx.Create(point)
+		} else {
+			point.SizeID = size.ID
+			point.Index = v.Index
+			point.LowerLimit = v.LSL
+			point.UpperLimit = v.USL
+			point.Norminal = v.Norminal
+			tx.Save(point)
 		}
 	}
 	tx.Commit()
+}
+
+func parseSizePoint(s string) (string, string) {
+	r := strings.Split(s, "_")
+	return r[0], s
 }
 
 // FetchFile 需要获取的文件
@@ -184,12 +205,11 @@ func fileIsNeed(fileDate, begin, end *time.Time) bool {
 	return begin.Before(*fileDate) && end.After(*fileDate)
 }
 
-func createDeviceIfNotExist(id string, material orm.Material) {
-	deviceName := fmt.Sprintf("%s设备%s", material.Name, id)
-	device := orm.GetDeviceWithName(deviceName)
+func createDeviceIfNotExist(name string, material orm.Material) {
+	device := orm.GetDeviceWithName(name)
 	if device == nil {
 		device = &orm.Device{
-			Name:       deviceName,
+			Name:       name,
 			MaterialID: material.ID,
 		}
 		orm.DB.Create(device)
