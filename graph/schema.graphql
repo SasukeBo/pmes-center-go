@@ -124,7 +124,7 @@ type Product {
   materialID: Int
   deviceID: Int
   qualified: Boolean
-  sizeValue: Map
+  pointValue: Map
   createdAt: Time
 }
 

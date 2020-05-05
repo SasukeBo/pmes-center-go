@@ -90,10 +90,10 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	}
 
 	rows, err := orm.DB.Raw(`
-	SELECT sv.product_uuid, s.name, sv.value FROM size_values AS sv
-	JOIN sizes AS s ON sv.size_id = s.id
-	WHERE sv.product_uuid IN (?)
-	ORDER BY sv.product_uuid, s.index
+	SELECT pv.product_uuid, p.name, pv.v FROM point_values AS pv
+	JOIN points AS p ON pv.point_id = p.id
+	WHERE pv.product_uuid IN (?)
+	ORDER BY pv.product_uuid, p.index
 	`, productUUIDs).Rows()
 	if err != nil {
 		return nil, NewGQLError("获取产品尺寸数据失败", err.Error())
@@ -102,15 +102,15 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 
 	var uuid, name string
 	var value float64
-	productSizeValueMap := make(map[string]map[string]interface{})
+	productPointValueMap := make(map[string]map[string]interface{})
 	for rows.Next() {
 		rows.Scan(&uuid, &name, &value)
-		if p, ok := productSizeValueMap[uuid]; ok {
+		if p, ok := productPointValueMap[uuid]; ok {
 			p[name] = value
 			continue
 		}
 
-		productSizeValueMap[uuid] = map[string]interface{}{name: value}
+		productPointValueMap[uuid] = map[string]interface{}{name: value}
 	}
 
 	var outProducts []*model.Product
@@ -124,18 +124,21 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 			Qualified:  &p.Qualified,
 			CreatedAt:  &p.CreatedAt,
 		}
-		if mp, ok := productSizeValueMap[p.UUID]; ok {
-			op.SizeValue = mp
+		if mp, ok := productPointValueMap[p.UUID]; ok {
+			op.PointValue = mp
 		}
 		outProducts = append(outProducts, op)
 	}
 
-	var sizeNames []string
-	orm.DB.Model(&orm.Size{}).Where("material_id = ?", material.ID).Order("sizes.index asc").Pluck("name", &sizeNames)
+	var sizeIDs []int
+	orm.DB.Model(&orm.Size{}).Where("material_id = ?", material.ID).Pluck("id", &sizeIDs)
+
+	var pointNames []string
+	orm.DB.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs).Order("points.index asc").Pluck("name", &pointNames)
 
 	status := model.FetchStatus{Pending: boolP(false)}
 	return &model.ProductWrap{
-		TableHeader: sizeNames,
+		TableHeader: pointNames,
 		Products:    outProducts,
 		Status:      &status,
 		Total:       &total,

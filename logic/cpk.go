@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"fmt"
 	"math"
 	"sort"
 )
