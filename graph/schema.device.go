@@ -29,7 +29,7 @@ func (r *queryResolver) AnalyzeDevice(ctx context.Context, searchInput model.Sea
 		endTime = &t
 	}
 	if beginTime == nil {
-		t := endTime.AddDate(0, -1, 0)
+		t := endTime.AddDate(-1, 0, 0)
 		beginTime = &t
 	}
 

@@ -57,6 +57,27 @@ func (r *queryResolver) AnalyzePoint(ctx context.Context, searchInput model.Sear
 	vars = append(vars, *begin)
 	conds = append(conds, "created_at < ?")
 	vars = append(vars, *end)
+
+	if lineID, ok := searchInput.Extra["lineID"]; ok {
+		conds = append(conds, "line_id = ?")
+		vars = append(vars, lineID)
+	}
+
+	if mouldID, ok := searchInput.Extra["mouldID"]; ok {
+		conds = append(conds, "mould_id = ?")
+		vars = append(vars, mouldID)
+	}
+
+	if jigID, ok := searchInput.Extra["jigID"]; ok {
+		conds = append(conds, "jig_id = ?")
+		vars = append(vars, jigID)
+	}
+
+	if shiftNumber, ok := searchInput.Extra["shiftNumber"]; ok {
+		conds = append(conds, "shift_number = ?")
+		vars = append(vars, shiftNumber)
+	}
+
 	cond := strings.Join(conds, " AND ")
 
 	var pointResults []*model.PointResult

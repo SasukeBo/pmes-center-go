@@ -34,7 +34,7 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	}
 	begin := searchInput.BeginTime
 	if begin == nil {
-		t := end.AddDate(0, -1, 0)
+		t := end.AddDate(-1, 0, 0)
 		begin = &t
 	}
 
@@ -62,6 +62,26 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	vars = append(vars, end)
 	conditions = append(conditions, "created_at > ?")
 	vars = append(vars, begin)
+
+	if lineID, ok := searchInput.Extra["lineID"]; ok {
+		conditions = append(conditions, "line_id = ?")
+		vars = append(vars, lineID)
+	}
+
+	if mouldID, ok := searchInput.Extra["mouldID"]; ok {
+		conditions = append(conditions, "mould_id = ?")
+		vars = append(vars, mouldID)
+	}
+
+	if jigID, ok := searchInput.Extra["jigID"]; ok {
+		conditions = append(conditions, "jig_id = ?")
+		vars = append(vars, jigID)
+	}
+
+	if shiftNumber, ok := searchInput.Extra["shiftNumber"]; ok {
+		conditions = append(conditions, "shift_number = ?")
+		vars = append(vars, shiftNumber)
+	}
 
 	fmt.Println(conditions)
 	cond := strings.Join(conditions, " AND ")

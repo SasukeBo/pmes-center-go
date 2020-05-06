@@ -159,6 +159,8 @@ input Search {
   beginTime: Time
   "查询时间范围结束时间"
   endTime: Time
+  "其他查询条件以map形式传递"
+  extra: Map
 }
 
 scalar Time

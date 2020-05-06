@@ -103,6 +103,8 @@ type Search struct {
 	BeginTime *time.Time `json:"beginTime"`
 	// 查询时间范围结束时间
 	EndTime *time.Time `json:"endTime"`
+	// 其他查询条件以map形式传递
+	Extra map[string]interface{} `json:"extra"`
 }
 
 type SettingInput struct {

@@ -6,6 +6,7 @@ import (
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"strings"
 	"time"
 )
 
@@ -33,7 +34,8 @@ func (r *mutationResolver) AddMaterial(ctx context.Context, materialName string)
 	}
 
 	end := time.Now()
-	begin := end.AddDate(0, 0, -30)
+	// 默认取近一年的数据
+	begin := end.AddDate(-1, 0, 0)
 	fileIDs, _ := logic.NeedFetch(&m, &begin, &end)
 	message := "创建料号成功"
 	var status = model.FetchStatus{
@@ -83,7 +85,7 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 		endTime = &t
 	}
 	if beginTime == nil {
-		t := endTime.AddDate(0, -1, 0)
+		t := endTime.AddDate(-1, 0, 0)
 		beginTime = &t
 	}
 
@@ -96,16 +98,37 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 		return &model.MaterialResult{Status: status}, nil
 	}
 
+	conditions := []string{"material_id = ?", "created_at < ?", "created_at > ?"}
+	vars := []interface{}{searchInput.MaterialID, endTime, beginTime}
+
+	if lineID, ok := searchInput.Extra["lineID"]; ok {
+		conditions = append(conditions, "line_id = ?")
+		vars = append(vars, lineID)
+	}
+
+	if mouldID, ok := searchInput.Extra["mouldID"]; ok {
+		conditions = append(conditions, "mould_id = ?")
+		vars = append(vars, mouldID)
+	}
+
+	if jigID, ok := searchInput.Extra["jigID"]; ok {
+		conditions = append(conditions, "jig_id = ?")
+		vars = append(vars, jigID)
+	}
+
+	if shiftNumber, ok := searchInput.Extra["shiftNumber"]; ok {
+		conditions = append(conditions, "shift_number = ?")
+		vars = append(vars, shiftNumber)
+	}
+	conditions = append(conditions, "qualified = ?")
+
 	var ok int
 	var ng int
-	orm.DB.Model(&orm.Product{}).Where(
-		"material_id = ? and created_at < ? and created_at > ? and qualified = 1",
-		searchInput.MaterialID, endTime, beginTime,
-	).Count(&ok)
-	orm.DB.Model(&orm.Product{}).Where(
-		"material_id = ? and created_at < ? and created_at > ? and qualified = 0",
-		searchInput.MaterialID, endTime, beginTime,
-	).Count(&ng)
+	cond := strings.Join(conditions, " AND ")
+	varsQualified := append(vars, 1)
+	orm.DB.Model(&orm.Product{}).Where(cond, varsQualified...).Count(&ok)
+	varsUnqualified := append(vars, 0)
+	orm.DB.Model(&orm.Product{}).Where(cond, varsUnqualified...).Count(&ng)
 	out := model.Material{
 		ID:   &material.ID,
 		Name: &material.Name,

@@ -1035,6 +1035,8 @@ input Search {
   beginTime: Time
   "查询时间范围结束时间"
   endTime: Time
+  "其他查询条件以map形式传递"
+  extra: Map
 }
 
 scalar Time
@@ -5016,6 +5018,12 @@ func (ec *executionContext) unmarshalInputSearch(ctx context.Context, obj interf
 		case "endTime":
 			var err error
 			it.EndTime, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "extra":
+			var err error
+			it.Extra, err = ec.unmarshalOMap2map(ctx, v)
 			if err != nil {
 				return it, err
 			}
