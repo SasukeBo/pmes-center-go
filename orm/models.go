@@ -124,11 +124,16 @@ func init() {
 		break
 	}
 
+	if os.Getenv("ENV") == "production" {
+		DB.LogMode(false)
+	} else {
+		DB.LogMode(true)
+	}
+
 	if err != nil {
 		panic(fmt.Errorf("open connection to db error: \n%v", err.Error()))
 	}
 
-	DB.LogMode(true)
 	err = DB.AutoMigrate(
 		&SystemConfig{},
 		&Device{},

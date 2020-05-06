@@ -46,6 +46,7 @@ services:
       - ftpviewer
     environment:
       DB_DNS: 'root:123456@tcp(db:3306)/ftpviewer?charset=utf8mb4&parseTime=True&loc=Local'
+      ENV: 'production'
     volumes:
       - "/home/sasukebo/go:/go"
 
