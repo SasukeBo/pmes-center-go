@@ -45,14 +45,46 @@ type MaterialWrap struct {
 	Materials []*Material `json:"materials"`
 }
 
+type Point struct {
+	ID         *int     `json:"id"`
+	Name       *string  `json:"name"`
+	UpperLimit *float64 `json:"upperLimit"`
+	Norminal   *float64 `json:"norminal"`
+	LowerLimit *float64 `json:"lowerLimit"`
+}
+
+type PointResult struct {
+	Total   *int                   `json:"total"`
+	S       *float64               `json:"s"`
+	Ok      *int                   `json:"ok"`
+	Ng      *int                   `json:"ng"`
+	Cp      *float64               `json:"cp"`
+	Cpk     *float64               `json:"cpk"`
+	Avg     *float64               `json:"avg"`
+	Max     *float64               `json:"max"`
+	Min     *float64               `json:"min"`
+	Dataset map[string]interface{} `json:"dataset"`
+	Point   *Point                 `json:"point"`
+}
+
+type PointResultsWrap struct {
+	PointResults []*PointResult `json:"pointResults"`
+	Total        int            `json:"total"`
+}
+
 type Product struct {
-	ID         *int                   `json:"id"`
-	UUID       *string                `json:"uuid"`
-	MaterialID *int                   `json:"materialID"`
-	DeviceID   *int                   `json:"deviceID"`
-	Qualified  *bool                  `json:"qualified"`
-	SizeValue  map[string]interface{} `json:"sizeValue"`
-	CreatedAt  *time.Time             `json:"createdAt"`
+	ID          *int                   `json:"id"`
+	UUID        *string                `json:"uuid"`
+	MaterialID  *int                   `json:"materialID"`
+	DeviceID    *int                   `json:"deviceID"`
+	Qualified   *bool                  `json:"qualified"`
+	PointValue  map[string]interface{} `json:"pointValue"`
+	CreatedAt   *time.Time             `json:"createdAt"`
+	D2code      *string                `json:"d2code"`
+	LineID      *int                   `json:"lineID"`
+	JigID       *string                `json:"jigID"`
+	MouldID     *int                   `json:"mouldID"`
+	ShiftNumber *int                   `json:"shiftNumber"`
 }
 
 type ProductWrap struct {
@@ -67,12 +99,12 @@ type Search struct {
 	MaterialID *int `json:"materialID"`
 	// 设备名称，如果不为空则指定该设备生产
 	DeviceID *int `json:"deviceID"`
-	// 尺寸，如果不为空则指定改尺寸数据
-	SizeID *int `json:"sizeID"`
 	// 查询时间范围起始时间
 	BeginTime *time.Time `json:"beginTime"`
 	// 查询时间范围结束时间
 	EndTime *time.Time `json:"endTime"`
+	// 其他查询条件以map形式传递
+	Extra map[string]interface{} `json:"extra"`
 }
 
 type SettingInput struct {
@@ -81,24 +113,9 @@ type SettingInput struct {
 }
 
 type Size struct {
-	ID         *int     `json:"id"`
-	Name       *string  `json:"name"`
-	UpperLimit *float64 `json:"upperLimit"`
-	Norminal   *float64 `json:"norminal"`
-	LowerLimit *float64 `json:"lowerLimit"`
-}
-
-type SizeResult struct {
-	Total   *int                   `json:"total"`
-	S       *float64               `json:"s"`
-	Ok      *int                   `json:"ok"`
-	Ng      *int                   `json:"ng"`
-	Cp      *float64               `json:"cp"`
-	Cpk     *float64               `json:"cpk"`
-	Avg     *float64               `json:"avg"`
-	Max     *float64               `json:"max"`
-	Min     *float64               `json:"min"`
-	Dataset map[string]interface{} `json:"dataset"`
+	ID         *int    `json:"id"`
+	Name       *string `json:"name"`
+	MaterialID *int    `json:"MaterialID"`
 }
 
 type SizeWrap struct {

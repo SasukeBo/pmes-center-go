@@ -12,9 +12,6 @@ import (
 	"github.com/tealeg/xlsx"
 	"log"
 	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // CSVDecoder csv decoder object
@@ -48,13 +45,11 @@ type SL struct {
 }
 
 type XLSXReader struct {
-	DateSet           [][]string    // only cache data of sheet 1
-	DimSL             map[string]SL // map cache key (dim) and value([uSL, lSL])
-	MaterialID        string
-	DeviceName        string
-	ProductUUIDPrefix string
-	ProductAt         *time.Time
-	PathID            int // 读取文件路径id
+	DateSet    [][]string    // only cache data of sheet 1
+	DimSL      map[string]SL // map cache key (dim) and value([uSL, lSL])
+	MaterialID string
+	DeviceName string
+	PathID     int // 读取文件路径id
 }
 
 func NewXLSXReader() *XLSXReader {
@@ -99,22 +94,13 @@ func (xr *XLSXReader) ReadSize(path string) error {
 func (xr *XLSXReader) Read(path string) error {
 	result := reg.FindAllStringSubmatch(filepath.Base(path), -1)
 	if len(result) > 0 && len(result[0]) > 3 {
-		dateStr := result[0][3]
-		year, _ := strconv.Atoi(dateStr[:4])
-		month, _ := strconv.Atoi(dateStr[4:6])
-		day, _ := strconv.Atoi(dateStr[6:])
-		productAt := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
-
-		xr.ProductAt = &productAt
 		xr.MaterialID = result[0][1]
-		xr.DeviceName = fmt.Sprintf("%s设备%s", xr.MaterialID, result[0][2])
+		xr.DeviceName = result[0][2]
 	} else {
 		return &FTPError{
 			Message: fmt.Sprintf("文件名格式不正确，%s", path),
 		}
 	}
-	s1 := strings.Replace(filepath.Base(path), ".xlsx", "", -1)
-	xr.ProductUUIDPrefix = strings.Replace(s1, "-", "", -1)
 	dataSheet, err := read(path)
 	if err != nil {
 		return err

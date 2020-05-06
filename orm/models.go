@@ -48,39 +48,47 @@ type Device struct {
 
 // Product 产品表
 type Product struct {
-	ID         int    `gorm:"column:id;primary_key"`
-	UUID       string `gorm:"column:product_uuid;unique_index;not null"`
-	MaterialID int    `gorm:"column:material_id;not null;index"`
-	DeviceID   int    `gorm:"column:device_id;not null"`
-	Qualified  bool   `gorm:"column:qualified;default:false"`
-	CreatedAt  time.Time
+	ID          int    `gorm:"column:id;primary_key"`
+	UUID        string `gorm:"column:uuid;unique_index;not null"`
+	MaterialID  int    `gorm:"column:material_id;not null;index"`
+	DeviceID    int    `gorm:"column:device_id;not null"`
+	Qualified   bool   `gorm:"column:qualified;default:false"`
+	CreatedAt   time.Time
+	D2Code      string `gorm:"column:d2_code"`
+	LineID      int    `gorm:"column:line_id"`
+	JigID       string `gorm:"column:jig_id;index"`
+	MouldID     int    `gorm:"column:mould_id;index"`
+	ShiftNumber int
 }
 
 // Size 尺寸
 type Size struct {
 	ID         int    `gorm:"column:id;primary_key"`
 	Name       string `gorm:"index;not null"`
-	Index      int    `gorm:"column:index;not null"`
 	MaterialID int    `gorm:"column:material_id;not null;index"`
+}
+
+// Point 点位
+type Point struct {
+	ID         int    `gorm:"column:id;primary_key"`
+	Name       string `gorm:"index;not null"`
+	SizeID     int    `gorm:"column:size_id;not null;index"`
+	Index      int    `gorm:"not null"`
 	UpperLimit float64
-	Norminal   float64
 	LowerLimit float64
+	Norminal   float64
 }
 
-// Valid 校验数据有效性
-func (s *Size) NotValid(v float64) bool {
-	return s.Norminal > 0 && v > s.Norminal*100
+// NotValid 校验数据有效性
+func (p *Point) NotValid(v float64) bool {
+	return p.Norminal > 0 && v > p.Norminal*100
 }
 
-// SizeValue 检测值
-type SizeValue struct {
-	ID          int
-	SizeID      int    `gorm:"column:size_id;index; not null"`
-	DeviceID    int    `gorm:"column:device_id; not null"`
-	ProductUUID string `gorm:"column:product_uuid;not null"`
-	Value       float64
-	Qualified   bool `gorm:"column:qualified;default:false"`
-	CreatedAt   time.Time
+// PointValue 点位值
+type PointValue struct {
+	PointID     int     `gorm:"column:point_id;not null;index"`
+	ProductUUID string  `gorm:"column:product_uuid;not null;index"`
+	V           float64 `gorm:"column:v;not null"`
 }
 
 // FileList 存储已加载数据的文件路径
@@ -131,7 +139,8 @@ func init() {
 		&Device{},
 		&Product{},
 		&Size{},
-		&SizeValue{},
+		&Point{},
+		&PointValue{},
 		&Material{},
 		&User{},
 		&FileList{},
@@ -152,7 +161,8 @@ func generateDefaultConfig() {
 		DB.Exec("ALTER TABLE file_lists CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
 		DB.Exec("ALTER TABLE materials CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
 		DB.Exec("ALTER TABLE products CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
-		DB.Exec("ALTER TABLE size_values CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+		DB.Exec("ALTER TABLE points CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+		DB.Exec("ALTER TABLE point_values CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
 		DB.Exec("ALTER TABLE sizes CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
 		DB.Exec("ALTER TABLE system_configs CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
 		DB.Exec("ALTER TABLE users CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")

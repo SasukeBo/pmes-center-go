@@ -1,19 +1,12 @@
 # Use the official golang image as parent image.
 FROM golang
 
-# Set the working directory
-WORKDIR /go/src/
+COPY ./deploy.sh /deploy.sh
 
-RUN mkdir -p github.com/SasukeBo/ftpviewer
-
-WORKDIR /go/src/github.com/SasukeBo/ftpviewer
-
-COPY . .
-
-RUN go build
+RUN chmod -R 755 /deploy.sh
 
 RUN apt-get update
 
 RUN apt-get install lsof
 
-CMD ["nohup", "./ftpviewer", "&"]
+CMD ["/deploy.sh"]
