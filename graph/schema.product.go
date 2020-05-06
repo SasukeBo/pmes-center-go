@@ -117,12 +117,17 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	for _, i := range products {
 		p := i
 		op := &model.Product{
-			ID:         &p.ID,
-			UUID:       &p.UUID,
-			MaterialID: &p.MaterialID,
-			DeviceID:   &p.DeviceID,
-			Qualified:  &p.Qualified,
-			CreatedAt:  &p.CreatedAt,
+			ID:          &p.ID,
+			UUID:        &p.UUID,
+			MaterialID:  &p.MaterialID,
+			DeviceID:    &p.DeviceID,
+			Qualified:   &p.Qualified,
+			CreatedAt:   &p.CreatedAt,
+			D2code:      &p.D2Code,
+			LineID:      &p.LineID,
+			JigID:       &p.JigID,
+			MouldID:     &p.MouldID,
+			ShiftNumber: &p.ShiftNumber,
 		}
 		if mp, ok := productPointValueMap[p.UUID]; ok {
 			op.PointValue = mp

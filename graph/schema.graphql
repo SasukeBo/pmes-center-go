@@ -126,6 +126,11 @@ type Product {
   qualified: Boolean
   pointValue: Map
   createdAt: Time
+  d2code: String
+  lineID: Int
+  jigID: String
+  mouldID: Int
+  shiftNumber: Int
 }
 
 type ProductWrap {

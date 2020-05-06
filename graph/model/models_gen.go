@@ -73,13 +73,18 @@ type PointResultsWrap struct {
 }
 
 type Product struct {
-	ID         *int                   `json:"id"`
-	UUID       *string                `json:"uuid"`
-	MaterialID *int                   `json:"materialID"`
-	DeviceID   *int                   `json:"deviceID"`
-	Qualified  *bool                  `json:"qualified"`
-	PointValue map[string]interface{} `json:"pointValue"`
-	CreatedAt  *time.Time             `json:"createdAt"`
+	ID          *int                   `json:"id"`
+	UUID        *string                `json:"uuid"`
+	MaterialID  *int                   `json:"materialID"`
+	DeviceID    *int                   `json:"deviceID"`
+	Qualified   *bool                  `json:"qualified"`
+	PointValue  map[string]interface{} `json:"pointValue"`
+	CreatedAt   *time.Time             `json:"createdAt"`
+	D2code      *string                `json:"d2code"`
+	LineID      *int                   `json:"lineID"`
+	JigID       *string                `json:"jigID"`
+	MouldID     *int                   `json:"mouldID"`
+	ShiftNumber *int                   `json:"shiftNumber"`
 }
 
 type ProductWrap struct {

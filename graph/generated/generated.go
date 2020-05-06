@@ -112,13 +112,18 @@ type ComplexityRoot struct {
 	}
 
 	Product struct {
-		CreatedAt  func(childComplexity int) int
-		DeviceID   func(childComplexity int) int
-		ID         func(childComplexity int) int
-		MaterialID func(childComplexity int) int
-		PointValue func(childComplexity int) int
-		Qualified  func(childComplexity int) int
-		UUID       func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		D2code      func(childComplexity int) int
+		DeviceID    func(childComplexity int) int
+		ID          func(childComplexity int) int
+		JigID       func(childComplexity int) int
+		LineID      func(childComplexity int) int
+		MaterialID  func(childComplexity int) int
+		MouldID     func(childComplexity int) int
+		PointValue  func(childComplexity int) int
+		Qualified   func(childComplexity int) int
+		ShiftNumber func(childComplexity int) int
+		UUID        func(childComplexity int) int
 	}
 
 	ProductWrap struct {
@@ -485,6 +490,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Product.CreatedAt(childComplexity), true
 
+	case "Product.d2code":
+		if e.complexity.Product.D2code == nil {
+			break
+		}
+
+		return e.complexity.Product.D2code(childComplexity), true
+
 	case "Product.deviceID":
 		if e.complexity.Product.DeviceID == nil {
 			break
@@ -499,12 +511,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Product.ID(childComplexity), true
 
+	case "Product.jigID":
+		if e.complexity.Product.JigID == nil {
+			break
+		}
+
+		return e.complexity.Product.JigID(childComplexity), true
+
+	case "Product.lineID":
+		if e.complexity.Product.LineID == nil {
+			break
+		}
+
+		return e.complexity.Product.LineID(childComplexity), true
+
 	case "Product.materialID":
 		if e.complexity.Product.MaterialID == nil {
 			break
 		}
 
 		return e.complexity.Product.MaterialID(childComplexity), true
+
+	case "Product.mouldID":
+		if e.complexity.Product.MouldID == nil {
+			break
+		}
+
+		return e.complexity.Product.MouldID(childComplexity), true
 
 	case "Product.pointValue":
 		if e.complexity.Product.PointValue == nil {
@@ -519,6 +552,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Product.Qualified(childComplexity), true
+
+	case "Product.shiftNumber":
+		if e.complexity.Product.ShiftNumber == nil {
+			break
+		}
+
+		return e.complexity.Product.ShiftNumber(childComplexity), true
 
 	case "Product.uuid":
 		if e.complexity.Product.UUID == nil {
@@ -962,6 +1002,11 @@ type Product {
   qualified: Boolean
   pointValue: Map
   createdAt: Time
+  d2code: String
+  lineID: Int
+  jigID: String
+  mouldID: Int
+  shiftNumber: Int
 }
 
 type ProductWrap {
@@ -2657,6 +2702,161 @@ func (ec *executionContext) _Product_createdAt(ctx context.Context, field graphq
 	res := resTmp.(*time.Time)
 	fc.Result = res
 	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Product_d2code(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Product",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.D2code, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Product_lineID(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Product",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LineID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Product_jigID(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Product",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.JigID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Product_mouldID(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Product",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MouldID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Product_shiftNumber(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Product",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ShiftNumber, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProductWrap_tableHeader(ctx context.Context, field graphql.CollectedField, obj *model.ProductWrap) (ret graphql.Marshaler) {
@@ -5192,6 +5392,16 @@ func (ec *executionContext) _Product(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Product_pointValue(ctx, field, obj)
 		case "createdAt":
 			out.Values[i] = ec._Product_createdAt(ctx, field, obj)
+		case "d2code":
+			out.Values[i] = ec._Product_d2code(ctx, field, obj)
+		case "lineID":
+			out.Values[i] = ec._Product_lineID(ctx, field, obj)
+		case "jigID":
+			out.Values[i] = ec._Product_jigID(ctx, field, obj)
+		case "mouldID":
+			out.Values[i] = ec._Product_mouldID(ctx, field, obj)
+		case "shiftNumber":
+			out.Values[i] = ec._Product_shiftNumber(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
