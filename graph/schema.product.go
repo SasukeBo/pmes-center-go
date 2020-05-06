@@ -86,7 +86,7 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	fmt.Println(conditions)
 	cond := strings.Join(conditions, " AND ")
 	var products []orm.Product
-	if err := orm.DB.Model(&orm.Product{}).Where(cond, vars...).Order("created_at desc").Offset(offset).Limit(limit).Find(&products).Error; err != nil {
+	if err := orm.DB.Model(&orm.Product{}).Where(cond, vars...).Order("id asc").Offset(offset).Limit(limit).Find(&products).Error; err != nil {
 		if err == gorm.ErrRecordNotFound { // 无数据
 			return &model.ProductWrap{
 				TableHeader: nil,
