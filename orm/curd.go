@@ -1,5 +1,10 @@
 package orm
 
+import (
+	"fmt"
+	"github.com/jinzhu/gorm"
+)
+
 // GetSystemConfig 获取缓存
 func GetSystemConfig(key string) *SystemConfig {
 	var conf SystemConfig
@@ -58,12 +63,33 @@ func GetDeviceWithID(id int) *Device {
 }
 
 // GetSizeWithMaterialIDSizeName _
-func GetSizeWithMaterialIDSizeName(sn string, materialID int) *Size {
+func GetSizeWithMaterialIDSizeName(sn string, materialID int, tx *gorm.DB) *Size {
+	conn := DB
+	if tx != nil {
+		conn = tx
+	}
+
 	var s Size
-	if err := DB.Where("name = ? AND material_id = ?", sn, materialID).First(&s).Error; err != nil {
+	if err := conn.Where("name = ? AND material_id = ?", sn, materialID).First(&s).Error; err != nil {
+		fmt.Println(err)
 		return nil
 	}
 	return &s
+}
+
+// GetPointWithSizeIDPointName _
+func GetPointWithSizeIDPointName(pn string, sizeID int, tx *gorm.DB) *Point {
+	conn := DB
+	if tx != nil {
+		conn = tx
+	}
+
+	var p Point
+	if err := conn.Where("name = ? AND size_id = ?", pn, sizeID).First(&p).Error; err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return &p
 }
 
 func GetSizeWithID(id int) *Size {
