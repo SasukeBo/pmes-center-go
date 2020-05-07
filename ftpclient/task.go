@@ -8,9 +8,9 @@ import (
 	stime "github.com/SasukeBo/lib/time"
 	"log"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"time"
-	"runtime/debug"
 
 	"github.com/google/uuid"
 )
@@ -123,6 +123,10 @@ func Store(xr *XLSXReader) {
 }
 
 func validRow(row []string) bool {
+	if len(row) == 0 {
+		fmt.Println("empty row")
+		return false
+	}
 	if row[0] == "" {
 		return false
 	}

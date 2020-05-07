@@ -128,6 +128,7 @@ func read(path string) ([][]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
 	}
+
 	originData, err := file.ToSlice()
 	if err != nil {
 		return nil, err
