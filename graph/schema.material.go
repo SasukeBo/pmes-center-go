@@ -6,6 +6,7 @@ import (
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"math"
 	"strings"
 	"time"
 )
@@ -64,10 +65,22 @@ func (r *queryResolver) DataFetchFinishPercent(ctx context.Context, fileIDs []*i
 	if total == 0 {
 		return 0, nil
 	}
-	var finished int
-	orm.DB.Model(&orm.FileList{}).Where("id in (?) and finished = 1", fileIDs).Count(&finished)
 
-	return float64(finished / total), nil
+	result := struct {
+		Finished int
+		Total    int
+	}{}
+	err := orm.DB.Table("files").Where("id in (?)", fileIDs).Select("SUM(total_rows) as total, SUM(finished_rows) as finished").First(&result).Error
+	if err != nil {
+		return 0, NewGQLError("查询数据导入完成度失败", err.Error())
+	}
+
+	if result.Total == 0 {
+		return 0, nil
+	}
+	percent := float64(result.Finished) / float64(result.Total)
+
+	return math.Round(percent*100) / 100, nil
 }
 
 func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error) {

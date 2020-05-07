@@ -46,23 +46,23 @@ func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error)
 	}
 	handleSizePoint(xr.DimSL, material.ID)
 
-	for _, file := range files {
+	for _, f := range files {
 		xr := ftpclient.NewXLSXReader()
-		path := resolvePath(material.Name, file.File)
+		path := resolvePath(material.Name, f.File)
 
-		fileList := orm.GetFileListWithPath(path)
-		if fileList == nil {
-			fileList = &orm.FileList{Path: path, MaterialID: material.ID, FileDate: file.Date}
-			orm.DB.Create(fileList)
+		file := orm.GetFileListWithPath(path)
+		if file == nil {
+			file = &orm.File{Path: path, MaterialID: material.ID, FileDate: f.Date}
+			orm.DB.Create(file)
 		}
-		fileIDs = append(fileIDs, fileList.ID)
+		fileIDs = append(fileIDs, file.ID)
 		go func() {
 			err := xr.Read(path)
 			if err != nil {
 				log.Println(err)
 				return
 			}
-			xr.PathID = fileList.ID
+			xr.PathID = file.ID
 			ftpclient.PushStore(xr)
 		}()
 	}
@@ -145,8 +145,8 @@ func NeedFetch(m *orm.Material, begin, end *time.Time) ([]int, error) {
 		conds = append(conds, "file_date < ?")
 		vars = append(vars, *end)
 	}
-	var fetchedFileList []orm.FileList
-	if err := orm.DB.Model(&orm.FileList{}).Where(strings.Join(conds, " AND "), vars...).Find(&fetchedFileList).Error; err != nil {
+	var fetchedFileList []orm.File
+	if err := orm.DB.Model(&orm.File{}).Where(strings.Join(conds, " AND "), vars...).Find(&fetchedFileList).Error; err != nil {
 		return fileIDs, err
 	}
 

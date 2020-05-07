@@ -91,13 +91,15 @@ type PointValue struct {
 	V           float64 `gorm:"column:v;not null"`
 }
 
-// FileList 存储已加载数据的文件路径
-type FileList struct {
-	ID         int
-	Path       string
-	MaterialID int
-	Finished   bool `gorm:"default:false"`
-	FileDate   time.Time
+// File 存储已加载数据的文件路径
+type File struct {
+	ID           int
+	Path         string
+	MaterialID   int
+	TotalRows    int
+	FinishedRows int
+	Finished     bool `gorm:"default:false"`
+	FileDate     time.Time
 }
 
 func init() {
@@ -143,7 +145,7 @@ func init() {
 		&PointValue{},
 		&Material{},
 		&User{},
-		&FileList{},
+		&File{},
 	).Error
 	if err != nil {
 		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
@@ -158,7 +160,7 @@ func generateDefaultConfig() {
 		DB.Exec("SET collation_connection = 'utf8_general_ci'")
 		DB.Exec("ALTER DATABASE ftpviewer CHARACTER SET utf8 COLLATE utf8_general_ci")
 		DB.Exec("ALTER TABLE devices CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
-		DB.Exec("ALTER TABLE file_lists CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+		DB.Exec("ALTER TABLE files CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
 		DB.Exec("ALTER TABLE materials CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
 		DB.Exec("ALTER TABLE products CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
 		DB.Exec("ALTER TABLE points CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")

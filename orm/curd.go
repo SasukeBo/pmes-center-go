@@ -71,7 +71,9 @@ func GetSizeWithMaterialIDSizeName(sn string, materialID int, tx *gorm.DB) *Size
 
 	var s Size
 	if err := conn.Where("name = ? AND material_id = ?", sn, materialID).First(&s).Error; err != nil {
-		fmt.Println(err)
+		if err != gorm.ErrRecordNotFound {
+			fmt.Println(err)
+		}
 		return nil
 	}
 	return &s
@@ -86,7 +88,9 @@ func GetPointWithSizeIDPointName(pn string, sizeID int, tx *gorm.DB) *Point {
 
 	var p Point
 	if err := conn.Where("name = ? AND size_id = ?", pn, sizeID).First(&p).Error; err != nil {
-		fmt.Println(err)
+		if err != gorm.ErrRecordNotFound {
+			fmt.Println(err)
+		}
 		return nil
 	}
 	return &p
@@ -100,8 +104,8 @@ func GetSizeWithID(id int) *Size {
 	return &s
 }
 
-func GetFileListWithPath(path string) *FileList {
-	var fl FileList
+func GetFileListWithPath(path string) *File {
+	var fl File
 	if err := DB.Where("path = ?", path).First(&fl).Error; err != nil {
 		return nil
 	}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/SasukeBo/ftpviewer/orm"
 	stime "github.com/SasukeBo/lib/time"
-	"log"
 	"regexp"
 	"runtime/debug"
 	"strconv"
@@ -28,12 +27,14 @@ var (
 		%s
 	`
 	productValueFieldTpl = `(?,?,?,?,?,?,?,?,?,?)`
+	productValueCount = 10
 	insertPointValuesTpl = `
 		INSERT INTO point_values (point_id, product_uuid, v)
 		VALUES
 		%s
 	`
 	pointValueFieldTpl = `(?,?,?)`
+	pointValueCount = 3
 )
 
 // FTPWorker _
@@ -114,12 +115,13 @@ func Store(xr *XLSXReader) {
 		products = append(products, pv...)
 	}
 
+	total := (len(products) / productValueCount) + (len(pointValues)/pointValueCount)
+	orm.DB.Model(&orm.File{}).Where("id = ?", xr.PathID).Update("total_rows", total)
+
 	fmt.Println("-----------------------------------\nbegin execInsert ....")
-	execInsert(products, 10, insertProductsTpl, productValueFieldTpl)
-	execInsert(pointValues, 3, insertPointValuesTpl, pointValueFieldTpl)
+	execInsert(products, productValueCount, insertProductsTpl, productValueFieldTpl, xr.PathID)
+	execInsert(pointValues, pointValueCount, insertPointValuesTpl, pointValueFieldTpl, xr.PathID)
 	fmt.Println("-----------------------------------\nfinish execInsert ....")
-	orm.DB.Model(&orm.FileList{}).Where("id = ?", xr.PathID).Update("finished", true)
-	fmt.Printf("-----------------------------------\nfinish udpate file id=%v finished=true\n", xr.PathID)
 }
 
 func validRow(row []string) bool {
@@ -138,7 +140,7 @@ func validRow(row []string) bool {
 	return true
 }
 
-func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {
+func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, fileID int) {
 	tx := orm.DB.Begin()
 	tx.LogMode(false)
 	datalen := len(dataset)
@@ -148,10 +150,18 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {
 		vSQL = vSQL + "," + valuetpl
 	}
 
+	var file orm.File
+	orm.DB.Model(&file).Where("id = ?", fileID).First(&file)
+	finishedRows := file.FinishedRows
 	for i := 0; i < totalLen/singleInsertLimit; i++ {
 		begin := i * singleInsertLimit * itemLen
 		end := (i + 1) * singleInsertLimit * itemLen
-		tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...)
+		err := tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...).Error
+		if err != nil {
+			fmt.Printf("[execInsert] %v\n", err)
+		}
+		finishedRows = finishedRows + singleInsertLimit
+		updateFinishedRows(fileID, finishedRows)
 	}
 
 	restLen := totalLen % singleInsertLimit
@@ -162,11 +172,21 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {
 		}
 		end := datalen
 		begin := datalen - restLen*itemLen
-		if err := tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...).Error; err != nil {
-			log.Println(err)
+		err := tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...).Error
+		if err != nil {
+			fmt.Printf("[execInsert] %v\n", err)
 		}
+		finishedRows = finishedRows + restLen
+		updateFinishedRows(fileID, finishedRows)
 	}
+	// 最后完成该文件
+	orm.DB.Model(&orm.File{}).Where("id = ?", fileID).Update("finished", true)
 	tx.Commit()
+}
+
+func updateFinishedRows(fileID, finishedRows int) {
+	orm.DB.Model(&orm.File{}).Where("id = ?", fileID).Update("finished_rows", finishedRows)
+	fmt.Printf("-----------------------------------\nfinish udpate file id=%v finished rows=%v\n", fileID, finishedRows)
 }
 
 func parseFloat(v string) float64 {
