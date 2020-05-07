@@ -140,7 +140,7 @@ func validRow(row []string) bool {
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string) {
 	tx := orm.DB.Begin()
-	tx.LogMode(true)
+	tx.LogMode(false)
 	datalen := len(dataset)
 	totalLen := datalen / itemLen
 	vSQL := valuetpl
