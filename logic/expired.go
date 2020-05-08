@@ -4,7 +4,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"github.com/SasukeBo/ftpviewer/orm"
-	"log"
+	"github.com/SasukeBo/log"
+
 	"strconv"
 	"time"
 )
@@ -21,17 +22,15 @@ var durations = map[string]int{
 
 // ClearUp 清除过期数据
 func ClearUp() {
-	log.Println("[CleanUp] Begin clean up worker")
-	go func() {
-		for {
-			select {
-			case <-time.After(24 * time.Hour):
+	log.Info("[CleanUp] Begin clean up worker")
+	for {
+		select {
+		case <-time.After(24 * time.Hour):
 			// case <-time.After(5 * time.Minute):
-				log.Println("[CleanUp] clean up ...")
-				clearUp()
-			}
+			log.Info("[CleanUp] clean up ...")
+			clearUp()
 		}
-	}()
+	}
 }
 
 func clearUp() {

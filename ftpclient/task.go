@@ -126,6 +126,9 @@ func Store(xr *XLSXReader) {
 			break
 		}
 	}
+
+	// 最后完成该文件
+	orm.DB.Model(&orm.File{}).Where("id = ?", xr.PathID).Update("finished", true)
 }
 
 func validRow(row []string) bool {
@@ -179,8 +182,6 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, fil
 		updateFinishedRows(fileID, restLen)
 	}
 
-	// 最后完成该文件
-	orm.DB.Model(&orm.File{}).Where("id = ?", fileID).Update("finished", true)
 	tx.Commit()
 	finishChan <- 1
 }

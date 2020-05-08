@@ -3,6 +3,8 @@ github.com/99designs/gqlgen v0.11.3/go.mod h1:RgX5GRRdDWNkh4pBrdzNpNPFVsdoUFY2+a
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/SasukeBo/lib v0.0.0-20200505011736-5d2e52c29cdc h1:2yeQLfEmZYLPNztuRy2ef8DoM8B/NIEe4MpnddUT0fQ=
 github.com/SasukeBo/lib v0.0.0-20200505011736-5d2e52c29cdc/go.mod h1:nuJxlxGF6AfZKCDc6CnUjBr9W2abJ4526+cCkSwBj3Y=
+github.com/SasukeBo/log v1.0.0 h1:wklEBgyTD4pH1ihTTu7Uw6KvushDfAlbTkkjQ4dFN4Y=
+github.com/SasukeBo/log v1.0.0/go.mod h1:3+Xt6o8Vv47/eRT/xqyNyVeYf3sLzyeRp7MFLLsex6o=
 github.com/SasukeBo/xlsx v1.0.5-fork h1:Lrsf0vFTE2LpcEQiFT/P1jQZxIvfCUZzKRcqV9c/3lU=
 github.com/SasukeBo/xlsx v1.0.5-fork/go.mod h1:BJ+FrI8pPkKtlzggAzaFYOyNRVgHjBKxkPED9s1Q4hY=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
@@ -142,6 +144,8 @@ gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/go-playground/assert.v1 v1.2.1/go.mod h1:9RXL0bg/zibRAgZUYszZSwO/z8Y/a8bDuhia5mkpMnE=
 gopkg.in/go-playground/validator.v9 v9.29.1/go.mod h1:+c9/zcJMFNgbLvly1L1V+PpxWdVbfP1avr/N00E2vyQ=
+gopkg.in/gookit/color.v1 v1.1.6 h1:5fB10p6AUFjhd2ayq9JgmJWr9WlTrguFdw3qlYtKNHk=
+gopkg.in/gookit/color.v1 v1.1.6/go.mod h1:IcEkFGaveVShJ+j8ew+jwe9epHyGpJ9IrptHmW3laVY=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.4/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.8 h1:obN1ZagJSUGI0Ek/LBmuj4SNLPfIny3KsKFopxRdj10=

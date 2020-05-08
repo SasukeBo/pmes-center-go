@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/SasukeBo/ftpviewer/orm"
-	"log"
+	"github.com/SasukeBo/log"
+	"github.com/jinzhu/gorm"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +16,45 @@ import (
 )
 
 var fileNamePattern = `(.*)-(.*)-(.*)-([w|b])\.xlsx`
+
+// AutoFetch 自动拉取
+func AutoFetch() {
+	log.Infoln("[AutoFetch] Begin auto fetch worker")
+	autoFetch()
+	for {
+		select {
+		case <-time.After(12 * time.Hour):
+			autoFetch()
+		}
+	}
+}
+
+func autoFetch() {
+	var materials []orm.Material
+	err := orm.DB.Model(&orm.Material{}).Find(&materials).Error
+	if err != nil {
+		log.Error("[autoFetch] get materials error: %v", err)
+	}
+
+	config := orm.GetSystemConfig("cache_days")
+	cacheDays, err := strconv.Atoi(config.Value)
+	if err != nil {
+		cacheDays = 30
+	}
+	now := time.Now()
+	begin := now.AddDate(0, 0, -cacheDays)
+
+	for _, m := range materials {
+		log.Info("[autoFetch] fetch %s duration %v - %v...", m.Name, begin, now)
+		go func() {
+			fileIDs, err := NeedFetch(&m, &begin, &now)
+			if err != nil {
+				log.Errorln(err)
+			}
+			log.Info("fetch file ids: %v", fileIDs)
+		}()
+	}
+}
 
 // IsMaterialExist _
 func IsMaterialExist(materialID string) bool {
@@ -24,7 +65,7 @@ func IsMaterialExist(materialID string) bool {
 			return false
 		}
 
-		log.Printf("[IsMaterialExist] %v", err)
+		log.Error("[IsMaterialExist] %v", err)
 		return false
 	}
 
@@ -62,7 +103,7 @@ func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error)
 		go func() {
 			err := xr.Read(path)
 			if err != nil {
-				log.Println(err)
+				log.Error("read path(%s) error: %v", path, err)
 				return
 			}
 			rowLen := len(xr.DateSet)
@@ -147,29 +188,12 @@ type FetchFile struct {
 // NeedFetch 判断是否需要从FTP拉取数据
 // 给定料号，时间范围，对比数据库中已拉取文件路径，得出是否有需要拉取的文件路径
 func NeedFetch(m *orm.Material, begin, end *time.Time) ([]int, error) {
-	var conds []string
-	var vars []interface{}
 	var files []FetchFile
 	var fileIDs []int
-	conds = append(conds, "finished = 1")
-	conds = append(conds, "material_id = ?")
-	vars = append(vars, m.ID)
 	if begin != nil && end != nil {
 		if begin.After(*end) {
 			return fileIDs, errors.New("时间范围不正确，开始时间不能晚于结束时间")
 		}
-	}
-	if begin != nil {
-		conds = append(conds, "file_date > ?")
-		vars = append(vars, *begin)
-	}
-	if end != nil {
-		conds = append(conds, "file_date < ?")
-		vars = append(vars, *end)
-	}
-	var fetchedFileList []orm.File
-	if err := orm.DB.Model(&orm.File{}).Where(strings.Join(conds, " AND "), vars...).Find(&fetchedFileList).Error; err != nil {
-		return fileIDs, err
 	}
 
 	ftpFileList, err := ftpclient.GetList("./" + m.Name)
@@ -177,36 +201,19 @@ func NeedFetch(m *orm.Material, begin, end *time.Time) ([]int, error) {
 		return fileIDs, err
 	}
 
-	reg := regexp.MustCompilePOSIX(fileNamePattern)
 	for _, p := range ftpFileList {
-		matched := reg.FindAllStringSubmatch(p, -1)
-		if len(matched) == 0 || len(matched[0]) <= 4 {
-			continue
-		}
-		dateStr := matched[0][3]
-		fileDate, _ := time.Parse(time.RFC3339, fmt.Sprintf("%s-%s-%sT00:00:00+08:00", dateStr[:4], dateStr[4:6], dateStr[6:]))
-
-		if !fileIsNeed(&fileDate, begin, end) {
+		need, deviceName, fileDate := checkFile(p,begin, end)
+		if !need {
 			continue
 		}
 
 		// 根据文件名创建设备
-		createDeviceIfNotExist(matched[0][2], *m)
+		createDeviceIfNotExist(deviceName, *m)
 
-		fetched := false
-		for _, f := range fetchedFileList {
-			if strings.Contains(f.Path, p) {
-				fetched = true
-				break
-			}
-		}
-
-		if !fetched {
-			files = append(files, FetchFile{
-				File: p,
-				Date: fileDate,
-			})
-		}
+		files = append(files, FetchFile{
+			File: p,
+			Date: *fileDate,
+		})
 	}
 
 	if len(files) == 0 {
@@ -220,11 +227,32 @@ func NeedFetch(m *orm.Material, begin, end *time.Time) ([]int, error) {
 	return fileIDs, nil
 }
 
-func fileIsNeed(fileDate, begin, end *time.Time) bool {
-	if begin == nil || end == nil {
-		return true
+func checkFile(fileName string, begin, end *time.Time) (bool, string, *time.Time) {
+	var file orm.File
+	err := orm.DB.Model(&file).Where("files.path = ?", fileName).First(&file).Error
+	if err != nil {
+		if err != gorm.ErrRecordNotFound {
+			log.Errorln(err)
+			return false, "", nil
+		}
 	}
-	return begin.Before(*fileDate) && end.After(*fileDate)
+
+	if file.ID != 0 {
+		return false, "", nil
+	}
+
+	reg := regexp.MustCompile(fileNamePattern)
+	matched := reg.FindStringSubmatch(fileName)
+	if len(matched) <= 4 {
+		return false, "", nil
+	}
+	dateStr := matched[3]
+	t, _ := time.Parse(time.RFC3339, fmt.Sprintf("%s-%s-%sT00:00:00+08:00", dateStr[:4], dateStr[4:6], dateStr[6:]))
+
+	if begin == nil || end == nil {
+		return true, matched[2], &t
+	}
+	return begin.Before(t) && end.After(t), matched[2], &t
 }
 
 func createDeviceIfNotExist(name string, material orm.Material) {
