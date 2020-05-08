@@ -21,11 +21,13 @@ var durations = map[string]int{
 
 // ClearUp 清除过期数据
 func ClearUp() {
-	log.Println("[ClearUp] Begin clear up worker")
+	log.Println("[CleanUp] Begin clean up worker")
 	go func() {
 		for {
 			select {
 			case <-time.After(24 * time.Hour):
+			// case <-time.After(5 * time.Minute):
+				log.Println("[CleanUp] clean up ...")
 				clearUp()
 			}
 		}
@@ -40,8 +42,12 @@ func clearUp() {
 	}
 
 	end := time.Now().AddDate(0, 0, -expiredDays)
-	orm.DB.Exec("DELETE FROM products WHERE created_at < ?", end)
-	orm.DB.Exec("DELETE FROM size_values WHERE created_at < ?", end)
+	orm.DB.Exec("DELETE FROM files WHERE file_date < ?", end) // clean files
+
+	var ids []string
+	orm.DB.Model(&orm.Product{}).Where("created_at < ?", end).Pluck("uuid", &ids)
+	orm.DB.Exec("DELETE FROM products WHERE uuid IN (?)", ids)
+	orm.DB.Exec("DELETE FROM point_values WHERE product_uuid IN (?)", ids)
 }
 
 func Active(token string) error {

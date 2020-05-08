@@ -45,7 +45,10 @@ func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error)
 		return nil, errors.New(fmt.Sprintf("读取数据文件%s失败", files[0].File))
 	}
 	handleSizePoint(xr.DimSL, material.ID)
+	colLen := len(xr.DimSL)
 
+	fileWaitChan := make(chan int, 1)
+	xlsxReaders := make([]*ftpclient.XLSXReader, 0)
 	for _, f := range files {
 		xr := ftpclient.NewXLSXReader()
 		path := resolvePath(material.Name, f.File)
@@ -62,9 +65,28 @@ func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error)
 				log.Println(err)
 				return
 			}
+			rowLen := len(xr.DateSet)
+			total := (colLen + 1) * rowLen
+			orm.DB.Model(&orm.File{}).Where("id = ?", file.ID).Update("total_rows", total)
 			xr.PathID = file.ID
-			ftpclient.PushStore(xr)
+
+			xlsxReaders = append(xlsxReaders, xr)
+			fileWaitChan <- 1
 		}()
+	}
+
+	// 这样做的目的是为了保证拉取数据前，file的total_rows已经准备就绪，否则造成前端数据完成进度条回滚的现象
+	var count int
+	for {
+		i := <-fileWaitChan
+		count = count + i
+		if count == 3 {
+			break
+		}
+	}
+
+	for _, xr := range xlsxReaders {
+		ftpclient.PushStore(xr)
 	}
 
 	return fileIDs, nil
@@ -207,7 +229,7 @@ func fileIsNeed(fileDate, begin, end *time.Time) bool {
 
 func createDeviceIfNotExist(name string, material orm.Material) {
 	device := orm.GetDeviceWithName(name)
-	if device == nil {
+	if device == nil || device.MaterialID != material.ID {
 		device = &orm.Device{
 			Name:       name,
 			MaterialID: material.ID,
