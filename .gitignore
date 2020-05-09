@@ -1,9 +1,10 @@
 *.swp
 .idea
-gateway-docker/dist
+gateway-docker/ftpviewer.conf
 conf/config.go
 ftpviewer
-docker-compose.local.yml
+docker-compose.yml
 方案书.pdf
 时间计划.pdf
 PLAN.md
+
