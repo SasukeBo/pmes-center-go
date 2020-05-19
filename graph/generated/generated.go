@@ -62,8 +62,10 @@ type ComplexityRoot struct {
 	}
 
 	Material struct {
-		ID   func(childComplexity int) int
-		Name func(childComplexity int) int
+		CustomerCode  func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Name          func(childComplexity int) int
+		ProjectRemark func(childComplexity int) int
 	}
 
 	MaterialResult struct {
@@ -79,7 +81,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddMaterial func(childComplexity int, materialName string) int
+		AddMaterial func(childComplexity int, input model.MaterialCreateInput) int
 		Login       func(childComplexity int, loginInput model.LoginInput) int
 		Setting     func(childComplexity int, settingInput model.SettingInput) int
 	}
@@ -180,7 +182,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error)
 	Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error)
-	AddMaterial(ctx context.Context, materialName string) (*model.AddMaterialResponse, error)
+	AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.AddMaterialResponse, error)
 }
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
@@ -265,6 +267,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DeviceResult.Status(childComplexity), true
 
+	case "Material.customerCode":
+		if e.complexity.Material.CustomerCode == nil {
+			break
+		}
+
+		return e.complexity.Material.CustomerCode(childComplexity), true
+
 	case "Material.id":
 		if e.complexity.Material.ID == nil {
 			break
@@ -278,6 +287,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Material.Name(childComplexity), true
+
+	case "Material.projectRemark":
+		if e.complexity.Material.ProjectRemark == nil {
+			break
+		}
+
+		return e.complexity.Material.ProjectRemark(childComplexity), true
 
 	case "MaterialResult.material":
 		if e.complexity.MaterialResult.Material == nil {
@@ -331,7 +347,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddMaterial(childComplexity, args["materialName"].(string)), true
+		return e.complexity.Mutation.AddMaterial(childComplexity, args["input"].(model.MaterialCreateInput)), true
 
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
@@ -899,7 +915,13 @@ type Mutation {
   login(loginInput: LoginInput!): User!
   setting(settingInput: SettingInput!): SystemConfig!
   "增加料号，需要返回pending: true和fileListIDs"
-  addMaterial(materialName: String!): AddMaterialResponse!
+  addMaterial(input: MaterialCreateInput!): AddMaterialResponse!
+}
+
+input MaterialCreateInput {
+  name: String!
+  customerCode: String
+  projectRemark: String
 }
 
 type fetchStatus {
@@ -971,8 +993,10 @@ type MaterialWrap {
 }
 
 type Material {
-  id: Int
-  name: String
+  id: Int!
+  name: String!
+  customerCode: String
+  projectRemark: String
 }
 
 type AddMaterialResponse {
@@ -1052,14 +1076,14 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Mutation_addMaterial_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["materialName"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg0 model.MaterialCreateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNMaterialCreateInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialCreateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["materialName"] = arg0
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -1581,11 +1605,14 @@ func (ec *executionContext) _Material_id(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Material_name(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
@@ -1606,6 +1633,71 @@ func (ec *executionContext) _Material_name(ctx context.Context, field graphql.Co
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Material_customerCode(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Material",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CustomerCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Material_projectRemark(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Material",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProjectRemark, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1911,7 +2003,7 @@ func (ec *executionContext) _Mutation_addMaterial(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddMaterial(rctx, args["materialName"].(string))
+		return ec.resolvers.Mutation().AddMaterial(rctx, args["input"].(model.MaterialCreateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4991,6 +5083,36 @@ func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj in
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputMaterialCreateInput(ctx context.Context, obj interface{}) (model.MaterialCreateInput, error) {
+	var it model.MaterialCreateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "customerCode":
+			var err error
+			it.CustomerCode, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "projectRemark":
+			var err error
+			it.ProjectRemark, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSearch(ctx context.Context, obj interface{}) (model.Search, error) {
 	var it model.Search
 	var asMap = obj.(map[string]interface{})
@@ -5160,8 +5282,18 @@ func (ec *executionContext) _Material(ctx context.Context, sel ast.SelectionSet,
 			out.Values[i] = graphql.MarshalString("Material")
 		case "id":
 			out.Values[i] = ec._Material_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "name":
 			out.Values[i] = ec._Material_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "customerCode":
+			out.Values[i] = ec._Material_customerCode(ctx, field, obj)
+		case "projectRemark":
+			out.Values[i] = ec._Material_projectRemark(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6146,6 +6278,10 @@ func (ec *executionContext) marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpvie
 		return graphql.Null
 	}
 	return ec._Material(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMaterialCreateInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialCreateInput(ctx context.Context, v interface{}) (model.MaterialCreateInput, error) {
+	return ec.unmarshalInputMaterialCreateInput(ctx, v)
 }
 
 func (ec *executionContext) marshalNMaterialResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialResult(ctx context.Context, sel ast.SelectionSet, v model.MaterialResult) graphql.Marshaler {

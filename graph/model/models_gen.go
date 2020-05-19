@@ -29,8 +29,16 @@ type LoginInput struct {
 }
 
 type Material struct {
-	ID   *int    `json:"id"`
-	Name *string `json:"name"`
+	ID            int     `json:"id"`
+	Name          string  `json:"name"`
+	CustomerCode  *string `json:"customerCode"`
+	ProjectRemark *string `json:"projectRemark"`
+}
+
+type MaterialCreateInput struct {
+	Name          string  `json:"name"`
+	CustomerCode  *string `json:"customerCode"`
+	ProjectRemark *string `json:"projectRemark"`
 }
 
 type MaterialResult struct {
