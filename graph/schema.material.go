@@ -11,25 +11,31 @@ import (
 	"time"
 )
 
-func (r *mutationResolver) AddMaterial(ctx context.Context, materialName string) (*model.AddMaterialResponse, error) {
+func (r *mutationResolver) AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.AddMaterialResponse, error) {
 	if err := logic.Authenticate(ctx); err != nil {
 		return nil, err
 	}
 
-	if materialName == "" {
-		return nil, NewGQLError("料号名称不能为空", "material name is empty string")
+	if input.Name == "" {
+		return nil, NewGQLError("厂内料号不能为空", "empty material code")
 	}
 
-	if !logic.IsMaterialExist(materialName) {
+	if !logic.IsMaterialExist(input.Name) {
 		return nil, NewGQLError("FTP服务器现在没有该料号的数据。", "IsMaterialExist false")
 	}
 
-	material := orm.GetMaterialWithName(materialName)
+	material := orm.GetMaterialWithName(input.Name)
 	if material != nil {
 		return nil, NewGQLError("料号已经存在，请确认你的输入。", "find material, can't create another one.")
 	}
 
-	m := orm.Material{Name: materialName}
+	m := orm.Material{Name: input.Name}
+	if input.CustomerCode != nil {
+		m.CustomerCode = *input.CustomerCode
+	}
+	if input.ProjectRemark != nil {
+		m.ProjectRemark = *input.ProjectRemark
+	}
 	if err := orm.DB.Create(&m).Error; err != nil {
 		return nil, NewGQLError("创建料号失败", err.Error())
 	}
@@ -50,8 +56,10 @@ func (r *mutationResolver) AddMaterial(ctx context.Context, materialName string)
 	}
 
 	materialOut := model.Material{
-		ID:   &m.ID,
-		Name: &m.Name,
+		ID:            m.ID,
+		Name:          m.Name,
+		CustomerCode:  stringP(m.CustomerCode),
+		ProjectRemark: stringP(m.ProjectRemark),
 	}
 
 	return &model.AddMaterialResponse{
@@ -143,8 +151,10 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 	varsUnqualified := append(vars, 0)
 	orm.DB.Model(&orm.Product{}).Where(cond, varsUnqualified...).Count(&ng)
 	out := model.Material{
-		ID:   &material.ID,
-		Name: &material.Name,
+		ID:            material.ID,
+		Name:          material.Name,
+		CustomerCode:  stringP(material.CustomerCode),
+		ProjectRemark: stringP(material.ProjectRemark),
 	}
 
 	return &model.MaterialResult{
@@ -168,8 +178,10 @@ func (r *queryResolver) Materials(ctx context.Context, page int, limit int) (*mo
 	for _, i := range materials {
 		v := i
 		outs = append(outs, &model.Material{
-			ID:   &v.ID,
-			Name: &v.Name,
+			ID:            v.ID,
+			Name:          v.Name,
+			CustomerCode:  stringP(v.CustomerCode),
+			ProjectRemark: stringP(v.ProjectRemark),
 		})
 	}
 	var count int

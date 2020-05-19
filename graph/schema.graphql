@@ -23,7 +23,13 @@ type Mutation {
   login(loginInput: LoginInput!): User!
   setting(settingInput: SettingInput!): SystemConfig!
   "增加料号，需要返回pending: true和fileListIDs"
-  addMaterial(materialName: String!): AddMaterialResponse!
+  addMaterial(input: MaterialCreateInput!): AddMaterialResponse!
+}
+
+input MaterialCreateInput {
+  name: String!
+  customerCode: String
+  projectRemark: String
 }
 
 type fetchStatus {
@@ -95,8 +101,10 @@ type MaterialWrap {
 }
 
 type Material {
-  id: Int
-  name: String
+  id: Int!
+  name: String!
+  customerCode: String
+  projectRemark: String
 }
 
 type AddMaterialResponse {
