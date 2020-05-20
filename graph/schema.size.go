@@ -79,17 +79,16 @@ func (r *queryResolver) AnalyzePoint(ctx context.Context, searchInput model.Sear
 	}
 
 	cond := strings.Join(conds, " AND ")
-
 	var pointResults []*model.PointResult
-
+	mpvs := make(map[int][]orm.PointValue)
 	for _, p := range points {
 		var pointValues []orm.PointValue
+		orm.DB.Joins("LEFT JOIN products ON point_values.product_uuid = products.uuid").Where(cond, vars...).Where("point_values.point_id = ?", p.ID).Find(&pointValues)
+		mpvs[p.ID] = pointValues
+	}
 
-		err := orm.DB.Joins("LEFT JOIN products ON point_values.product_uuid = products.uuid").Where(cond, vars...).Where("point_values.point_id = ?", p.ID).Find(&pointValues).Error
-		if err != nil {
-			return nil, NewGQLError("获取数据失败", err.Error())
-		}
-
+	for _, p := range points {
+		pointValues := mpvs[p.ID]
 		total := len(pointValues)
 		ok := 0
 		valueSet := make([]float64, 0)
