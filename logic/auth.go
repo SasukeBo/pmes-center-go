@@ -72,13 +72,20 @@ func ValidateExpired() error {
 
 // Authenticate _
 func Authenticate(ctx context.Context) error {
-	return nil
 	gc, err := GetGinContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	token := gc.GetHeader("Access-Token")
+	token, err := gc.Cookie("access_token")
+	if err != nil {
+		return &gqlerror.Error{
+			Message: "用户验证失败",
+			Extensions: map[string]interface{}{
+				"originErr": err.Error(),
+			},
+		}
+	}
 	user := orm.GetUserWithToken(token)
 	if user == nil {
 		return &gqlerror.Error{

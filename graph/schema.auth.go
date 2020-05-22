@@ -30,7 +30,8 @@ func (r *mutationResolver) Login(ctx context.Context, loginInput model.LoginInpu
 	}
 
 	if gc != nil {
-		gc.Header("Access-Token", token)
+		maxAge := 7 * 24 * 60 * 60
+		gc.SetCookie("access_token", token, maxAge, "/", "", false, true)
 	}
 
 	userID := int(user.ID)
@@ -57,4 +58,3 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
 		Admin:   &user.Admin,
 	}, nil
 }
-
