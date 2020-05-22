@@ -48,6 +48,12 @@ type MaterialResult struct {
 	Status   *FetchStatus `json:"status"`
 }
 
+type MaterialUpdateInput struct {
+	ID            int     `json:"id"`
+	CustomerCode  *string `json:"customerCode"`
+	ProjectRemark *string `json:"projectRemark"`
+}
+
 type MaterialWrap struct {
 	Total     *int        `json:"total"`
 	Materials []*Material `json:"materials"`

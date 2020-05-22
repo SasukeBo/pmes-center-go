@@ -81,9 +81,11 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddMaterial func(childComplexity int, input model.MaterialCreateInput) int
-		Login       func(childComplexity int, loginInput model.LoginInput) int
-		Setting     func(childComplexity int, settingInput model.SettingInput) int
+		AddMaterial    func(childComplexity int, input model.MaterialCreateInput) int
+		DeleteMaterial func(childComplexity int, id int) int
+		Login          func(childComplexity int, loginInput model.LoginInput) int
+		Setting        func(childComplexity int, settingInput model.SettingInput) int
+		UpdateMaterial func(childComplexity int, input model.MaterialUpdateInput) int
 	}
 
 	Point struct {
@@ -143,6 +145,7 @@ type ComplexityRoot struct {
 		DataFetchFinishPercent func(childComplexity int, fileIDs []*int) int
 		Devices                func(childComplexity int, materialID int) int
 		Materials              func(childComplexity int, page int, limit int) int
+		MaterialsWithSearch    func(childComplexity int, page int, limit int, search *string) int
 		Products               func(childComplexity int, searchInput model.Search, page int, limit int) int
 		Sizes                  func(childComplexity int, page int, limit int, materialID int) int
 	}
@@ -183,6 +186,8 @@ type MutationResolver interface {
 	Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error)
 	Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error)
 	AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.AddMaterialResponse, error)
+	UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error)
+	DeleteMaterial(ctx context.Context, id int) (string, error)
 }
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
@@ -192,6 +197,7 @@ type QueryResolver interface {
 	AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.DeviceResult, error)
 	Sizes(ctx context.Context, page int, limit int, materialID int) (*model.SizeWrap, error)
 	Materials(ctx context.Context, page int, limit int) (*model.MaterialWrap, error)
+	MaterialsWithSearch(ctx context.Context, page int, limit int, search *string) (*model.MaterialWrap, error)
 	Devices(ctx context.Context, materialID int) ([]*model.Device, error)
 	DataFetchFinishPercent(ctx context.Context, fileIDs []*int) (float64, error)
 }
@@ -349,6 +355,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddMaterial(childComplexity, args["input"].(model.MaterialCreateInput)), true
 
+	case "Mutation.deleteMaterial":
+		if e.complexity.Mutation.DeleteMaterial == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteMaterial_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteMaterial(childComplexity, args["id"].(int)), true
+
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
 			break
@@ -372,6 +390,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Setting(childComplexity, args["settingInput"].(model.SettingInput)), true
+
+	case "Mutation.updateMaterial":
+		if e.complexity.Mutation.UpdateMaterial == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateMaterial_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateMaterial(childComplexity, args["input"].(model.MaterialUpdateInput)), true
 
 	case "Point.id":
 		if e.complexity.Point.ID == nil {
@@ -690,6 +720,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Materials(childComplexity, args["page"].(int), args["limit"].(int)), true
 
+	case "Query.materialsWithSearch":
+		if e.complexity.Query.MaterialsWithSearch == nil {
+			break
+		}
+
+		args, err := ec.field_Query_materialsWithSearch_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MaterialsWithSearch(childComplexity, args["page"].(int), args["limit"].(int), args["search"].(*string)), true
+
 	case "Query.products":
 		if e.complexity.Query.Products == nil {
 			break
@@ -905,6 +947,8 @@ var sources = []*ast.Source{
   sizes(page: Int!, limit: Int!, materialID: Int!): SizeWrap!
   "获取料号数据"
   materials(page: Int!, limit: Int!): MaterialWrap!
+  "获取料号数据，包括名称模糊搜索"
+  materialsWithSearch(page: Int!, limit: Int!, search: String): MaterialWrap!
   "获取设备生产数据"
   devices(materialID: Int!): [Device]!
   "数据获取完成百分比"
@@ -916,6 +960,16 @@ type Mutation {
   setting(settingInput: SettingInput!): SystemConfig!
   "增加料号，需要返回pending: true和fileListIDs"
   addMaterial(input: MaterialCreateInput!): AddMaterialResponse!
+  "编辑料号"
+  updateMaterial(input: MaterialUpdateInput!): Material!
+  "删除料号"
+  deleteMaterial(id: Int!): String!
+}
+
+input MaterialUpdateInput {
+  id: Int!
+  customerCode: String
+  projectRemark: String
 }
 
 input MaterialCreateInput {
@@ -1087,6 +1141,20 @@ func (ec *executionContext) field_Mutation_addMaterial_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_deleteMaterial_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1112,6 +1180,20 @@ func (ec *executionContext) field_Mutation_setting_args(ctx context.Context, raw
 		}
 	}
 	args["settingInput"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateMaterial_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MaterialUpdateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNMaterialUpdateInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialUpdateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -1212,6 +1294,36 @@ func (ec *executionContext) field_Query_devices_args(ctx context.Context, rawArg
 		}
 	}
 	args["materialID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_materialsWithSearch_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["page"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["limit"]; ok {
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["search"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["search"] = arg2
 	return args, nil
 }
 
@@ -2018,6 +2130,88 @@ func (ec *executionContext) _Mutation_addMaterial(ctx context.Context, field gra
 	res := resTmp.(*model.AddMaterialResponse)
 	fc.Result = res
 	return ec.marshalNAddMaterialResponse2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAddMaterialResponse(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateMaterial(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateMaterial_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateMaterial(rctx, args["input"].(model.MaterialUpdateInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Material)
+	fc.Result = res
+	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterial(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteMaterial(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteMaterial_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteMaterial(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Point_id(ctx context.Context, field graphql.CollectedField, obj *model.Point) (ret graphql.Marshaler) {
@@ -3341,6 +3535,47 @@ func (ec *executionContext) _Query_materials(ctx context.Context, field graphql.
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().Materials(rctx, args["page"].(int), args["limit"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.MaterialWrap)
+	fc.Result = res
+	return ec.marshalNMaterialWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialWrap(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_materialsWithSearch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_materialsWithSearch_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MaterialsWithSearch(rctx, args["page"].(int), args["limit"].(int), args["search"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5113,6 +5348,36 @@ func (ec *executionContext) unmarshalInputMaterialCreateInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputMaterialUpdateInput(ctx context.Context, obj interface{}) (model.MaterialUpdateInput, error) {
+	var it model.MaterialUpdateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.ID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "customerCode":
+			var err error
+			it.CustomerCode, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "projectRemark":
+			var err error
+			it.ProjectRemark, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSearch(ctx context.Context, obj interface{}) (model.Search, error) {
 	var it model.Search
 	var asMap = obj.(map[string]interface{})
@@ -5388,6 +5653,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "addMaterial":
 			out.Values[i] = ec._Mutation_addMaterial(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateMaterial":
+			out.Values[i] = ec._Mutation_updateMaterial(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteMaterial":
+			out.Values[i] = ec._Mutation_deleteMaterial(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -5691,6 +5966,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_materials(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "materialsWithSearch":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_materialsWithSearch(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -6296,6 +6585,10 @@ func (ec *executionContext) marshalNMaterialResult2ᚖgithubᚗcomᚋSasukeBoᚋ
 		return graphql.Null
 	}
 	return ec._MaterialResult(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNMaterialUpdateInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialUpdateInput(ctx context.Context, v interface{}) (model.MaterialUpdateInput, error) {
+	return ec.unmarshalInputMaterialUpdateInput(ctx, v)
 }
 
 func (ec *executionContext) marshalNMaterialWrap2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialWrap(ctx context.Context, sel ast.SelectionSet, v model.MaterialWrap) graphql.Marshaler {
