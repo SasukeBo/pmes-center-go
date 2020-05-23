@@ -145,8 +145,8 @@ type ComplexityRoot struct {
 		DataFetchFinishPercent func(childComplexity int, fileIDs []*int) int
 		Devices                func(childComplexity int, materialID int) int
 		Materials              func(childComplexity int, page int, limit int) int
-		MaterialsWithSearch    func(childComplexity int, page int, limit int, search *string) int
-		Products               func(childComplexity int, searchInput model.Search, page int, limit int) int
+		MaterialsWithSearch    func(childComplexity int, offset int, limit int, search *string) int
+		Products               func(childComplexity int, searchInput model.Search, page *int, limit int, offset *int) int
 		Sizes                  func(childComplexity int, page int, limit int, materialID int) int
 	}
 
@@ -191,13 +191,13 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
-	Products(ctx context.Context, searchInput model.Search, page int, limit int) (*model.ProductWrap, error)
+	Products(ctx context.Context, searchInput model.Search, page *int, limit int, offset *int) (*model.ProductWrap, error)
 	AnalyzePoint(ctx context.Context, searchInput model.Search, limit int, offset int) (*model.PointResultsWrap, error)
 	AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error)
 	AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.DeviceResult, error)
 	Sizes(ctx context.Context, page int, limit int, materialID int) (*model.SizeWrap, error)
 	Materials(ctx context.Context, page int, limit int) (*model.MaterialWrap, error)
-	MaterialsWithSearch(ctx context.Context, page int, limit int, search *string) (*model.MaterialWrap, error)
+	MaterialsWithSearch(ctx context.Context, offset int, limit int, search *string) (*model.MaterialWrap, error)
 	Devices(ctx context.Context, materialID int) ([]*model.Device, error)
 	DataFetchFinishPercent(ctx context.Context, fileIDs []*int) (float64, error)
 }
@@ -730,7 +730,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.MaterialsWithSearch(childComplexity, args["page"].(int), args["limit"].(int), args["search"].(*string)), true
+		return e.complexity.Query.MaterialsWithSearch(childComplexity, args["offset"].(int), args["limit"].(int), args["search"].(*string)), true
 
 	case "Query.products":
 		if e.complexity.Query.Products == nil {
@@ -742,7 +742,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Products(childComplexity, args["searchInput"].(model.Search), args["page"].(int), args["limit"].(int)), true
+		return e.complexity.Query.Products(childComplexity, args["searchInput"].(model.Search), args["page"].(*int), args["limit"].(int), args["offset"].(*int)), true
 
 	case "Query.sizes":
 		if e.complexity.Query.Sizes == nil {
@@ -936,7 +936,7 @@ var sources = []*ast.Source{
   "获取当前用户"
   currentUser: User!
   "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
-  products(searchInput: Search!, page: Int!, limit: Int!): ProductWrap!
+  products(searchInput: Search!, page: Int, limit: Int!, offset: Int): ProductWrap!
   "分析点位数据"
   analyzePoint(searchInput: Search!, limit: Int!, offset: Int!): PointResultsWrap!
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
@@ -948,7 +948,7 @@ var sources = []*ast.Source{
   "获取料号数据"
   materials(page: Int!, limit: Int!): MaterialWrap!
   "获取料号数据，包括名称模糊搜索"
-  materialsWithSearch(page: Int!, limit: Int!, search: String): MaterialWrap!
+  materialsWithSearch(offset: Int!, limit: Int!, search: String): MaterialWrap!
   "获取设备生产数据"
   devices(materialID: Int!): [Device]!
   "数据获取完成百分比"
@@ -1301,13 +1301,13 @@ func (ec *executionContext) field_Query_materialsWithSearch_args(ctx context.Con
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
-	if tmp, ok := rawArgs["page"]; ok {
+	if tmp, ok := rawArgs["offset"]; ok {
 		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["page"] = arg0
+	args["offset"] = arg0
 	var arg1 int
 	if tmp, ok := rawArgs["limit"]; ok {
 		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
@@ -1360,9 +1360,9 @@ func (ec *executionContext) field_Query_products_args(ctx context.Context, rawAr
 		}
 	}
 	args["searchInput"] = arg0
-	var arg1 int
+	var arg1 *int
 	if tmp, ok := rawArgs["page"]; ok {
-		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1376,6 +1376,14 @@ func (ec *executionContext) field_Query_products_args(ctx context.Context, rawAr
 		}
 	}
 	args["limit"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["offset"]; ok {
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["offset"] = arg3
 	return args, nil
 }
 
@@ -3329,7 +3337,7 @@ func (ec *executionContext) _Query_products(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Products(rctx, args["searchInput"].(model.Search), args["page"].(int), args["limit"].(int))
+		return ec.resolvers.Query().Products(rctx, args["searchInput"].(model.Search), args["page"].(*int), args["limit"].(int), args["offset"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3575,7 +3583,7 @@ func (ec *executionContext) _Query_materialsWithSearch(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MaterialsWithSearch(rctx, args["page"].(int), args["limit"].(int), args["search"].(*string))
+		return ec.resolvers.Query().MaterialsWithSearch(rctx, args["offset"].(int), args["limit"].(int), args["search"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

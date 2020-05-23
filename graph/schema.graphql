@@ -2,7 +2,7 @@ type Query {
   "获取当前用户"
   currentUser: User!
   "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
-  products(searchInput: Search!, page: Int!, limit: Int!): ProductWrap!
+  products(searchInput: Search!, page: Int, limit: Int!, offset: Int): ProductWrap!
   "分析点位数据"
   analyzePoint(searchInput: Search!, limit: Int!, offset: Int!): PointResultsWrap!
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
@@ -14,7 +14,7 @@ type Query {
   "获取料号数据"
   materials(page: Int!, limit: Int!): MaterialWrap!
   "获取料号数据，包括名称模糊搜索"
-  materialsWithSearch(page: Int!, limit: Int!, search: String): MaterialWrap!
+  materialsWithSearch(offset: Int!, limit: Int!, search: String): MaterialWrap!
   "获取设备生产数据"
   devices(materialID: Int!): [Device]!
   "数据获取完成百分比"

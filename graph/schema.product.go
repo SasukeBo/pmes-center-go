@@ -11,14 +11,19 @@ import (
 	"time"
 )
 
-func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, page int, limit int) (*model.ProductWrap, error) {
+func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, page *int, limit int, offset *int) (*model.ProductWrap, error) {
 	if searchInput.MaterialID == nil {
-		return nil, NewGQLError("差缺数据缺少料号ID", "searchInput.MaterialID is nil")
+		return nil, NewGQLError("料号ID不能为空", "searchInput.MaterialID is nil")
 	}
-	if page < 1 {
-		return nil, NewGQLError("页数不能小于1", "")
+	oset := 0
+	if offset != nil {
+		oset = *offset
+	} else if page != nil {
+		if *page < 1 {
+			return nil, NewGQLError("页数不能小于1", "")
+		}
+		oset = (*page - 1) * limit
 	}
-	offset := (page - 1) * limit
 
 	var conditions []string
 	var vars []interface{}
@@ -86,7 +91,7 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	fmt.Println(conditions)
 	cond := strings.Join(conditions, " AND ")
 	var products []orm.Product
-	if err := orm.DB.Model(&orm.Product{}).Where(cond, vars...).Order("id asc").Offset(offset).Limit(limit).Find(&products).Error; err != nil {
+	if err := orm.DB.Model(&orm.Product{}).Where(cond, vars...).Order("id asc").Offset(oset).Limit(limit).Find(&products).Error; err != nil {
 		if err == gorm.ErrRecordNotFound { // 无数据
 			return &model.ProductWrap{
 				TableHeader: nil,
