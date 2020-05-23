@@ -61,6 +61,11 @@ type ComplexityRoot struct {
 		Status func(childComplexity int) int
 	}
 
+	Download struct {
+		FileContent   func(childComplexity int) int
+		FileExtension func(childComplexity int) int
+	}
+
 	Material struct {
 		CustomerCode  func(childComplexity int) int
 		ID            func(childComplexity int) int
@@ -84,6 +89,7 @@ type ComplexityRoot struct {
 		AddMaterial    func(childComplexity int, input model.MaterialCreateInput) int
 		DeleteMaterial func(childComplexity int, id int) int
 		Login          func(childComplexity int, loginInput model.LoginInput) int
+		Logout         func(childComplexity int) int
 		Setting        func(childComplexity int, settingInput model.SettingInput) int
 		UpdateMaterial func(childComplexity int, input model.MaterialUpdateInput) int
 	}
@@ -144,6 +150,7 @@ type ComplexityRoot struct {
 		CurrentUser            func(childComplexity int) int
 		DataFetchFinishPercent func(childComplexity int, fileIDs []*int) int
 		Devices                func(childComplexity int, materialID int) int
+		ExportProducts         func(childComplexity int, searchInput model.Search) int
 		Materials              func(childComplexity int, page int, limit int) int
 		MaterialsWithSearch    func(childComplexity int, offset int, limit int, search *string) int
 		Products               func(childComplexity int, searchInput model.Search, page *int, limit int, offset *int) int
@@ -184,6 +191,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error)
+	Logout(ctx context.Context) (string, error)
 	Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error)
 	AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.AddMaterialResponse, error)
 	UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error)
@@ -192,6 +200,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
 	Products(ctx context.Context, searchInput model.Search, page *int, limit int, offset *int) (*model.ProductWrap, error)
+	ExportProducts(ctx context.Context, searchInput model.Search) (*model.Download, error)
 	AnalyzePoint(ctx context.Context, searchInput model.Search, limit int, offset int) (*model.PointResultsWrap, error)
 	AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error)
 	AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.DeviceResult, error)
@@ -272,6 +281,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DeviceResult.Status(childComplexity), true
+
+	case "Download.fileContent":
+		if e.complexity.Download.FileContent == nil {
+			break
+		}
+
+		return e.complexity.Download.FileContent(childComplexity), true
+
+	case "Download.fileExtension":
+		if e.complexity.Download.FileExtension == nil {
+			break
+		}
+
+		return e.complexity.Download.FileExtension(childComplexity), true
 
 	case "Material.customerCode":
 		if e.complexity.Material.CustomerCode == nil {
@@ -378,6 +401,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Login(childComplexity, args["loginInput"].(model.LoginInput)), true
+
+	case "Mutation.logout":
+		if e.complexity.Mutation.Logout == nil {
+			break
+		}
+
+		return e.complexity.Mutation.Logout(childComplexity), true
 
 	case "Mutation.setting":
 		if e.complexity.Mutation.Setting == nil {
@@ -708,6 +738,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Devices(childComplexity, args["materialID"].(int)), true
 
+	case "Query.exportProducts":
+		if e.complexity.Query.ExportProducts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_exportProducts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ExportProducts(childComplexity, args["searchInput"].(model.Search)), true
+
 	case "Query.materials":
 		if e.complexity.Query.Materials == nil {
 			break
@@ -937,6 +979,8 @@ var sources = []*ast.Source{
   currentUser: User!
   "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   products(searchInput: Search!, page: Int, limit: Int!, offset: Int): ProductWrap!
+  "导出数据，以Base64的形式返回文件内容，由前端去处理为文件。"
+  exportProducts(searchInput: Search!): Download!
   "分析点位数据"
   analyzePoint(searchInput: Search!, limit: Int!, offset: Int!): PointResultsWrap!
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
@@ -956,7 +1000,10 @@ var sources = []*ast.Source{
 }
 
 type Mutation {
+  "登入"
   login(loginInput: LoginInput!): User!
+  "登出"
+  logout: String!
   setting(settingInput: SettingInput!): SystemConfig!
   "增加料号，需要返回pending: true和fileListIDs"
   addMaterial(input: MaterialCreateInput!): AddMaterialResponse!
@@ -964,6 +1011,11 @@ type Mutation {
   updateMaterial(input: MaterialUpdateInput!): Material!
   "删除料号"
   deleteMaterial(id: Int!): String!
+}
+
+type Download {
+  fileContent: String!
+  fileExtension: String!
 }
 
 input MaterialUpdateInput {
@@ -1294,6 +1346,20 @@ func (ec *executionContext) field_Query_devices_args(ctx context.Context, rawArg
 		}
 	}
 	args["materialID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_exportProducts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.Search
+	if tmp, ok := rawArgs["searchInput"]; ok {
+		arg0, err = ec.unmarshalNSearch2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSearch(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["searchInput"] = arg0
 	return args, nil
 }
 
@@ -1701,6 +1767,74 @@ func (ec *executionContext) _DeviceResult_status(ctx context.Context, field grap
 	return ec.marshalOfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Download_fileContent(ctx context.Context, field graphql.CollectedField, obj *model.Download) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Download",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileContent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Download_fileExtension(ctx context.Context, field graphql.CollectedField, obj *model.Download) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Download",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileExtension, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Material_id(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2056,6 +2190,40 @@ func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.C
 	res := resTmp.(*model.User)
 	fc.Result = res
 	return ec.marshalNUser2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_logout(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Logout(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_setting(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3352,6 +3520,47 @@ func (ec *executionContext) _Query_products(ctx context.Context, field graphql.C
 	res := resTmp.(*model.ProductWrap)
 	fc.Result = res
 	return ec.marshalNProductWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐProductWrap(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_exportProducts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_exportProducts_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ExportProducts(rctx, args["searchInput"].(model.Search))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Download)
+	fc.Result = res
+	return ec.marshalNDownload2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDownload(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_analyzePoint(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5542,6 +5751,38 @@ func (ec *executionContext) _DeviceResult(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var downloadImplementors = []string{"Download"}
+
+func (ec *executionContext) _Download(ctx context.Context, sel ast.SelectionSet, obj *model.Download) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, downloadImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Download")
+		case "fileContent":
+			out.Values[i] = ec._Download_fileContent(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "fileExtension":
+			out.Values[i] = ec._Download_fileExtension(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var materialImplementors = []string{"Material"}
 
 func (ec *executionContext) _Material(ctx context.Context, sel ast.SelectionSet, obj *model.Material) graphql.Marshaler {
@@ -5651,6 +5892,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "login":
 			out.Values[i] = ec._Mutation_login(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "logout":
+			out.Values[i] = ec._Mutation_logout(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -5904,6 +6150,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_products(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "exportProducts":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_exportProducts(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -6500,6 +6760,20 @@ func (ec *executionContext) marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋft
 		return graphql.Null
 	}
 	return ec._DeviceResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNDownload2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDownload(ctx context.Context, sel ast.SelectionSet, v model.Download) graphql.Marshaler {
+	return ec._Download(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDownload2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDownload(ctx context.Context, sel ast.SelectionSet, v *model.Download) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Download(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {

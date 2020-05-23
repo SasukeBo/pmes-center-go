@@ -23,6 +23,11 @@ type DeviceResult struct {
 	Status *FetchStatus `json:"status"`
 }
 
+type Download struct {
+	FileContent   string `json:"fileContent"`
+	FileExtension string `json:"fileExtension"`
+}
+
 type LoginInput struct {
 	Account  string `json:"account"`
 	Password string `json:"password"`
