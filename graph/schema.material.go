@@ -231,12 +231,8 @@ func (r *queryResolver) Materials(ctx context.Context, page int, limit int) (*mo
 	}, nil
 }
 
-func (r *queryResolver) MaterialsWithSearch(ctx context.Context, page int, limit int, search *string) (*model.MaterialWrap, error) {
+func (r *queryResolver) MaterialsWithSearch(ctx context.Context, offset int, limit int, search *string) (*model.MaterialWrap, error) {
 	var materials []orm.Material
-	if page < 1 {
-		return nil, NewGQLError("页数不能小于1", "page < 1")
-	}
-	offset := (page - 1) * limit
 	db := orm.DB.Order("id desc").Limit(limit).Offset(offset)
 
 	if search != nil {
