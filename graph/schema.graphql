@@ -3,8 +3,6 @@ type Query {
   currentUser: User!
   "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   products(searchInput: Search!, page: Int, limit: Int!, offset: Int): ProductWrap!
-  "导出数据，以Base64的形式返回文件内容，由前端去处理为文件。"
-  exportProducts(searchInput: Search!): Download!
   "分析点位数据"
   analyzePoint(searchInput: Search!, limit: Int!, offset: Int!): PointResultsWrap!
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"

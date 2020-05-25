@@ -8,8 +8,13 @@ import (
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/log"
+	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/tealeg/xlsx"
+	"io/ioutil"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -178,6 +183,150 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	}, nil
 }
 
+type object map[string]interface{}
+
+// ExportsProducts 处理数据导出
+func ExportsProducts(ctx *gin.Context) {
+	materialID := ctx.Param("material_id")
+	id, err := strconv.Atoi(materialID)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, object{
+			"message": "料号ID不是数字",
+			"error":   err.Error(),
+		})
+		return
+	}
+	material := orm.GetMaterialWithID(id)
+	if material == nil {
+		ctx.JSON(http.StatusBadRequest, object{"message": "未找到料号"})
+		return
+	}
+	// 创建文件
+	file := xlsx.NewFile()
+	sheet, err := file.AddSheet("data")
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, object{
+			"message":   "导出数据失败，发生了一些错误",
+			"originErr": err.Error(),
+		})
+		return
+	}
+
+	// 获取表头信息
+	var sizeIDs []int
+	if err := orm.DB.Model(&orm.Size{}).Where("material_id = ?", material.ID).Pluck("id", &sizeIDs).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, object{"message": "系统错误", "err": err.Error()})
+		return
+	}
+
+	var points []orm.Point
+	if err := orm.DB.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs).Order("points.index asc").Find(&points).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, object{"message": "系统错误", "err": err.Error()})
+		return
+	}
+
+	// 写入头部数据
+	logic.CreateXLSXHeader(sheet, points)
+	//rowMap := logic.CreateXLSXSumRows(sheet)
+	logic.CreateXLSXSumRows(sheet)
+	logic.CreateXLSXSubHeader(sheet)
+
+	// 查询数据
+	var conditions []string
+	var vars []interface{}
+
+	var end, begin *time.Time
+	if endStr, ok := ctx.GetQuery("end_time"); ok {
+		if t, err := time.Parse(time.RFC3339, endStr); err != nil {
+			end = &t
+		}
+	}
+	if end == nil {
+		t := time.Now()
+		end = &t
+	}
+
+	if beginStr, ok := ctx.GetQuery("begin_time"); ok {
+		if t, err := time.Parse(time.RFC3339, beginStr); err != nil {
+			begin = &t
+		}
+	}
+	if begin == nil {
+		t := end.AddDate(-1, 0, 0)
+		begin = &t
+	}
+
+	conditions = append(conditions, "material_id = ?")
+	vars = append(vars, material.ID)
+	if v, ok := ctx.GetQuery("device_id"); ok {
+		deviceID, err := strconv.Atoi(v)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, object{"message": "设备ID不是数字", "err": err.Error()})
+			return
+		}
+		device := orm.GetDeviceWithID(deviceID)
+		if device != nil {
+			conditions = append(conditions, "device_id = ?")
+			vars = append(vars, device.ID)
+		}
+	}
+
+	conditions = append(conditions, "created_at < ?")
+	vars = append(vars, end)
+	conditions = append(conditions, "created_at > ?")
+	vars = append(vars, begin)
+
+	if lineID, ok := ctx.GetQuery("line_id"); ok {
+		conditions = append(conditions, "line_id = ?")
+		vars = append(vars, lineID)
+	}
+
+	if mouldID, ok := ctx.GetQuery("mould_id"); ok {
+		conditions = append(conditions, "mould_id = ?")
+		vars = append(vars, mouldID)
+	}
+
+	if jigID, ok := ctx.GetQuery("jig_id"); ok {
+		conditions = append(conditions, "jig_id = ?")
+		vars = append(vars, jigID)
+	}
+
+	if shiftNumber, ok := ctx.GetQuery("shift_number"); ok {
+		conditions = append(conditions, "shift_number = ?")
+		vars = append(vars, shiftNumber)
+	}
+
+	cond := strings.Join(conditions, " AND ")
+	var products []orm.Product
+	if err := orm.DB.Model(&orm.Product{}).Where(cond, vars...).Order("id asc").Find(&products).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, object{"message": "导出数据失败，发生了一些错误", "err": err.Error()})
+		return
+	}
+
+
+	var sql = `
+		SELECT
+			p.name,
+			pv.v
+		FROM
+			point_values AS pv
+			JOIN points AS p ON pv.point_id = p.id
+		WHERE
+			pv.product_uuid = ?
+		ORDER BY
+			pv.product_uuid, p.index
+		`
+
+
+
+	// 输出文件
+	buf := bytes.NewBufferString("")
+	file.Write(buf)
+
+	xlsxContentType := "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	ctx.DataFromReader(http.StatusOK, int64(buf.Len()), xlsxContentType, buf, map[string]string{"Content-Disposition": "attachment; filename=color-map.xlsx"})
+}
+
 func (r *queryResolver) ExportProducts(ctx context.Context, searchInput model.Search) (*model.Download, error) {
 	/*
 		if searchInput.MaterialID == nil {
@@ -296,6 +445,13 @@ func (r *queryResolver) ExportProducts(ctx context.Context, searchInput model.Se
 
 	buf := bytes.NewBufferString("")
 	file.Write(buf)
+	if err := file.Save("/Users/sasukebo/Downloads/test.xlsx"); err != nil {
+		log.Errorln(err)
+	}
+
+	if err := ioutil.WriteFile("/Users/sasukebo/Downloads/test2.xlsx", buf.Bytes(), 0644); err != nil {
+		log.Errorln(err)
+	}
 
 	content := base64.StdEncoding.EncodeToString(buf.Bytes())
 
