@@ -58,3 +58,21 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
 		Admin:   &user.Admin,
 	}, nil
 }
+
+func (r *mutationResolver) Logout(ctx context.Context) (string, error) {
+	if err := logic.Authenticate(ctx); err != nil {
+		return "error", err
+	}
+
+	user := logic.CurrentUser(ctx)
+	if user == nil {
+		return "error", NewGQLError("用户未登录", "current user is nil")
+	}
+
+	user.AccessToken = ""
+	if err := orm.DB.Save(user).Error; err != nil {
+		return "error", NewGQLError("退出登录失败，发生了一些错误", err.Error())
+	}
+
+	return "ok", nil
+}
