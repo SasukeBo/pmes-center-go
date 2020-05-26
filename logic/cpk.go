@@ -1,12 +1,13 @@
 package logic
 
 import (
+	"github.com/SasukeBo/ftpviewer/orm"
 	"math"
 	"sort"
 )
 
-// RMSError 样本标准差计算公式
-func RMSError(datas []float64) float64 {
+// solveRmsError 样本标准差计算公式
+func solveRmsError(datas []float64) float64 {
 	n := len(datas)
 	if n == 0 {
 		return 0
@@ -26,8 +27,8 @@ func RMSError(datas []float64) float64 {
 	return math.Sqrt(subPowSum / float64(n))
 }
 
-// Cp Cp计算公式
-func Cp(tu, tl, s float64) float64 {
+// solveCp Cp计算公式
+func solveCp(tu, tl, s float64) float64 {
 	t := tu - tl
 	if s == 0 {
 		return 0
@@ -37,7 +38,7 @@ func Cp(tu, tl, s float64) float64 {
 }
 
 // Cpk 计算公式
-func Cpk(tu, tl, u, s float64) float64 {
+func solveCpk(tu, tl, u, s float64) float64 {
 	if u == 0 || s == 0 {
 		return 0
 	}
@@ -96,4 +97,26 @@ func distributeFunc(s, a, x float64) float64 {
 	part2 := math.Exp((-1 * (x - a) * (x - a)) / (2 * s * s))
 
 	return math.Round(part1*part2*100) / 100
+}
+
+func AnalyzePointValues(point orm.Point, data []float64) (s, cp, cpk, avg float64, ok, total int, valueSet []float64){
+	total = len(data)
+	ok = 0
+	valueSet = make([]float64, 0)
+	for _, v := range data {
+		if point.NotValid(v) {
+			continue
+		}
+
+		valueSet = append(valueSet, v)
+		if v >= point.LowerLimit && v <= point.UpperLimit {
+			ok++
+		}
+	}
+
+	s = solveRmsError(valueSet)
+	cp = solveCp(point.UpperLimit, point.LowerLimit, s)
+	avg = solveAvg(valueSet)
+	cpk = solveCpk(point.UpperLimit, point.LowerLimit, avg, s)
+	return
 }

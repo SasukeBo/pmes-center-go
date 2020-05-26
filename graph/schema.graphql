@@ -3,6 +3,8 @@ type Query {
   currentUser: User!
   "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   products(searchInput: Search!, page: Int, limit: Int!, offset: Int): ProductWrap!
+  "导出产品数据，返回opID，表示处理的uuid"
+  exportProducts(searchInput: Search!): String!
   "分析点位数据"
   analyzePoint(searchInput: Search!, limit: Int!, offset: Int!): PointResultsWrap!
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
@@ -155,10 +157,10 @@ type Product {
   pointValue: Map
   createdAt: Time
   d2code: String
-  lineID: Int
+  lineID: String
   jigID: String
-  mouldID: Int
-  shiftNumber: Int
+  mouldID: String
+  shiftNumber: String
 }
 
 type ProductWrap {

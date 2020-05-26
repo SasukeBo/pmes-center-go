@@ -1,6 +1,6 @@
 package logic
 
-func Average(values []float64) float64 {
+func solveAvg(values []float64) float64 {
 	total := len(values)
 	if total == 0 {
 		return 0

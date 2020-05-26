@@ -12,7 +12,7 @@ func TestIsMaterialExist(t *testing.T) {
 
 func TestRMSError(t *testing.T) {
 	data := []float64{200, 50, 100, 200}
-	r := RMSError(data)
+	r := solveRmsError(data)
 	if r != 75 {
 		t.Fatalf("expect 75, but got %v", r)
 	}

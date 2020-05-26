@@ -200,7 +200,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
 	Products(ctx context.Context, searchInput model.Search, page *int, limit int, offset *int) (*model.ProductWrap, error)
-	ExportProducts(ctx context.Context, searchInput model.Search) (*model.Download, error)
+	ExportProducts(ctx context.Context, searchInput model.Search) (string, error)
 	AnalyzePoint(ctx context.Context, searchInput model.Search, limit int, offset int) (*model.PointResultsWrap, error)
 	AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error)
 	AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.DeviceResult, error)
@@ -979,8 +979,8 @@ var sources = []*ast.Source{
   currentUser: User!
   "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   products(searchInput: Search!, page: Int, limit: Int!, offset: Int): ProductWrap!
-  "导出数据，以Base64的形式返回文件内容，由前端去处理为文件。"
-  exportProducts(searchInput: Search!): Download!
+  "导出产品数据，返回opID，表示处理的uuid"
+  exportProducts(searchInput: Search!): String!
   "分析点位数据"
   analyzePoint(searchInput: Search!, limit: Int!, offset: Int!): PointResultsWrap!
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
@@ -1133,10 +1133,10 @@ type Product {
   pointValue: Map
   createdAt: Time
   d2code: String
-  lineID: Int
+  lineID: String
   jigID: String
-  mouldID: Int
-  shiftNumber: Int
+  mouldID: String
+  shiftNumber: String
 }
 
 type ProductWrap {
@@ -3225,9 +3225,9 @@ func (ec *executionContext) _Product_lineID(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Product_jigID(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
@@ -3287,9 +3287,9 @@ func (ec *executionContext) _Product_mouldID(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Product_shiftNumber(ctx context.Context, field graphql.CollectedField, obj *model.Product) (ret graphql.Marshaler) {
@@ -3318,9 +3318,9 @@ func (ec *executionContext) _Product_shiftNumber(ctx context.Context, field grap
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProductWrap_tableHeader(ctx context.Context, field graphql.CollectedField, obj *model.ProductWrap) (ret graphql.Marshaler) {
@@ -3558,9 +3558,9 @@ func (ec *executionContext) _Query_exportProducts(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Download)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNDownload2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDownload(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_analyzePoint(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6760,20 +6760,6 @@ func (ec *executionContext) marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋft
 		return graphql.Null
 	}
 	return ec._DeviceResult(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNDownload2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDownload(ctx context.Context, sel ast.SelectionSet, v model.Download) graphql.Marshaler {
-	return ec._Download(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDownload2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDownload(ctx context.Context, sel ast.SelectionSet, v *model.Download) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Download(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {

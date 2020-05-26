@@ -106,11 +106,7 @@ func Store(xr *XLSXReader) {
 			pointValues = append(pointValues, pv...)
 		}
 
-		lineID, _ := strconv.Atoi(row[3])
-		mouldID, _ := strconv.Atoi(row[5])
-		shiftNumber, _ := strconv.Atoi(row[6])
-
-		pv := []interface{}{puuid, material.ID, device.ID, qp, productAt, row[2], lineID, row[4], mouldID, shiftNumber}
+		pv := []interface{}{puuid, material.ID, device.ID, qp, productAt, row[2], row[3], row[4], row[5], row[6]}
 		products = append(products, pv...)
 	}
 

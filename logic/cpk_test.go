@@ -16,10 +16,10 @@ var dataset = []float64{
 }
 
 func TestSizeAnalyze(t *testing.T) {
-	s := RMSError(dataset)
-	avg := Average(dataset)
-	cp := Cp(4.28, 4.18, s)
-	cpk := Cpk(4.28, 4.18, avg, s)
+	s := solveRmsError(dataset)
+	avg := solveAvg(dataset)
+	cp := solveCp(4.28, 4.18, s)
+	cpk := solveCpk(4.28, 4.18, avg, s)
 
 	fmt.Printf("s=%v avg=%v cp=%v cpk=%v\n", s, avg, cp, cpk)
 }
