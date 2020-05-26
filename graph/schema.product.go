@@ -213,29 +213,47 @@ func (r *queryResolver) ExportProducts(ctx context.Context, searchInput model.Se
 		}
 	}
 
-	if lineID, ok := searchInput.Extra["line_id"]; ok {
+	if lineID, ok := searchInput.Extra["lineID"]; ok {
 		conditions = append(conditions, "line_id = ?")
 		vars = append(vars, lineID)
 	}
 
-	if mouldID, ok := searchInput.Extra["mould_id"]; ok {
+	if mouldID, ok := searchInput.Extra["mouldID"]; ok {
 		conditions = append(conditions, "mould_id = ?")
 		vars = append(vars, mouldID)
 	}
 
-	if jigID, ok := searchInput.Extra["jig_id"]; ok {
+	if jigID, ok := searchInput.Extra["jigID"]; ok {
 		conditions = append(conditions, "jig_id = ?")
 		vars = append(vars, jigID)
 	}
 
-	if shiftNumber, ok := searchInput.Extra["shift_number"]; ok {
+	if shiftNumber, ok := searchInput.Extra["shiftNumber"]; ok {
 		conditions = append(conditions, "shift_number = ?")
 		vars = append(vars, shiftNumber)
 	}
 
 	opID := uuid.New().String()
 	condition := strings.Join(conditions, " AND ")
-	go logic.HandleExport(opID, material, searchInput, condition, vars)
+	go logic.HandleExport(opID, material, searchInput, condition, vars...)
 
 	return opID, nil
+}
+
+func (r *queryResolver) ExportFinishPercent(ctx context.Context, opID string) (*model.ExportResponse, error) {
+	rsp, err := logic.CheckExport(opID)
+	if err != nil {
+		return nil, NewGQLError("查询导出进度失败", err.Error())
+	}
+
+	return rsp, nil
+}
+
+func (r *mutationResolver) CancelExport(ctx context.Context, opID string) (string, error) {
+	err := logic.CancelExport(opID)
+	if err != nil {
+		return "error", NewGQLError("取消导出失败", err.Error())
+	}
+
+	return "ok", nil
 }

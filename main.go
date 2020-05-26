@@ -83,6 +83,6 @@ func main() {
 		})
 	})
 	r.GET("/", basicAuth, playgroundHandler())
-	//r.GET("/downloads/product_data/:material_id", graph.ExportsProducts)
+	r.GET("/downloads", logic.Download)
 	r.Run(":44761")
 }

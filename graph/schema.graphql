@@ -21,6 +21,8 @@ type Query {
   devices(materialID: Int!): [Device]!
   "数据获取完成百分比"
   dataFetchFinishPercent(fileIDs: [Int]!): Float!
+  "数据导出完成比例"
+  exportFinishPercent(opID: String!): ExportResponse!
 }
 
 type Mutation {
@@ -35,11 +37,15 @@ type Mutation {
   updateMaterial(input: MaterialUpdateInput!): Material!
   "删除料号"
   deleteMaterial(id: Int!): String!
+  "取消导出"
+  cancelExport(opID: String!): String!
 }
 
-type Download {
-  fileContent: String!
-  fileExtension: String!
+type ExportResponse {
+  percent: Float!
+  message: String!
+  fileName: String
+  finished: Boolean!
 }
 
 input MaterialUpdateInput {

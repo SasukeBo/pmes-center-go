@@ -110,9 +110,8 @@ func init() {
 
 	if dbdns := os.Getenv("DB_DNS"); dbdns != "" {
 		dbUrl = dbdns
-		// TODO: open comment
-		//} else if conf.GetEnv() == "TEST" {
-		//	dbUrl = conf.DBdnstest
+	} else if conf.GetEnv() == "TEST" {
+		dbUrl = conf.DBdnstest
 	} else {
 		dbUrl = conf.DBdns
 	}
@@ -134,8 +133,6 @@ func init() {
 	} else {
 		DB.LogMode(true)
 	}
-	// TODO: remove
-	DB.LogMode(false)
 
 	if err != nil {
 		panic(fmt.Errorf("open connection to db error: \n%v", err.Error()))

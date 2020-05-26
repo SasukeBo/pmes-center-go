@@ -61,9 +61,11 @@ type ComplexityRoot struct {
 		Status func(childComplexity int) int
 	}
 
-	Download struct {
-		FileContent   func(childComplexity int) int
-		FileExtension func(childComplexity int) int
+	ExportResponse struct {
+		FileName func(childComplexity int) int
+		Finished func(childComplexity int) int
+		Message  func(childComplexity int) int
+		Percent  func(childComplexity int) int
 	}
 
 	Material struct {
@@ -87,6 +89,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddMaterial    func(childComplexity int, input model.MaterialCreateInput) int
+		CancelExport   func(childComplexity int, opID string) int
 		DeleteMaterial func(childComplexity int, id int) int
 		Login          func(childComplexity int, loginInput model.LoginInput) int
 		Logout         func(childComplexity int) int
@@ -150,6 +153,7 @@ type ComplexityRoot struct {
 		CurrentUser            func(childComplexity int) int
 		DataFetchFinishPercent func(childComplexity int, fileIDs []*int) int
 		Devices                func(childComplexity int, materialID int) int
+		ExportFinishPercent    func(childComplexity int, opID string) int
 		ExportProducts         func(childComplexity int, searchInput model.Search) int
 		Materials              func(childComplexity int, page int, limit int) int
 		MaterialsWithSearch    func(childComplexity int, offset int, limit int, search *string) int
@@ -196,6 +200,7 @@ type MutationResolver interface {
 	AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.AddMaterialResponse, error)
 	UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error)
 	DeleteMaterial(ctx context.Context, id int) (string, error)
+	CancelExport(ctx context.Context, opID string) (string, error)
 }
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
@@ -209,6 +214,7 @@ type QueryResolver interface {
 	MaterialsWithSearch(ctx context.Context, offset int, limit int, search *string) (*model.MaterialWrap, error)
 	Devices(ctx context.Context, materialID int) ([]*model.Device, error)
 	DataFetchFinishPercent(ctx context.Context, fileIDs []*int) (float64, error)
+	ExportFinishPercent(ctx context.Context, opID string) (*model.ExportResponse, error)
 }
 
 type executableSchema struct {
@@ -282,19 +288,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DeviceResult.Status(childComplexity), true
 
-	case "Download.fileContent":
-		if e.complexity.Download.FileContent == nil {
+	case "ExportResponse.fileName":
+		if e.complexity.ExportResponse.FileName == nil {
 			break
 		}
 
-		return e.complexity.Download.FileContent(childComplexity), true
+		return e.complexity.ExportResponse.FileName(childComplexity), true
 
-	case "Download.fileExtension":
-		if e.complexity.Download.FileExtension == nil {
+	case "ExportResponse.finished":
+		if e.complexity.ExportResponse.Finished == nil {
 			break
 		}
 
-		return e.complexity.Download.FileExtension(childComplexity), true
+		return e.complexity.ExportResponse.Finished(childComplexity), true
+
+	case "ExportResponse.message":
+		if e.complexity.ExportResponse.Message == nil {
+			break
+		}
+
+		return e.complexity.ExportResponse.Message(childComplexity), true
+
+	case "ExportResponse.percent":
+		if e.complexity.ExportResponse.Percent == nil {
+			break
+		}
+
+		return e.complexity.ExportResponse.Percent(childComplexity), true
 
 	case "Material.customerCode":
 		if e.complexity.Material.CustomerCode == nil {
@@ -377,6 +397,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AddMaterial(childComplexity, args["input"].(model.MaterialCreateInput)), true
+
+	case "Mutation.cancelExport":
+		if e.complexity.Mutation.CancelExport == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_cancelExport_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CancelExport(childComplexity, args["opID"].(string)), true
 
 	case "Mutation.deleteMaterial":
 		if e.complexity.Mutation.DeleteMaterial == nil {
@@ -738,6 +770,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Devices(childComplexity, args["materialID"].(int)), true
 
+	case "Query.exportFinishPercent":
+		if e.complexity.Query.ExportFinishPercent == nil {
+			break
+		}
+
+		args, err := ec.field_Query_exportFinishPercent_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ExportFinishPercent(childComplexity, args["opID"].(string)), true
+
 	case "Query.exportProducts":
 		if e.complexity.Query.ExportProducts == nil {
 			break
@@ -997,6 +1041,8 @@ var sources = []*ast.Source{
   devices(materialID: Int!): [Device]!
   "数据获取完成百分比"
   dataFetchFinishPercent(fileIDs: [Int]!): Float!
+  "数据导出完成比例"
+  exportFinishPercent(opID: String!): ExportResponse!
 }
 
 type Mutation {
@@ -1011,11 +1057,15 @@ type Mutation {
   updateMaterial(input: MaterialUpdateInput!): Material!
   "删除料号"
   deleteMaterial(id: Int!): String!
+  "取消导出"
+  cancelExport(opID: String!): String!
 }
 
-type Download {
-  fileContent: String!
-  fileExtension: String!
+type ExportResponse {
+  percent: Float!
+  message: String!
+  fileName: String
+  finished: Boolean!
 }
 
 input MaterialUpdateInput {
@@ -1193,6 +1243,20 @@ func (ec *executionContext) field_Mutation_addMaterial_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_cancelExport_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["opID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["opID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteMaterial_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1346,6 +1410,20 @@ func (ec *executionContext) field_Query_devices_args(ctx context.Context, rawArg
 		}
 	}
 	args["materialID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_exportFinishPercent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["opID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["opID"] = arg0
 	return args, nil
 }
 
@@ -1767,7 +1845,7 @@ func (ec *executionContext) _DeviceResult_status(ctx context.Context, field grap
 	return ec.marshalOfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Download_fileContent(ctx context.Context, field graphql.CollectedField, obj *model.Download) (ret graphql.Marshaler) {
+func (ec *executionContext) _ExportResponse_percent(ctx context.Context, field graphql.CollectedField, obj *model.ExportResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1775,7 +1853,7 @@ func (ec *executionContext) _Download_fileContent(ctx context.Context, field gra
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Download",
+		Object:   "ExportResponse",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1784,7 +1862,41 @@ func (ec *executionContext) _Download_fileContent(ctx context.Context, field gra
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FileContent, nil
+		return obj.Percent, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ExportResponse_message(ctx context.Context, field graphql.CollectedField, obj *model.ExportResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ExportResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1801,7 +1913,7 @@ func (ec *executionContext) _Download_fileContent(ctx context.Context, field gra
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Download_fileExtension(ctx context.Context, field graphql.CollectedField, obj *model.Download) (ret graphql.Marshaler) {
+func (ec *executionContext) _ExportResponse_fileName(ctx context.Context, field graphql.CollectedField, obj *model.ExportResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1809,7 +1921,7 @@ func (ec *executionContext) _Download_fileExtension(ctx context.Context, field g
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:   "Download",
+		Object:   "ExportResponse",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -1818,7 +1930,38 @@ func (ec *executionContext) _Download_fileExtension(ctx context.Context, field g
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FileExtension, nil
+		return obj.FileName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ExportResponse_finished(ctx context.Context, field graphql.CollectedField, obj *model.ExportResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ExportResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Finished, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1830,9 +1973,9 @@ func (ec *executionContext) _Download_fileExtension(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Material_id(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
@@ -2374,6 +2517,47 @@ func (ec *executionContext) _Mutation_deleteMaterial(ctx context.Context, field 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().DeleteMaterial(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_cancelExport(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_cancelExport_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CancelExport(rctx, args["opID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3889,6 +4073,47 @@ func (ec *executionContext) _Query_dataFetchFinishPercent(ctx context.Context, f
 	res := resTmp.(float64)
 	fc.Result = res
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_exportFinishPercent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_exportFinishPercent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ExportFinishPercent(rctx, args["opID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ExportResponse)
+	fc.Result = res
+	return ec.marshalNExportResponse2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐExportResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5751,24 +5976,31 @@ func (ec *executionContext) _DeviceResult(ctx context.Context, sel ast.Selection
 	return out
 }
 
-var downloadImplementors = []string{"Download"}
+var exportResponseImplementors = []string{"ExportResponse"}
 
-func (ec *executionContext) _Download(ctx context.Context, sel ast.SelectionSet, obj *model.Download) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, downloadImplementors)
+func (ec *executionContext) _ExportResponse(ctx context.Context, sel ast.SelectionSet, obj *model.ExportResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, exportResponseImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Download")
-		case "fileContent":
-			out.Values[i] = ec._Download_fileContent(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("ExportResponse")
+		case "percent":
+			out.Values[i] = ec._ExportResponse_percent(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "fileExtension":
-			out.Values[i] = ec._Download_fileExtension(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._ExportResponse_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "fileName":
+			out.Values[i] = ec._ExportResponse_fileName(ctx, field, obj)
+		case "finished":
+			out.Values[i] = ec._ExportResponse_finished(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -5917,6 +6149,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteMaterial":
 			out.Values[i] = ec._Mutation_deleteMaterial(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "cancelExport":
+			out.Values[i] = ec._Mutation_cancelExport(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -6276,6 +6513,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_dataFetchFinishPercent(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "exportFinishPercent":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_exportFinishPercent(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -6760,6 +7011,20 @@ func (ec *executionContext) marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋft
 		return graphql.Null
 	}
 	return ec._DeviceResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNExportResponse2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐExportResponse(ctx context.Context, sel ast.SelectionSet, v model.ExportResponse) graphql.Marshaler {
+	return ec._ExportResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNExportResponse2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐExportResponse(ctx context.Context, sel ast.SelectionSet, v *model.ExportResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ExportResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {

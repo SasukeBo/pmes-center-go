@@ -1,12 +1,17 @@
 package logic
 
 import (
+	"errors"
 	"fmt"
 	"github.com/SasukeBo/ftpviewer/conf"
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/gin-gonic/gin"
 	"github.com/tealeg/xlsx"
+	"io/ioutil"
 	"math"
+	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -131,11 +136,12 @@ func CreateXLSXSubHeader(sheet *xlsx.Sheet) {
 }
 
 type handlerResponse struct {
-	err      error   // 处理错误
-	percent  float64 // 阶段完成百分比
-	message  string  // 阶段描述
-	fileName string  // 生成的文件名称
-	finished bool    // 是否已完成
+	err        error   // 处理错误
+	percent    float64 // 阶段完成百分比
+	message    string  // 阶段描述
+	fileName   string  // 生成的文件名称
+	finished   bool    // 是否已完成
+	cancelChan chan struct{}
 }
 
 var handlerCache map[string]*handlerResponse
@@ -147,7 +153,8 @@ const (
 
 func HandleExport(opID string, material *orm.Material, search model.Search, condition string, vars ...interface{}) {
 	response := &handlerResponse{
-		message: "正在准备导出数据",
+		message:    "正在准备导出数据",
+		cancelChan: make(chan struct{}, 0),
 	}
 	handlerCache[opID] = response
 
@@ -169,7 +176,7 @@ func HandleExport(opID string, material *orm.Material, search model.Search, cond
 	}
 
 	var points []orm.Point
-	if err := orm.DB.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs).Order("points.index asc").Find(&points).Error; err != nil {
+	if err := orm.DB.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs).Order("points.index ASC").Find(&points).Error; err != nil {
 		response.err = err
 		response.message = "查询数据时发生错误，导出失败"
 		return
@@ -183,7 +190,7 @@ func HandleExport(opID string, material *orm.Material, search model.Search, cond
 	// 开始处理数据
 	var total, finished float64
 	var products []orm.Product
-	if err := orm.DB.Model(&orm.Product{}).Where(condition, vars...).Order("id asc").Find(&products).Error; err != nil {
+	if err := orm.DB.Model(&orm.Product{}).Where(condition, vars...).Order("id ASC").Find(&products).Error; err != nil {
 		response.err = err
 		response.message = "查询数据时发生错误，导出失败"
 		return
@@ -191,35 +198,61 @@ func HandleExport(opID string, material *orm.Material, search model.Search, cond
 
 	response.message = "正在处理数据"
 	total = float64(len(products))
-	for _, p := range products {
-		row := sheet.AddRow()
-		hds := normalCellStyle
-		bds := dataCellStyle
-		if !p.Qualified {
-			hds = errorRowCellStyle
-			bds = errorRowCellStyle
+	pChan := make(chan orm.Product, 1)
+	finishChan := make(chan struct{}, 0)
+	go func() {
+		for _, p := range products {
+			pChan <- p
 		}
-		appendValueWithFgColor(row, hds, p.ID)
-		appendValueWithFgColor(row, hds, p.CreatedAt.Format("2006-01-02T15:04:05"))
-		appendValueWithFgColor(row, hds, p.D2Code)
-		appendValueWithFgColor(row, hds, p.LineID)
-		appendValueWithFgColor(row, hds, p.JigID)
-		appendValueWithFgColor(row, hds, p.MouldID)
-		appendValueWithFgColor(row, hds, p.ShiftNumber)
+		close(finishChan)
+	}()
 
-		sqlRows, err := orm.DB.Raw(pvSQL, p.UUID).Rows()
-		if err != nil {
-			continue
-		}
-		for sqlRows.Next() {
-			var pv float64
-			sqlRows.Scan(&pv)
-			appendValueWithFgColor(row, bds, pv)
+	stopLoop := false
+	for {
+		select {
+		case <-finishChan:
+			stopLoop = true
+			break
+
+		case <-response.cancelChan:
+			response.message = "已取消"
+			response.finished = true
+			return
+
+		case p := <-pChan:
+			row := sheet.AddRow()
+			hds := normalCellStyle
+			bds := dataCellStyle
+			if !p.Qualified {
+				hds = errorRowCellStyle
+				bds = errorRowCellStyle
+			}
+			appendValueWithFgColor(row, hds, p.ID)
+			appendValueWithFgColor(row, hds, p.CreatedAt.Format("2006-01-02T15:04:05"))
+			appendValueWithFgColor(row, hds, p.D2Code)
+			appendValueWithFgColor(row, hds, p.LineID)
+			appendValueWithFgColor(row, hds, p.JigID)
+			appendValueWithFgColor(row, hds, p.MouldID)
+			appendValueWithFgColor(row, hds, p.ShiftNumber)
+
+			sqlRows, err := orm.DB.Raw(pvSQL, p.UUID).Rows()
+			if err != nil {
+				continue
+			}
+			for sqlRows.Next() {
+				var pv float64
+				sqlRows.Scan(&pv)
+				appendValueWithFgColor(row, bds, pv)
+			}
+
+			sqlRows.Close()
+			finished++
+			response.percent = finished / total
 		}
 
-		sqlRows.Close()
-		finished++
-		response.percent = finished / total
+		if stopLoop {
+			break
+		}
 	}
 
 	response.message = "正在处理统计数据"
@@ -285,6 +318,64 @@ func appendValueWithFgColor(row *xlsx.Row, style *xlsx.Style, v interface{}) {
 	cell := row.AddCell()
 	cell.SetStyle(style)
 	cell.SetValue(v)
+}
+
+type object map[string]string
+
+func Download(c *gin.Context) {
+	fileName, ok := c.GetQuery("file_name")
+	if !ok {
+		c.JSON(http.StatusBadRequest, object{
+			"message": "请求参数缺少文件名",
+		})
+		return
+	}
+
+	filePath := filepath.Join(conf.FileCachePath, fileName)
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, object{
+			"message": "下载文件失败",
+			"err":     err.Error(),
+		})
+	}
+	os.Remove(filePath) // 删除临时文件
+	c.Header("Content-Disposition", "attachment; filename="+fileName)
+	c.Data(http.StatusOK, xlsxContentType, data)
+}
+
+func CheckExport(opID string) (*model.ExportResponse, error) {
+	rsp, ok := handlerCache[opID]
+	if !ok {
+		return nil, errors.New("没有该导出任务的进度记录")
+	}
+
+	if rsp.err != nil {
+		return nil, rsp.err
+	}
+
+	var fileName = rsp.fileName
+	out := &model.ExportResponse{
+		Percent:  rsp.percent,
+		Message:  rsp.message,
+		FileName: &fileName,
+		Finished: rsp.finished,
+	}
+	if rsp.finished {
+		delete(handlerCache, opID)
+	}
+	return out, nil
+}
+
+func CancelExport(opID string) error {
+	rsp, ok := handlerCache[opID]
+	if !ok {
+		return errors.New("没有该导出任务的进度记录")
+	}
+
+	close(rsp.cancelChan)
+	delete(handlerCache, opID)
+	return nil
 }
 
 func init() {
