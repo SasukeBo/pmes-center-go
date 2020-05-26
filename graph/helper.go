@@ -5,13 +5,22 @@ import (
 )
 
 // NewGQLError _
-func NewGQLError(message, originErr string) error {
-	return &gqlerror.Error{
-		Message: message,
-		Extensions: map[string]interface{}{
-			"originErr": originErr,
-		},
+func NewGQLError(vars ...string) error {
+	if len(vars) < 1 {
+		panic("must have 1 variable at least")
 	}
+
+	err := &gqlerror.Error{
+		Message: vars[0],
+	}
+
+	if len(vars) > 1 {
+		err.Extensions = map[string]interface{}{
+			"originErr": vars[1],
+		}
+	}
+
+	return err
 }
 
 func stringP(s string) *string {

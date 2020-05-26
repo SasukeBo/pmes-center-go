@@ -80,33 +80,30 @@ func (r *queryResolver) AnalyzePoint(ctx context.Context, searchInput model.Sear
 
 	cond := strings.Join(conds, " AND ")
 	var pointResults []*model.PointResult
-	mpvs := make(map[int][]orm.PointValue)
+	mpvs := make(map[int][]float64)
 	for _, p := range points {
-		var pointValues []orm.PointValue
-		orm.DB.Joins("LEFT JOIN products ON point_values.product_uuid = products.uuid").Where(cond, vars...).Where("point_values.point_id = ?", p.ID).Find(&pointValues)
+		var pointValues []float64
+		rows, err := orm.DB.Model(&orm.PointValue{}).Joins(
+			"LEFT JOIN products ON point_values.product_uuid = products.uuid",
+		).Where(cond, vars...).Where("point_values.point_id = ?", p.ID).Select("point_values.v").Rows()
+		if err != nil {
+			rows.Close()
+			mpvs[p.ID] = pointValues
+			continue
+		}
+
+		for rows.Next() {
+			var v float64
+			rows.Scan(&v)
+			pointValues = append(pointValues, v)
+		}
+		rows.Close()
 		mpvs[p.ID] = pointValues
 	}
 
 	for _, p := range points {
-		pointValues := mpvs[p.ID]
-		total := len(pointValues)
-		ok := 0
-		valueSet := make([]float64, 0)
-		for _, v := range pointValues {
-			if p.NotValid(v.V) {
-				continue
-			}
-
-			valueSet = append(valueSet, v.V)
-			if v.V >= p.LowerLimit && v.V <= p.UpperLimit {
-				ok++
-			}
-		}
-
-		s := logic.RMSError(valueSet)
-		cp := logic.Cp(p.UpperLimit, p.LowerLimit, s)
-		avg := logic.Average(valueSet)
-		cpk := logic.Cpk(p.UpperLimit, p.LowerLimit, avg, s)
+		data := mpvs[p.ID]
+		s, cp, cpk, avg, ok, total, valueSet := logic.AnalyzePointValues(p, data)
 		min, max, values, freqs, distribution := logic.Distribute(s, avg, valueSet)
 
 		point := p

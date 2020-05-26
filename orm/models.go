@@ -57,10 +57,10 @@ type Product struct {
 	Qualified   bool      `gorm:"column:qualified;default:false"`
 	CreatedAt   time.Time `gorm:"index"`
 	D2Code      string    `gorm:"column:d2_code"`
-	LineID      int       `gorm:"column:line_id;index"`
+	LineID      string    `gorm:"column:line_id;index"`
 	JigID       string    `gorm:"column:jig_id;index"`
-	MouldID     int       `gorm:"column:mould_id;index"`
-	ShiftNumber int       `gorm:"index"`
+	MouldID     string    `gorm:"column:mould_id;index"`
+	ShiftNumber string    `gorm:"index"`
 }
 
 // Size 尺寸

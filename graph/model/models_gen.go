@@ -23,9 +23,11 @@ type DeviceResult struct {
 	Status *FetchStatus `json:"status"`
 }
 
-type Download struct {
-	FileContent   string `json:"fileContent"`
-	FileExtension string `json:"fileExtension"`
+type ExportResponse struct {
+	Percent  float64 `json:"percent"`
+	Message  string  `json:"message"`
+	FileName *string `json:"fileName"`
+	Finished bool    `json:"finished"`
 }
 
 type LoginInput struct {
@@ -100,10 +102,10 @@ type Product struct {
 	PointValue  map[string]interface{} `json:"pointValue"`
 	CreatedAt   *time.Time             `json:"createdAt"`
 	D2code      *string                `json:"d2code"`
-	LineID      *int                   `json:"lineID"`
+	LineID      *string                `json:"lineID"`
 	JigID       *string                `json:"jigID"`
-	MouldID     *int                   `json:"mouldID"`
-	ShiftNumber *int                   `json:"shiftNumber"`
+	MouldID     *string                `json:"mouldID"`
+	ShiftNumber *string                `json:"shiftNumber"`
 }
 
 type ProductWrap struct {
