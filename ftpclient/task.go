@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/SasukeBo/ftpviewer/orm"
 	stime "github.com/SasukeBo/lib/time"
+	"github.com/SasukeBo/log"
 	"regexp"
 	"runtime/debug"
 	"strconv"
@@ -85,8 +86,9 @@ func Store(xr *XLSXReader) {
 
 	products := make([]interface{}, 0)
 	pointValues := make([]interface{}, 0)
-	for _, row := range xr.DateSet {
+	for i, row := range xr.DataSet {
 		if !validRow(row) { // 过滤掉无效行和空行
+			log.Warn("empty row %v", i)
 			continue
 		}
 		qp := true
@@ -129,7 +131,6 @@ func Store(xr *XLSXReader) {
 
 func validRow(row []string) bool {
 	if len(row) == 0 {
-		fmt.Println("empty row")
 		return false
 	}
 	if row[0] == "" {
@@ -145,6 +146,7 @@ func validRow(row []string) bool {
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, fileID int, finishChan chan int) {
 	tx := orm.DB.Begin()
+	//tx.LogMode(true)
 	tx.LogMode(false)
 	datalen := len(dataset)
 	totalLen := datalen / itemLen
