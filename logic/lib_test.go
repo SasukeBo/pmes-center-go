@@ -7,7 +7,8 @@ import (
 )
 
 func TestIsMaterialExist(t *testing.T) {
-	fmt.Printf("material 1765 exist: %v\n", IsMaterialExist("1766"))
+	list := []int{1, 2}
+	fmt.Println(list[1:])
 }
 
 func TestRMSError(t *testing.T) {
