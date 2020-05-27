@@ -243,7 +243,7 @@ func (r *queryResolver) ExportProducts(ctx context.Context, searchInput model.Se
 func (r *queryResolver) ExportFinishPercent(ctx context.Context, opID string) (*model.ExportResponse, error) {
 	rsp, err := logic.CheckExport(opID)
 	if err != nil {
-		return nil, NewGQLError("查询导出进度失败", err.Error())
+		return nil, NewGQLError(rsp.Message, err.Error())
 	}
 
 	return rsp, nil

@@ -256,9 +256,6 @@ func HandleExport(opID string, material *orm.Material, search model.Search, cond
 	}
 
 	response.message = "正在处理统计数据"
-	response.percent = 0
-	total = float64(len(points))
-	finished = 0
 	xfSlice, err := file.ToSlice()
 	if err != nil {
 		response.err = err
@@ -273,8 +270,6 @@ func HandleExport(opID string, material *orm.Material, search model.Search, cond
 			pvs = append(pvs, pv)
 		}
 		calculateAndCreate(rMap, p, pvs)
-		finished++
-		response.percent = finished / total
 	}
 
 	response.message = "正在写入文件"
@@ -296,6 +291,7 @@ func HandleExport(opID string, material *orm.Material, search model.Search, cond
 	file.Save(filePath)
 	response.fileName = fileName
 	response.finished = true
+	response.message = "导出成功"
 }
 
 func calculateAndCreate(rMap rowMap, point orm.Point, values []float64) {
@@ -350,10 +346,6 @@ func CheckExport(opID string) (*model.ExportResponse, error) {
 		return nil, errors.New("没有该导出任务的进度记录")
 	}
 
-	if rsp.err != nil {
-		return nil, rsp.err
-	}
-
 	var fileName = rsp.fileName
 	out := &model.ExportResponse{
 		Percent:  rsp.percent,
@@ -364,7 +356,8 @@ func CheckExport(opID string) (*model.ExportResponse, error) {
 	if rsp.finished {
 		delete(handlerCache, opID)
 	}
-	return out, nil
+
+	return out, rsp.err
 }
 
 func CancelExport(opID string) error {
