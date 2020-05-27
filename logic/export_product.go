@@ -20,9 +20,10 @@ import (
 const (
 	CellRgbColorLightGreen = "00EFFFEF"
 	CellRgbColorYellow     = "7DFFFF00"
-	CellRgbColorDarkGreen  = "F9008000"
+	CellRgbColorDarkGreen  = "00508C60"
 	CellRgbColorWhite      = "00FFFFFF"
-	CellRgbColorRed        = "F9F50808"
+	CellRgbColorRed        = "00F59D87"
+	CellRgbColorDarkRed    = "00E41515"
 )
 
 const (
@@ -65,6 +66,7 @@ var (
 	errorRowCellStyle  = newNormalStyle(CellRgbColorRed)
 	normalCellStyle    = newNormalStyle(CellRgbColorWhite)
 	dataCellStyle      = newNormalStyle(CellRgbColorDarkGreen)
+	errorCellStyle     = newNormalStyle(CellRgbColorDarkRed)
 )
 
 type rowMap map[string]*xlsx.Row
@@ -148,7 +150,16 @@ var handlerCache map[string]*handlerResponse
 
 const (
 	xlsxContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-	pvSQL           = `SELECT pv.v FROM point_values AS pv JOIN points AS p ON pv.point_id = p.id WHERE pv.product_uuid = ? ORDER BY p.index ASC`
+	pvSQL           = `
+SELECT
+	pv.v, pv.v >= p.lower_limit AND pv.v <= p.upper_limit AS qualified
+FROM
+	point_values AS pv
+	JOIN points AS p ON pv.point_id = p.id
+WHERE
+	pv.product_uuid = ?
+ORDER BY
+	p.index ASC`
 )
 
 func HandleExport(opID string, material *orm.Material, search model.Search, condition string, vars ...interface{}) {
@@ -166,6 +177,7 @@ func HandleExport(opID string, material *orm.Material, search model.Search, cond
 		response.message = "导出失败，发生了一些错误"
 		return
 	}
+	creatTipsRow(sheet)
 
 	// 获取表头信息
 	var sizeIDs []int
@@ -241,8 +253,13 @@ func HandleExport(opID string, material *orm.Material, search model.Search, cond
 			}
 			for sqlRows.Next() {
 				var pv float64
-				sqlRows.Scan(&pv)
-				appendValueWithFgColor(row, bds, pv)
+				var qualified int
+				sqlRows.Scan(&pv, &qualified)
+				if qualified == 1 {
+					appendValueWithFgColor(row, bds, pv)
+				} else {
+					appendValueWithFgColor(row, errorCellStyle, pv)
+				}
 			}
 
 			sqlRows.Close()
@@ -261,7 +278,7 @@ func HandleExport(opID string, material *orm.Material, search model.Search, cond
 		response.err = err
 		response.message = "统计数据时发生错误，导出失败"
 	}
-	dataRows := xfSlice[0]
+	dataRows := xfSlice[0][1:]
 	for i, p := range points {
 		pvs := make([]float64, 0)
 		for j := 12; j < len(dataRows); j++ {
@@ -369,6 +386,39 @@ func CancelExport(opID string) error {
 	close(rsp.cancelChan)
 	delete(handlerCache, opID)
 	return nil
+}
+
+func creatTipsRow(sheet *xlsx.Sheet) {
+	tipRow := sheet.AddRow()
+	descriptionCell := tipRow.AddCell()
+	descriptionCell.SetString("颜色标注说明：")
+	descriptionCell.SetStyle(normalCellStyle)
+	descriptionCell.Merge(1, 0)
+	tipRow.AddCell()
+
+	header := tipRow.AddCell()
+	header.SetStyle(headerCellStyle)
+	header.SetString("表头及统计数据")
+	header.Merge(1, 0)
+	tipRow.AddCell()
+
+	data := tipRow.AddCell()
+	data.SetStyle(dataCellStyle)
+	data.SetString("检测数据")
+	data.Merge(1, 0)
+	tipRow.AddCell()
+
+	perr := tipRow.AddCell()
+	perr.SetStyle(errorRowCellStyle)
+	perr.SetString("产品不良")
+	perr.Merge(1, 0)
+	tipRow.AddCell()
+
+	cerr := tipRow.AddCell()
+	cerr.SetStyle(errorCellStyle)
+	cerr.SetString("尺寸不良")
+	cerr.Merge(1, 0)
+	tipRow.AddCell()
 }
 
 func init() {
