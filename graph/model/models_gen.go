@@ -158,6 +158,11 @@ type User struct {
 	Admin   *bool   `json:"admin"`
 }
 
+type YieldWrap struct {
+	Name  string  `json:"name"`
+	Value float64 `json:"value"`
+}
+
 type FetchStatus struct {
 	Message *string `json:"message"`
 	Pending *bool   `json:"pending"`

@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
@@ -9,7 +10,7 @@ import (
 	"time"
 )
 
-func (r *queryResolver) AnalyzePoint(ctx context.Context, searchInput model.Search, limit int, offset int) (*model.PointResultsWrap, error) {
+func (r *queryResolver) AnalyzePoint(ctx context.Context, searchInput model.Search, limit int, offset int, pattern *string) (*model.PointResultsWrap, error) {
 	if searchInput.MaterialID == nil {
 		return nil, NewGQLError("料号ID不能为空", "")
 	}
@@ -24,13 +25,18 @@ func (r *queryResolver) AnalyzePoint(ctx context.Context, searchInput model.Sear
 		return nil, NewGQLError("获取该料号的尺寸信息发生错误", err.Error())
 	}
 
+	pointSql := orm.DB.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs)
+	if pattern != nil {
+		pointSql = pointSql.Where("name LIKE ?", fmt.Sprintf("%%%s%%", *pattern))
+	}
+
 	var points []orm.Point
-	if err := orm.DB.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs).Order("points.index ASC").Limit(limit).Offset(offset).Find(&points).Error; err != nil {
+	if err := pointSql.Order("points.index ASC").Limit(limit).Offset(offset).Find(&points).Error; err != nil {
 		return nil, NewGQLError("获取尺寸点位失败", err.Error())
 	}
 
 	var total int
-	if err := orm.DB.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs).Count(&total).Error; err != nil {
+	if err := pointSql.Count(&total).Error; err != nil {
 		return nil, NewGQLError("统计检测点位总数时发生错误", err.Error())
 	}
 
@@ -52,7 +58,6 @@ func (r *queryResolver) AnalyzePoint(ctx context.Context, searchInput model.Sear
 		conds = append(conds, "device_id = ?")
 		vars = append(vars, *searchInput.DeviceID)
 	}
-
 	conds = append(conds, "created_at > ?")
 	vars = append(vars, *begin)
 	conds = append(conds, "created_at < ?")
@@ -81,11 +86,11 @@ func (r *queryResolver) AnalyzePoint(ctx context.Context, searchInput model.Sear
 	cond := strings.Join(conds, " AND ")
 	var pointResults []*model.PointResult
 	mpvs := make(map[int][]float64)
+	sql := orm.DB.Model(&orm.PointValue{}).Joins("LEFT JOIN products ON point_values.product_uuid = products.uuid").Where(cond, vars...).Select("point_values.v")
+
 	for _, p := range points {
 		var pointValues []float64
-		rows, err := orm.DB.Model(&orm.PointValue{}).Joins(
-			"LEFT JOIN products ON point_values.product_uuid = products.uuid",
-		).Where(cond, vars...).Where("point_values.point_id = ?", p.ID).Select("point_values.v").Rows()
+		rows, err := sql.Where("point_values.point_id = ?", p.ID).Rows()
 		if err != nil {
 			rows.Close()
 			mpvs[p.ID] = pointValues
@@ -167,4 +172,118 @@ func (r *queryResolver) Sizes(ctx context.Context, page int, limit int, material
 		Total: &count,
 		Sizes: outs,
 	}, nil
+}
+
+func (r *queryResolver) TotalPointYield(ctx context.Context, searchInput model.Search, pattern *string) ([]*model.YieldWrap, error) {
+	if searchInput.MaterialID == nil {
+		return nil, NewGQLError("料号ID不能为空", "")
+	}
+
+	material := orm.GetMaterialWithID(*searchInput.MaterialID)
+	if material == nil {
+		return nil, NewGQLError("没有找到该尺寸所属的料号", "")
+	}
+
+	var sizeIDs []int
+	if err := orm.DB.Model(&orm.Size{}).Where("material_id = ?", material.ID).Pluck("id", &sizeIDs).Error; err != nil {
+		return nil, NewGQLError("获取该料号的尺寸信息发生错误", err.Error())
+	}
+
+	pointSql := orm.DB.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs)
+	if pattern != nil {
+		pointSql = pointSql.Where("name LIKE ?", fmt.Sprintf("%%%s%%", *pattern))
+	}
+
+	var points []orm.Point
+	if err := pointSql.Order("points.index ASC").Find(&points).Error; err != nil {
+		return nil, NewGQLError("获取尺寸点位失败", err.Error())
+	}
+
+	end := searchInput.EndTime
+	if end == nil {
+		t := time.Now()
+		end = &t
+	}
+	begin := searchInput.BeginTime
+	if begin == nil {
+		t := end.AddDate(0, -1, 0)
+		begin = &t
+	}
+
+	var conds []string
+	var vars []interface{}
+
+	if searchInput.DeviceID != nil {
+		conds = append(conds, "device_id = ?")
+		vars = append(vars, *searchInput.DeviceID)
+	}
+	conds = append(conds, "created_at > ?")
+	vars = append(vars, *begin)
+	conds = append(conds, "created_at < ?")
+	vars = append(vars, *end)
+
+	if lineID, ok := searchInput.Extra["lineID"]; ok {
+		conds = append(conds, "line_id = ?")
+		vars = append(vars, lineID)
+	}
+
+	if mouldID, ok := searchInput.Extra["mouldID"]; ok {
+		conds = append(conds, "mould_id = ?")
+		vars = append(vars, mouldID)
+	}
+
+	if jigID, ok := searchInput.Extra["jigID"]; ok {
+		conds = append(conds, "jig_id = ?")
+		vars = append(vars, jigID)
+	}
+
+	if shiftNumber, ok := searchInput.Extra["shiftNumber"]; ok {
+		conds = append(conds, "shift_number = ?")
+		vars = append(vars, shiftNumber)
+	}
+
+	cond := strings.Join(conds, " AND ")
+	mpvs := make(map[int][]float64)
+	sql := orm.DB.Model(&orm.PointValue{}).Joins("LEFT JOIN products ON point_values.product_uuid = products.uuid").Where(cond, vars...).Select("point_values.v")
+
+	for _, p := range points {
+		var pointValues []float64
+		rows, err := sql.Where("point_values.point_id = ?", p.ID).Rows()
+		if err != nil {
+			rows.Close()
+			mpvs[p.ID] = pointValues
+			continue
+		}
+
+		for rows.Next() {
+			var v float64
+			rows.Scan(&v)
+			pointValues = append(pointValues, v)
+		}
+		rows.Close()
+		mpvs[p.ID] = pointValues
+	}
+
+	var out []*model.YieldWrap
+	for _, p := range points {
+		data := mpvs[p.ID]
+		total := len(data)
+		ok := 0
+		for _, v := range data {
+			if p.NotValid(v) {
+				continue
+			}
+
+			if v >= p.LowerLimit && v <= p.UpperLimit {
+				ok++
+			}
+		}
+		o := &model.YieldWrap{
+			Name:  p.Name,
+			Value: float64(ok) / float64(total),
+		}
+		out = append(out, o)
+	}
+
+	return out, nil
 }

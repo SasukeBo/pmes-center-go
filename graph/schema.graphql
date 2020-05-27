@@ -6,7 +6,9 @@ type Query {
   "导出产品数据，返回opID，表示处理的uuid"
   exportProducts(searchInput: Search!): String!
   "分析点位数据"
-  analyzePoint(searchInput: Search!, limit: Int!, offset: Int!): PointResultsWrap!
+  analyzePoint(searchInput: Search!, limit: Int!, offset: Int!, pattern: String): PointResultsWrap!
+  "查询所有点位良率"
+  totalPointYield(searchInput: Search!, pattern: String): [YieldWrap]!
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeMaterial(searchInput: Search!): MaterialResult!
   "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
@@ -46,6 +48,11 @@ type ExportResponse {
   message: String!
   fileName: String
   finished: Boolean!
+}
+
+type YieldWrap {
+  name: String!
+  value: Float!
 }
 
 input MaterialUpdateInput {

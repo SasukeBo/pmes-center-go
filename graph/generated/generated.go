@@ -149,7 +149,7 @@ type ComplexityRoot struct {
 	Query struct {
 		AnalyzeDevice          func(childComplexity int, searchInput model.Search) int
 		AnalyzeMaterial        func(childComplexity int, searchInput model.Search) int
-		AnalyzePoint           func(childComplexity int, searchInput model.Search, limit int, offset int) int
+		AnalyzePoint           func(childComplexity int, searchInput model.Search, limit int, offset int, pattern *string) int
 		CurrentUser            func(childComplexity int) int
 		DataFetchFinishPercent func(childComplexity int, fileIDs []*int) int
 		Devices                func(childComplexity int, materialID int) int
@@ -159,6 +159,7 @@ type ComplexityRoot struct {
 		MaterialsWithSearch    func(childComplexity int, offset int, limit int, search *string) int
 		Products               func(childComplexity int, searchInput model.Search, page *int, limit int, offset *int) int
 		Sizes                  func(childComplexity int, page int, limit int, materialID int) int
+		TotalPointYield        func(childComplexity int, searchInput model.Search, pattern *string) int
 	}
 
 	Size struct {
@@ -186,6 +187,11 @@ type ComplexityRoot struct {
 		ID      func(childComplexity int) int
 	}
 
+	YieldWrap struct {
+		Name  func(childComplexity int) int
+		Value func(childComplexity int) int
+	}
+
 	FetchStatus struct {
 		FileIDs func(childComplexity int) int
 		Message func(childComplexity int) int
@@ -206,7 +212,8 @@ type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
 	Products(ctx context.Context, searchInput model.Search, page *int, limit int, offset *int) (*model.ProductWrap, error)
 	ExportProducts(ctx context.Context, searchInput model.Search) (string, error)
-	AnalyzePoint(ctx context.Context, searchInput model.Search, limit int, offset int) (*model.PointResultsWrap, error)
+	AnalyzePoint(ctx context.Context, searchInput model.Search, limit int, offset int, pattern *string) (*model.PointResultsWrap, error)
+	TotalPointYield(ctx context.Context, searchInput model.Search, pattern *string) ([]*model.YieldWrap, error)
 	AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error)
 	AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.DeviceResult, error)
 	Sizes(ctx context.Context, page int, limit int, materialID int) (*model.SizeWrap, error)
@@ -737,7 +744,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.AnalyzePoint(childComplexity, args["searchInput"].(model.Search), args["limit"].(int), args["offset"].(int)), true
+		return e.complexity.Query.AnalyzePoint(childComplexity, args["searchInput"].(model.Search), args["limit"].(int), args["offset"].(int), args["pattern"].(*string)), true
 
 	case "Query.currentUser":
 		if e.complexity.Query.CurrentUser == nil {
@@ -842,6 +849,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Sizes(childComplexity, args["page"].(int), args["limit"].(int), args["materialID"].(int)), true
 
+	case "Query.totalPointYield":
+		if e.complexity.Query.TotalPointYield == nil {
+			break
+		}
+
+		args, err := ec.field_Query_totalPointYield_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TotalPointYield(childComplexity, args["searchInput"].(model.Search), args["pattern"].(*string)), true
+
 	case "Size.id":
 		if e.complexity.Size.ID == nil {
 			break
@@ -932,6 +951,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.ID(childComplexity), true
+
+	case "YieldWrap.name":
+		if e.complexity.YieldWrap.Name == nil {
+			break
+		}
+
+		return e.complexity.YieldWrap.Name(childComplexity), true
+
+	case "YieldWrap.value":
+		if e.complexity.YieldWrap.Value == nil {
+			break
+		}
+
+		return e.complexity.YieldWrap.Value(childComplexity), true
 
 	case "fetchStatus.fileIDs":
 		if e.complexity.FetchStatus.FileIDs == nil {
@@ -1026,7 +1059,9 @@ var sources = []*ast.Source{
   "导出产品数据，返回opID，表示处理的uuid"
   exportProducts(searchInput: Search!): String!
   "分析点位数据"
-  analyzePoint(searchInput: Search!, limit: Int!, offset: Int!): PointResultsWrap!
+  analyzePoint(searchInput: Search!, limit: Int!, offset: Int!, pattern: String): PointResultsWrap!
+  "查询所有点位良率"
+  totalPointYield(searchInput: Search!, pattern: String): [YieldWrap]!
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeMaterial(searchInput: Search!): MaterialResult!
   "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
@@ -1066,6 +1101,11 @@ type ExportResponse {
   message: String!
   fileName: String
   finished: Boolean!
+}
+
+type YieldWrap {
+  name: String!
+  value: Float!
 }
 
 input MaterialUpdateInput {
@@ -1382,6 +1422,14 @@ func (ec *executionContext) field_Query_analyzePoint_args(ctx context.Context, r
 		}
 	}
 	args["offset"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["pattern"]; ok {
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pattern"] = arg3
 	return args, nil
 }
 
@@ -1558,6 +1606,28 @@ func (ec *executionContext) field_Query_sizes_args(ctx context.Context, rawArgs 
 		}
 	}
 	args["materialID"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_totalPointYield_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.Search
+	if tmp, ok := rawArgs["searchInput"]; ok {
+		arg0, err = ec.unmarshalNSearch2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSearch(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["searchInput"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["pattern"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pattern"] = arg1
 	return args, nil
 }
 
@@ -3771,7 +3841,7 @@ func (ec *executionContext) _Query_analyzePoint(ctx context.Context, field graph
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AnalyzePoint(rctx, args["searchInput"].(model.Search), args["limit"].(int), args["offset"].(int))
+		return ec.resolvers.Query().AnalyzePoint(rctx, args["searchInput"].(model.Search), args["limit"].(int), args["offset"].(int), args["pattern"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3786,6 +3856,47 @@ func (ec *executionContext) _Query_analyzePoint(ctx context.Context, field graph
 	res := resTmp.(*model.PointResultsWrap)
 	fc.Result = res
 	return ec.marshalNPointResultsWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐPointResultsWrap(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_totalPointYield(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_totalPointYield_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TotalPointYield(rctx, args["searchInput"].(model.Search), args["pattern"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.YieldWrap)
+	fc.Result = res
+	return ec.marshalNYieldWrap2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐYieldWrap(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_analyzeMaterial(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4586,6 +4697,74 @@ func (ec *executionContext) _User_admin(ctx context.Context, field graphql.Colle
 	res := resTmp.(*bool)
 	fc.Result = res
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _YieldWrap_name(ctx context.Context, field graphql.CollectedField, obj *model.YieldWrap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "YieldWrap",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _YieldWrap_value(ctx context.Context, field graphql.CollectedField, obj *model.YieldWrap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "YieldWrap",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -6420,6 +6599,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "totalPointYield":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_totalPointYield(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "analyzeMaterial":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -6650,6 +6843,38 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_account(ctx, field, obj)
 		case "admin":
 			out.Values[i] = ec._User_admin(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var yieldWrapImplementors = []string{"YieldWrap"}
+
+func (ec *executionContext) _YieldWrap(ctx context.Context, sel ast.SelectionSet, obj *model.YieldWrap) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, yieldWrapImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("YieldWrap")
+		case "name":
+			out.Values[i] = ec._YieldWrap_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "value":
+			out.Values[i] = ec._YieldWrap_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7272,6 +7497,43 @@ func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋSasukeBoᚋftpviewer�
 	return ec._User(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNYieldWrap2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐYieldWrap(ctx context.Context, sel ast.SelectionSet, v []*model.YieldWrap) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOYieldWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐYieldWrap(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
@@ -7882,6 +8144,17 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 		return graphql.Null
 	}
 	return ec.marshalOTime2timeᚐTime(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalOYieldWrap2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐYieldWrap(ctx context.Context, sel ast.SelectionSet, v model.YieldWrap) graphql.Marshaler {
+	return ec._YieldWrap(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOYieldWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐYieldWrap(ctx context.Context, sel ast.SelectionSet, v *model.YieldWrap) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._YieldWrap(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {
