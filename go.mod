@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/99designs/gqlgen v0.11.3
-	github.com/SasukeBo/lib v0.0.0-20200505011736-5d2e52c29cdc
+	github.com/SasukeBo/lib v0.0.0-20200527114554-7d04dff0ae99
 	github.com/SasukeBo/log v1.0.0
 	github.com/chfenger/goNum v0.0.0-20191211064013-a00d841c1e7b // indirect
 	github.com/dgryski/trifles v0.0.0-20191129005055-5a6159895336 // indirect

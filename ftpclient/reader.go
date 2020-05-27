@@ -9,9 +9,10 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
+	"github.com/SasukeBo/log"
 	"github.com/tealeg/xlsx"
-	"log"
 	"path/filepath"
+	"strconv"
 )
 
 // CSVDecoder csv decoder object
@@ -45,7 +46,7 @@ type SL struct {
 }
 
 type XLSXReader struct {
-	DateSet    [][]string    // only cache data of sheet 1
+	DataSet    [][]string    // only cache data of sheet 1
 	DimSL      map[string]SL // map cache key (dim) and value([uSL, lSL])
 	MaterialID string
 	DeviceName string
@@ -54,7 +55,7 @@ type XLSXReader struct {
 
 func NewXLSXReader() *XLSXReader {
 	return &XLSXReader{
-		DateSet: make([][]string, 0),
+		DataSet: make([][]string, 0),
 		DimSL:   make(map[string]SL),
 	}
 }
@@ -66,12 +67,25 @@ func (xr *XLSXReader) ReadSize(path string) error {
 	}
 
 	var dimSet, USLSet, LSLSet *[]string
-	dimSet = &dataSheet[2]
-	USLSet = &dataSheet[3]
-	LSLSet = &dataSheet[5]
+	for i, row := range dataSheet {
+		switch row[0] {
+		case "Dim":
+			dimSet = &dataSheet[i]
+		case "USL":
+			USLSet = &dataSheet[i]
+		case "LSL":
+			LSLSet = &dataSheet[i]
+		}
+
+		if dimSet != nil && USLSet != nil && LSLSet != nil {
+			break
+		}
+	}
 
 	if dimSet == nil || USLSet == nil || LSLSet == nil {
-		return errors.New("xlsx文件格式有误。")
+		err := errors.New("xlsx文件格式有误。")
+		log.Errorln(err)
+		return err
 	}
 
 	for i, k := range *dimSet {
@@ -105,7 +119,26 @@ func (xr *XLSXReader) Read(path string) error {
 	if err != nil {
 		return err
 	}
-	xr.DateSet = dataSheet[15:]
+	var bIdx = 0
+	var eIdx = 0
+	for i, row := range dataSheet {
+		if len(row) == 0 {
+			eIdx = i
+		}
+		if bIdx == 0 {
+			_, err := strconv.Atoi(row[0])
+			if err == nil {
+				bIdx = i
+			}
+		}
+		if bIdx > 0 && eIdx > 0 && eIdx > bIdx {
+			break
+		}
+	}
+	dataSet := dataSheet[bIdx : eIdx-1]
+	xr.DataSet = dataSet
+
+	log.Info("data begin idx: %v, end idx: %v\n", bIdx, eIdx)
 	return nil
 }
 
@@ -117,7 +150,7 @@ func read(path string) ([][]string, error) {
 			return nil, err
 		}
 
-		log.Println(err)
+		log.Errorln(err)
 		return nil, &FTPError{
 			Message:   fmt.Sprintf("从FTP服务器读取文件%s失败", path),
 			OriginErr: err,

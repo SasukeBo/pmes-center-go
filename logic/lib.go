@@ -83,7 +83,7 @@ func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error)
 	xr := ftpclient.NewXLSXReader()
 	err := xr.ReadSize(resolvePath(material.Name, files[0].File))
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("读取数据文件%s失败", files[0].File))
+		return nil, errors.New(fmt.Sprintf("读取数据文件%s失败: %v", files[0].File, err))
 	}
 	handleSizePoint(xr.DimSL, material.ID)
 	colLen := len(xr.DimSL)
@@ -101,27 +101,36 @@ func fetchMaterialDatas(material orm.Material, files []FetchFile) ([]int, error)
 		}
 		fileIDs = append(fileIDs, file.ID)
 		go func() {
+			log.Warn("start read routine with file: %s\n", path)
 			err := xr.Read(path)
 			if err != nil {
 				log.Error("read path(%s) error: %v", path, err)
 				return
 			}
-			rowLen := len(xr.DateSet)
+			rowLen := len(xr.DataSet)
 			total := (colLen + 1) * rowLen
 			orm.DB.Model(&orm.File{}).Where("id = ?", file.ID).Update("total_rows", total)
 			xr.PathID = file.ID
 
 			xlsxReaders = append(xlsxReaders, xr)
 			fileWaitChan <- 1
+			log.Warn("finish read routine with file: %s\n", path)
 		}()
 	}
 
 	// 这样做的目的是为了保证拉取数据前，file的total_rows已经准备就绪，否则造成前端数据完成进度条回滚的现象
 	var count int
+	var timeout = false
 	for {
-		i := <-fileWaitChan
-		count = count + i
-		if count == 3 {
+		select {
+		case i := <-fileWaitChan:
+			count = count + i
+		case <-time.After(time.Second * 5):
+			log.Warnln("read file time out")
+			timeout = true
+		}
+
+		if count == len(files) || timeout {
 			break
 		}
 	}
@@ -202,7 +211,8 @@ func NeedFetch(m *orm.Material, begin, end *time.Time) ([]int, error) {
 	}
 
 	for _, p := range ftpFileList {
-		need, deviceName, fileDate := checkFile(p,begin, end)
+		need, deviceName, fileDate := checkFile(p, begin, end)
+		fmt.Println(need, deviceName, fileDate)
 		if !need {
 			continue
 		}

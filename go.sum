@@ -3,6 +3,8 @@ github.com/99designs/gqlgen v0.11.3/go.mod h1:RgX5GRRdDWNkh4pBrdzNpNPFVsdoUFY2+a
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/SasukeBo/lib v0.0.0-20200505011736-5d2e52c29cdc h1:2yeQLfEmZYLPNztuRy2ef8DoM8B/NIEe4MpnddUT0fQ=
 github.com/SasukeBo/lib v0.0.0-20200505011736-5d2e52c29cdc/go.mod h1:nuJxlxGF6AfZKCDc6CnUjBr9W2abJ4526+cCkSwBj3Y=
+github.com/SasukeBo/lib v0.0.0-20200527114554-7d04dff0ae99 h1:kC0A4STxgCIH9u5Z/aVzFKOGDJ6mZAJrV6IU++S+U24=
+github.com/SasukeBo/lib v0.0.0-20200527114554-7d04dff0ae99/go.mod h1:nuJxlxGF6AfZKCDc6CnUjBr9W2abJ4526+cCkSwBj3Y=
 github.com/SasukeBo/log v1.0.0 h1:wklEBgyTD4pH1ihTTu7Uw6KvushDfAlbTkkjQ4dFN4Y=
 github.com/SasukeBo/log v1.0.0/go.mod h1:3+Xt6o8Vv47/eRT/xqyNyVeYf3sLzyeRp7MFLLsex6o=
 github.com/SasukeBo/xlsx v1.0.5-fork h1:Lrsf0vFTE2LpcEQiFT/P1jQZxIvfCUZzKRcqV9c/3lU=
