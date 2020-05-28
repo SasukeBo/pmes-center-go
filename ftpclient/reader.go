@@ -86,7 +86,7 @@ func (xr *XLSXReader) ReadSize(path string) error {
 	}
 
 	if dimSet == nil || USLSet == nil || LSLSet == nil {
-		err := errors.New("xlsx文件格式有误。")
+		err := errors.New(fmt.Sprintf("xlsx文件格式有误。%s", path))
 		log.Errorln(err)
 		return err
 	}
@@ -127,6 +127,7 @@ func (xr *XLSXReader) Read(path string) error {
 	for i, row := range dataSheet {
 		if len(row) == 0 {
 			eIdx = i
+			continue
 		}
 		if bIdx == 0 {
 			_, err := strconv.Atoi(row[0])
