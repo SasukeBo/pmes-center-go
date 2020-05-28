@@ -68,6 +68,9 @@ func (xr *XLSXReader) ReadSize(path string) error {
 
 	var dimSet, USLSet, LSLSet *[]string
 	for i, row := range dataSheet {
+		if len(row) ==0 {
+			continue
+		}
 		switch row[0] {
 		case "Dim":
 			dimSet = &dataSheet[i]
