@@ -17,6 +17,10 @@ import (
 // DB connection to database
 var DB *gorm.DB
 
+func Create(object interface{}) *gorm.DB {
+	return DB.Create(object)
+}
+
 func init() {
 	var err error
 	var dns = fmt.Sprintf(
@@ -42,7 +46,7 @@ func init() {
 		break
 	}
 
-	if configer.GetEnv("env") == "prod" {
+	if configer.GetString("env") == "prod" {
 		DB.LogMode(false)
 	} else {
 		DB.LogMode(true)
@@ -67,7 +71,9 @@ func init() {
 		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
 	}
 
-	generateRootUser()
+	if configer.GetString("env") != "test" {
+		generateRootUser()
+	}
 	generateDefaultConfig()
 	utf8GeneralCI()
 }

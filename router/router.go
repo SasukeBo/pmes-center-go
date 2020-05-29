@@ -1,6 +1,8 @@
 package router
 
 import (
+	"fmt"
+	"github.com/SasukeBo/configer"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"time"
@@ -24,5 +26,5 @@ func Start() {
 	r.GET("/active", active)
 	r.GET("/", basicAuth, playgroundHandler())
 	r.GET("/downloads", download)
-	r.Run(":44761")
+	r.Run(fmt.Sprintf(":%s", configer.GetString("port")))
 }
