@@ -2,12 +2,10 @@ package orm
 
 import (
 	"fmt"
+	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/ftpviewer/util"
 	"github.com/SasukeBo/log"
-
-	"github.com/SasukeBo/configer"
 	"github.com/jinzhu/gorm"
-
 	"time"
 
 	// set db driver
@@ -17,65 +15,15 @@ import (
 // DB connection to database
 var DB *gorm.DB
 
-func Create(object interface{}) *gorm.DB {
-	return DB.Create(object)
-}
-
-func init() {
-	var err error
-	var dns = fmt.Sprintf(
+func createUriWithDBName(name string) string {
+	return fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		configer.GetString("db_user"),
 		configer.GetString("db_pass"),
 		configer.GetString("db_host"),
 		configer.GetString("db_port"),
-		configer.GetString("db_name"),
+		name,
 	)
-
-	reconnectLimit := 5
-	for {
-		DB, err = gorm.Open("mysql", dns)
-		log.Info("open connection to mysql %s\n", dns)
-		if err != nil && reconnectLimit > 0 {
-			log.Errorln(err)
-			reconnectLimit--
-			time.Sleep(time.Duration(5-reconnectLimit) * 2 * time.Second)
-			log.Infoln("try to reconnect db again ...")
-			continue
-		}
-		break
-	}
-
-	if configer.GetString("env") == "prod" {
-		DB.LogMode(false)
-	} else {
-		DB.LogMode(true)
-	}
-
-	if err != nil {
-		panic(fmt.Errorf("open connection to db error: \n%v", err.Error()))
-	}
-
-	err = DB.AutoMigrate(
-		&SystemConfig{},
-		&Device{},
-		&Product{},
-		&Size{},
-		&Point{},
-		&PointValue{},
-		&Material{},
-		&User{},
-		&File{},
-	).Error
-	if err != nil {
-		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
-	}
-
-	if configer.GetString("env") != "test" {
-		generateRootUser()
-	}
-	generateDefaultConfig()
-	utf8GeneralCI()
 }
 
 func generateDefaultConfig() {
@@ -85,18 +33,16 @@ func generateDefaultConfig() {
 	SetIfNotExist("ftp_password", configer.GetString("ftp_password"))
 }
 
-func utf8GeneralCI() {
+func alterTableUtf8(tbname string) {
+	DB.Exec(fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci", tbname))
+}
+
+func utf8GeneralCI(tableNames []string) {
 	DB.Exec("SET collation_connection = 'utf8_general_ci'")
-	DB.Exec("ALTER DATABASE ftpviewer CHARACTER SET utf8 COLLATE utf8_general_ci")
-	DB.Exec("ALTER TABLE devices CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
-	DB.Exec("ALTER TABLE files CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
-	DB.Exec("ALTER TABLE materials CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
-	DB.Exec("ALTER TABLE products CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
-	DB.Exec("ALTER TABLE points CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
-	DB.Exec("ALTER TABLE point_values CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
-	DB.Exec("ALTER TABLE sizes CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
-	DB.Exec("ALTER TABLE system_configs CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
-	DB.Exec("ALTER TABLE users CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci")
+	DB.Exec(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET utf8 COLLATE utf8_general_ci", configer.GetString("db_name")))
+	for _, name := range tableNames {
+		alterTableUtf8(name)
+	}
 }
 
 func generateRootUser() {
@@ -114,4 +60,62 @@ func generateRootUser() {
 			panic(fmt.Sprintf("Generate root user failed: %v", err))
 		}
 	}
+}
+
+func init() {
+	var err error
+	var uri = createUriWithDBName("mysql")
+	var dbname = configer.GetString("db_name")
+
+	reconnectLimit := 5
+	for {
+		conn, err := gorm.Open("mysql", uri)
+		if err != nil && reconnectLimit > 0 {
+			log.Errorln(err)
+			reconnectLimit--
+			time.Sleep(time.Duration(5-reconnectLimit) * 2 * time.Second)
+			log.Info("open connection with %s failed, try again ...\n", uri)
+			continue
+		}
+		conn.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS %s", dbname))
+		conn.Close()
+		break
+	}
+
+	DB, err = gorm.Open("mysql", createUriWithDBName(dbname))
+	if err != nil {
+		panic(err)
+	}
+
+	if configer.GetString("env") == "prod" {
+		DB.LogMode(false)
+	} else {
+		DB.LogMode(true)
+	}
+
+	if err != nil {
+		panic(fmt.Errorf("open connection to db error: \n%v", err.Error()))
+	}
+
+	err = DB.AutoMigrate(
+		&DecodeTemplate{},
+		&Device{},
+		&ImportRecord{},
+		&Material{},
+		&Point{},
+		&Product{},
+		&SystemConfig{},
+		&User{},
+	).Error
+	if err != nil {
+		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
+	}
+
+	if configer.GetString("env") != "test" {
+		generateRootUser()
+	}
+	generateDefaultConfig()
+
+	tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users"}
+	utf8GeneralCI(tableNames)
 }
