@@ -2,38 +2,33 @@ package graph
 
 import (
 	"context"
+	"github.com/SasukeBo/ftpviewer/errormap"
+	"github.com/SasukeBo/ftpviewer/graph/logic"
 	"github.com/SasukeBo/ftpviewer/graph/model"
-	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/SasukeBo/ftpviewer/util"
 	"github.com/jinzhu/gorm"
 )
 
 func (r *mutationResolver) Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error) {
+	gc := logic.GetGinContext(ctx)
 	var user orm.User
 
 	if err := orm.DB.Where("username = ? AND password = ?", loginInput.Account, util.Encrypt(loginInput.Password)).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, NewGQLError("账号或密码不正确", err.Error())
+			return nil, errormap.SendGQLError(gc, errormap.ErrorCodeAccountPasswordIncorrect, err)
 		}
 
-		return nil, NewGQLError("登录失败", err.Error())
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeLoginFailed, err)
 	}
 
 	token := logic.GenToken(user.Password)
 	if err := orm.DB.Model(&user).Update("access_token", token).Error; err != nil {
-		return nil, NewGQLError("登录失败", err.Error())
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeLoginFailed, err)
 	}
 
-	gc, err := logic.GetGinContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if gc != nil {
-		maxAge := 7 * 24 * 60 * 60
-		gc.SetCookie("access_token", token, maxAge, "/", "", false, true)
-	}
+	maxAge := 7 * 24 * 60 * 60
+	gc.SetCookie("access_token", token, maxAge, "/", "", false, true)
 
 	userID := int(user.ID)
 	return &model.User{
@@ -44,13 +39,14 @@ func (r *mutationResolver) Login(ctx context.Context, loginInput model.LoginInpu
 }
 
 func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
+	gc := logic.GetGinContext(ctx)
 	if err := logic.Authenticate(ctx); err != nil {
 		return nil, err
 	}
 
 	user := logic.CurrentUser(ctx)
 	if user == nil {
-		return nil, NewGQLError("用户未登录", "current user is nil")
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeUnauthenticated, errormap.NewOrigin("current user is nil"))
 	}
 
 	return &model.User{

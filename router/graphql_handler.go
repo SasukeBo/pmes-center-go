@@ -29,15 +29,9 @@ func playgroundHandler() gin.HandlerFunc {
 	}
 }
 
-// GinContextToContextMiddleware store gin.Context into context.Context
-func ginContextToContextMiddleware() gin.HandlerFunc {
+// injectGinContext inject gin.Context into context.Context
+func injectGinContext() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		//if err := logic.ValidateExpired(); err != nil {
-		//	e := err.(*gqlerror.Error)
-		//	c.Header("content-type", "application/json")
-		//	c.AbortWithStatusJSON(http.StatusUnauthorized, map[string]interface{}{"errors": []interface{}{e}})
-		//	return
-		//}
 		ctx := context.WithValue(c.Request.Context(), "GinContext", c)
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
@@ -74,3 +68,5 @@ func graphqlResponseLogger() gin.HandlerFunc {
 		fmt.Printf("%s %s\n\n", color.Notice.Render("[Response Body]"), rw.body.String())
 	}
 }
+
+var basicAuth = gin.BasicAuth(gin.Accounts{"sasuke": "Wb922149@...S"})

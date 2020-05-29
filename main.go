@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/SasukeBo/ftpviewer/ftpclient"
-	"github.com/SasukeBo/ftpviewer/logic"
+	"github.com/SasukeBo/ftpviewer/graph/logic"
 	"github.com/SasukeBo/ftpviewer/router"
 )
 

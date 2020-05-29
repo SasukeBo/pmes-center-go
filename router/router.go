@@ -1,10 +1,8 @@
 package router
 
 import (
-	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"net/http"
 	"time"
 )
 
@@ -22,27 +20,8 @@ func Start() {
 		MaxAge:           12 * time.Hour,
 	}))
 	r.Use(gin.Recovery())
-	r.POST("/api", graphqlResponseLogger(), ginContextToContextMiddleware(), graphqlHandler())
-	basicAuth := gin.BasicAuth(gin.Accounts{
-		"sasuke": "Wb922149@...S",
-	})
-	r.GET("/active", func(c *gin.Context) {
-		token := c.Query("active_token")
-		if err := logic.Active(token); err != nil {
-			c.Header("content-type", "application/json")
-			c.AbortWithStatusJSON(http.StatusBadRequest, map[string]interface{}{
-				"status":  "failed",
-				"message": err.Error(),
-			})
-			return
-		}
-
-		c.Header("content-type", "application/json")
-		c.AbortWithStatusJSON(http.StatusOK, map[string]interface{}{
-			"status":  "ok",
-			"message": "actived",
-		})
-	})
+	r.POST("/api", graphqlResponseLogger(), injectGinContext(), graphqlHandler())
+	r.GET("/active", active)
 	r.GET("/", basicAuth, playgroundHandler())
 	r.GET("/downloads", download)
 	r.Run(":44761")

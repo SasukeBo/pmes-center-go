@@ -3,8 +3,8 @@ package graph
 import (
 	"context"
 	"fmt"
+	"github.com/SasukeBo/ftpviewer/graph/logic"
 	"github.com/SasukeBo/ftpviewer/graph/model"
-	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"strings"
 	"time"
