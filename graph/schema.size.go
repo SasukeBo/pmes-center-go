@@ -131,7 +131,7 @@ func (r *queryResolver) AnalyzePoint(ctx context.Context, searchInput model.Sear
 				ID:         &point.ID,
 				Name:       &point.Name,
 				UpperLimit: &point.UpperLimit,
-				Norminal:   &point.Norminal,
+				Nominal:   &point.Nominal,
 				LowerLimit: &point.LowerLimit,
 			},
 		}

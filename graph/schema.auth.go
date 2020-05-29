@@ -5,13 +5,14 @@ import (
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/ftpviewer/util"
 	"github.com/jinzhu/gorm"
 )
 
 func (r *mutationResolver) Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error) {
 	var user orm.User
 
-	if err := orm.DB.Where("username = ? AND password = ?", loginInput.Account, orm.Encrypt(loginInput.Password)).First(&user).Error; err != nil {
+	if err := orm.DB.Where("username = ? AND password = ?", loginInput.Account, util.Encrypt(loginInput.Password)).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, NewGQLError("账号或密码不正确", err.Error())
 		}

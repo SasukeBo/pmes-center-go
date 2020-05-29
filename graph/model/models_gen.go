@@ -70,7 +70,7 @@ type Point struct {
 	ID         *int     `json:"id"`
 	Name       *string  `json:"name"`
 	UpperLimit *float64 `json:"upperLimit"`
-	Norminal   *float64 `json:"norminal"`
+	Nominal   *float64 `json:"norminal"`
 	LowerLimit *float64 `json:"lowerLimit"`
 }
 

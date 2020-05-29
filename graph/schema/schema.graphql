@@ -116,7 +116,7 @@ type Point {
   id: Int
   name: String
   upperLimit: Float
-  norminal: Float
+  nominal: Float
   lowerLimit: Float
 }
 

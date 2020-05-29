@@ -1,38 +1,5 @@
-# FTP 数据分析服务器
+# Data analyze system
 
-Ftp CSV file analyze system
-
-## 计划书
-
-第一周启动时间已协商确认时间为准
-
-### 第一周
-
-1. 解决 Ftp 服务器访问逻辑
-1. CSV 数据文件解析逻辑
-1. 可视化系统服务端缓存设备生产数据逻辑
-
-### 第二周
-
-1. 设计数据库表 设备表 尺寸表 检测值表 系统配置表
-1. HTTP 服务器代码架构
-1. 服务器接口开发
-   - 产品接口
-   - 设备接口
-
-### 第三周
-
-1. 服务器接口开发
-   - 设备生产数据汇总统计接口
-   - 尺寸良率接口
-   - 尺寸生产数据详情接口
-   - 产品生产数据汇总
-
-### 第四周
-
-1.  前端开发
-
-### 第五周
-
-1.  前端开发
-1.  部署测试
+- support ftp auto fetch .xlsx file data
+- support user uploaded .xlsx file data
+- support realtime data

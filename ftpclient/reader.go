@@ -5,8 +5,6 @@ package ftpclient
 // 生成批量插入的SQL
 
 import (
-	"bytes"
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"github.com/SasukeBo/log"
@@ -15,33 +13,10 @@ import (
 	"strconv"
 )
 
-// CSVDecoder csv decoder object
-type CSVDecoder struct {
-	Headers    []string
-	Rows       [][]string
-	Limits     [][]string
-	MaterialID string
-	DeviceName string
-}
-
-// Decode 解析csv文件，输出二维字符串
-func (cd *CSVDecoder) Decode(data []byte) error {
-	reader := csv.NewReader(bytes.NewReader(data))
-	rr, err := reader.ReadAll()
-	if err != nil {
-		return err
-	}
-
-	cd.Headers = rr[0]
-	cd.Limits = rr[1:3]
-	cd.Rows = rr[3:]
-	return nil
-}
-
 type SL struct {
 	Index    int
 	USL      float64
-	Norminal float64
+	Nominal float64
 	LSL      float64
 }
 
@@ -99,7 +74,7 @@ func (xr *XLSXReader) ReadSize(path string) error {
 		lsl := parseFloat((*LSLSet)[i])
 		xr.DimSL[k] = SL{
 			USL:      usl,
-			Norminal: (usl + lsl) / 2,
+			Nominal: (usl + lsl) / 2,
 			LSL:      lsl,
 			Index:    i,
 		}

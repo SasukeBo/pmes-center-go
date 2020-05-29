@@ -3,15 +3,11 @@ package logic
 import (
 	"errors"
 	"fmt"
-	"github.com/SasukeBo/ftpviewer/conf"
+	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/orm"
-	"github.com/gin-gonic/gin"
 	"github.com/tealeg/xlsx"
-	"io/ioutil"
 	"math"
-	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -93,7 +89,7 @@ func CreateXLSXHeader(sheet *xlsx.Sheet, points []orm.Point) {
 		nominalRow := rMap[CellNameNominal]
 		nominalCell := nominalRow.AddCell()
 		nominalCell.SetStyle(headerCellStyle)
-		nominalCell.SetValue(p.Norminal)
+		nominalCell.SetValue(p.Nominal)
 
 		lslRow := rMap[CellNameLSL]
 		lslCell := lslRow.AddCell()
@@ -149,8 +145,7 @@ type handlerResponse struct {
 var handlerCache map[string]*handlerResponse
 
 const (
-	xlsxContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-	pvSQL           = `
+	pvSQL = `
 SELECT
 	pv.v, pv.v >= p.lower_limit AND pv.v <= p.upper_limit AS qualified
 FROM
@@ -302,7 +297,7 @@ func HandleExport(opID string, material *orm.Material, search model.Search, cond
 	fileNameParts = append(fileNameParts, search.BeginTime.Format("20060102"))
 	fileNameParts = append(fileNameParts, search.EndTime.Format("20060102"))
 	fileName := strings.Join(fileNameParts, "-") + ".xlsx"
-	filePath := filepath.Join(conf.FileCachePath, fileName)
+	filePath := filepath.Join(configer.GetString("file_cache_path"), fileName)
 
 	// 输出文件
 	file.Save(filePath)
@@ -331,30 +326,6 @@ func appendValueWithFgColor(row *xlsx.Row, style *xlsx.Style, v interface{}) {
 	cell := row.AddCell()
 	cell.SetStyle(style)
 	cell.SetValue(v)
-}
-
-type object map[string]string
-
-func Download(c *gin.Context) {
-	fileName, ok := c.GetQuery("file_name")
-	if !ok {
-		c.JSON(http.StatusBadRequest, object{
-			"message": "请求参数缺少文件名",
-		})
-		return
-	}
-
-	filePath := filepath.Join(conf.FileCachePath, fileName)
-	data, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, object{
-			"message": "下载文件失败",
-			"err":     err.Error(),
-		})
-	}
-	os.Remove(filePath) // 删除临时文件
-	c.Header("Content-Disposition", "attachment; filename="+fileName)
-	c.Data(http.StatusOK, xlsxContentType, data)
 }
 
 func CheckExport(opID string) (*model.ExportResponse, error) {
