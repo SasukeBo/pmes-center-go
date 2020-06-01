@@ -85,23 +85,36 @@ func login(account, password string) {
 }
 
 func init() {
+	orm.DB.LogMode(false)
 	tearDown()
 	setup()
 	host = fmt.Sprintf("http://localhost:%v", configer.GetEnv("port"))
 	go router.Start()
 	login(data.User.Username, testUserPasswd)
+	orm.DB.LogMode(true)
 }
 
 func tearDown() {
-	orm.DB.Exec("DELETE FROM devices where 1 = 1")
-	orm.DB.Exec("DELETE FROM files where 1 = 1")
-	orm.DB.Exec("DELETE FROM materials where 1 = 1")
-	orm.DB.Exec("DELETE FROM point_values where 1 = 1")
-	orm.DB.Exec("DELETE FROM points where 1 = 1")
-	orm.DB.Exec("DELETE FROM products where 1 = 1")
-	orm.DB.Exec("DELETE FROM sizes where 1 = 1")
-	orm.DB.Exec("DELETE FROM system_configs where 1 = 1")
-	orm.DB.Exec("DELETE FROM users where 1 = 1")
+	var tables = []string{
+		"decode_templates",
+		"devices",
+		"import_records",
+		"materials",
+		"points",
+		"products",
+		"system_configs",
+		"users",
+	}
+
+	orm.DB.LogMode(false)
+	for _, name := range tables {
+		cleanTable(name)
+	}
+	orm.DB.LogMode(true)
+}
+
+func cleanTable(tbName string) {
+	orm.DB.Exec(fmt.Sprintf("DELETE FROM %s WHERE 1 = 1", tbName))
 }
 
 // generate fake data
@@ -120,13 +133,13 @@ const (
 
 func setup() {
 	data.User = &orm.User{
-		Admin:    false,
+		IsAdmin:  false,
 		Username: testUserAccount,
 		Password: util.Encrypt(testUserPasswd),
 	}
 	orm.Create(data.User)
 	data.Admin = &orm.User{
-		Admin:    true,
+		IsAdmin:  true,
 		Username: testAdminAccount,
 		Password: util.Encrypt(testAdminPasswd),
 	}

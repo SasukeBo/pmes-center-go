@@ -1,0 +1,11 @@
+type User {
+    id: Int
+    account: String
+    admin: Boolean
+}
+
+input LoginInput {
+    account: String!
+    password: String!
+}
+
