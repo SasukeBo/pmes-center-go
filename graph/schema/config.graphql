@@ -1,0 +1,12 @@
+type SystemConfig {
+    id: Int
+    key: String
+    value: String
+    createdAt: Time
+    updatedAt: Time
+}
+
+input SettingInput {
+    key: String!
+    value: String!
+}

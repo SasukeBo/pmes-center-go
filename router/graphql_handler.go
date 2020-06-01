@@ -7,15 +7,15 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/SasukeBo/configer"
-	"github.com/SasukeBo/ftpviewer/graph"
 	"github.com/SasukeBo/ftpviewer/graph/generated"
+	"github.com/SasukeBo/ftpviewer/graph/resolver"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/gookit/color.v1"
 	"io/ioutil"
 )
 
 func graphqlHandler() gin.HandlerFunc {
-	h := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	h := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{}}))
 
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)

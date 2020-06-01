@@ -34,10 +34,15 @@ func ClearUp() {
 }
 
 func clearUp() {
-	config := orm.GetSystemConfig("cache_days")
-	expiredDays, err := strconv.Atoi(config.Value)
-	if err != nil {
+	var expiredDays int
+	config := orm.SystemConfig{}
+	if err := config.GetConfig("cache_days"); err != nil {
 		expiredDays = 30
+	} else {
+		expiredDays, err = strconv.Atoi(config.Value)
+		if err != nil {
+			expiredDays = 30
+		}
 	}
 
 	end := time.Now().AddDate(0, 0, -expiredDays)
@@ -74,13 +79,12 @@ func Active(token string) error {
 		expiredValue = t.Format(time.RFC3339)
 	}
 
-	expiredConfig := orm.GetSystemConfig("expired_at")
-	if expiredConfig == nil {
-		expiredConfig = &orm.SystemConfig{Key: "expired_at"}
-	}
-	expiredConfig.Value = expiredValue
+	config := orm.SystemConfig{}
+	config.GetConfig("expired_at")
+	config.Key = "expired_at"
+	config.Value = expiredValue
 
-	if err := orm.DB.Model(expiredConfig).Save(expiredConfig).Error; err != nil {
+	if err := orm.DB.Model(config).Save(config).Error; err != nil {
 		return err
 	}
 

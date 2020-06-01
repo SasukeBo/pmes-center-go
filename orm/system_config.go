@@ -11,7 +11,7 @@ type SystemConfig struct {
 
 func SetIfNotExist(key, value string) {
 	var s SystemConfig
-	if err := DB.Model(&SystemConfig{}).Where("key = ?", key).First(&s).Error; err != nil {
+	if err := DB.Model(&SystemConfig{}).Where("`system_configs`.`key` = ?", key).First(&s).Error; err != nil {
 		s = SystemConfig{
 			Key:   key,
 			Value: value,
@@ -19,4 +19,8 @@ func SetIfNotExist(key, value string) {
 
 		DB.Create(&s)
 	}
+}
+
+func (s *SystemConfig) GetConfig(key string) error {
+	return DB.Model(s).Where("`system_configs`.`key` = ?", key).First(s).Error
 }

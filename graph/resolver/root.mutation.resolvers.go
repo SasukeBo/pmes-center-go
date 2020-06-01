@@ -1,0 +1,207 @@
+package resolver
+
+// This file will be automatically regenerated based on the schema, any resolver implementations
+// will be copied through when generating and any unknown code will be moved to the end.
+
+import (
+	"context"
+	"github.com/SasukeBo/ftpviewer/graph/generated"
+	"github.com/SasukeBo/ftpviewer/graph/logic"
+	"github.com/SasukeBo/ftpviewer/graph/model"
+)
+
+func (r *mutationResolver) Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error) {
+	return logic.Login(ctx, loginInput)
+}
+
+func (r *mutationResolver) Logout(ctx context.Context) (string, error) {
+	return logic.Logout(ctx)
+}
+
+func (r *mutationResolver) Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error) {
+	return nil, nil
+	//if err := logic.Authenticate(ctx); err != nil {
+	//	return nil, err
+	//}
+	//
+	//user := logic.CurrentUser(ctx)
+	//if user == nil || !user.Admin {
+	//	return nil, NewGQLError("添加系统配置失败，您不是Admin", fmt.Sprintf("%+v", *user))
+	//}
+	//
+	//conf := orm.GetSystemConfig(settingInput.Key)
+	//if conf == nil {
+	//	conf = &orm.SystemConfig{
+	//		Key:   settingInput.Key,
+	//		Value: settingInput.Value,
+	//	}
+	//} else {
+	//	conf.Value = settingInput.Value
+	//}
+	//
+	//if err := orm.DB.Save(conf).Error; err != nil {
+	//	return nil, NewGQLError("添加系统配置失败", err.Error())
+	//}
+	//
+	//confID := int(conf.ID)
+	//return &model.SystemConfig{
+	//	ID:        &confID,
+	//	Key:       &conf.Key,
+	//	Value:     &conf.Value,
+	//	CreatedAt: &conf.CreatedAt,
+	//	UpdatedAt: &conf.UpdatedAt,
+	//}, nil
+}
+
+func (r *mutationResolver) AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error) {
+	return nil, nil
+	//if err := logic.Authenticate(ctx); err != nil {
+	//	return nil, err
+	//}
+	//
+	//if input.Name == "" {
+	//	return nil, NewGQLError("厂内料号不能为空", "empty material code")
+	//}
+	//
+	//if !logic.IsMaterialExist(input.Name) {
+	//	return nil, NewGQLError("FTP服务器现在没有该料号的数据。", "IsMaterialExist false")
+	//}
+	//
+	//material := orm.GetMaterialWithName(input.Name)
+	//if material != nil {
+	//	return nil, NewGQLError("料号已经存在，请确认你的输入。", "find material, can't create another one.")
+	//}
+	//
+	//m := orm.Material{Name: input.Name}
+	//if input.CustomerCode != nil {
+	//	m.CustomerCode = *input.CustomerCode
+	//}
+	//if input.ProjectRemark != nil {
+	//	m.ProjectRemark = *input.ProjectRemark
+	//}
+	//if err := orm.DB.Create(&m).Error; err != nil {
+	//	return nil, NewGQLError("创建料号失败", err.Error())
+	//}
+	//
+	//end := time.Now()
+	//// 默认取近一年的数据
+	//begin := end.AddDate(-1, 0, 0)
+	//fileIDs, _ := logic.NeedFetch(&m, &begin, &end)
+	//message := "创建料号成功"
+	//var status = model.FetchStatus{
+	//	Message: &message,
+	//	Pending: boolP(true),
+	//	FileIDs: fileIDs,
+	//}
+	//if len(fileIDs) == 0 {
+	//	status.Pending = boolP(false)
+	//	status.Message = stringP("已为您创建料号，但FTP服务器暂无该料号最近一个月的数据")
+	//}
+	//
+	//materialOut := model.Material{
+	//	ID:            m.ID,
+	//	Name:          m.Name,
+	//	CustomerCode:  stringP(m.CustomerCode),
+	//	ProjectRemark: stringP(m.ProjectRemark),
+	//}
+	//
+	//return &model.AddMaterialResponse{
+	//	Material: &materialOut,
+	//	Status:   &status,
+	//}, nil
+}
+
+func (r *mutationResolver) UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error) {
+	return nil, nil
+	//if err := logic.Authenticate(ctx); err != nil {
+	//	return nil, err
+	//}
+	//
+	//var material orm.Material
+	//if err := orm.DB.Model(&orm.Material{}).Where("id = ?", input.ID).First(&material).Error; err != nil {
+	//	if err == gorm.ErrRecordNotFound {
+	//		return nil, NewGQLError("料号不存在", err.Error())
+	//	}
+	//
+	//	return nil, NewGQLError("获取料号失败", err.Error())
+	//}
+	//
+	//if input.ProjectRemark != nil {
+	//	material.ProjectRemark = *input.ProjectRemark
+	//}
+	//
+	//if input.CustomerCode != nil {
+	//	material.CustomerCode = *input.CustomerCode
+	//}
+	//
+	//if err := orm.DB.Save(&material).Error; err != nil {
+	//	return nil, NewGQLError("保存料号失败", err.Error())
+	//}
+	//
+	//out := &model.Material{
+	//	ID:            material.ID,
+	//	Name:          material.Name,
+	//	CustomerCode:  &material.CustomerCode,
+	//	ProjectRemark: &material.ProjectRemark,
+	//}
+	//
+	//return out, nil
+}
+
+func (r *mutationResolver) DeleteMaterial(ctx context.Context, id int) (string, error) {
+	return "", nil
+	//if err := logic.Authenticate(ctx); err != nil {
+	//	return "error", err
+	//}
+	//
+	//tx := orm.DB.Begin()
+	//defer tx.Rollback()
+	//
+	//var sizeIDs []int
+	//if err := tx.Model(&orm.Size{}).Where("material_id = ?", id).Pluck("id", &sizeIDs).Error; err != nil {
+	//	return "error", NewGQLError("删除料号尺寸数据失败，删除操作被终止", err.Error())
+	//}
+	//
+	//var pointIDs []int
+	//if err := tx.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs).Pluck("id", &pointIDs).Error; err != nil {
+	//	return "error", NewGQLError("删除料号尺寸点位数据失败，删除操作被终止", err.Error())
+	//}
+	//
+	//if err := tx.Where("id = ?", id).Delete(orm.Material{}).Error; err != nil {
+	//	return "error", NewGQLError("删除料号失败，发生了一些错误", err.Error())
+	//}
+	//
+	//if err := tx.Where("material_id = ?", id).Delete(orm.File{}).Error; err != nil {
+	//	return "error", NewGQLError("删除料号失败，发生了一些错误", err.Error())
+	//}
+	//
+	//if err := tx.Where("material_id = ?", id).Delete(orm.Device{}).Error; err != nil {
+	//	return "error", NewGQLError("删除料号设备失败，发生了一些错误", err.Error())
+	//}
+	//
+	//tx.Commit()
+	//
+	//go func() {
+	//	orm.DB.Where("material_id = ?", id).Delete(orm.Product{})
+	//	orm.DB.Where("point_id in (?)", pointIDs).Delete(orm.PointValue{})
+	//	orm.DB.Where("id in (?)", pointIDs).Delete(orm.Point{})
+	//	orm.DB.Where("id in (?)", sizeIDs).Delete(orm.Size{})
+	//}()
+	//
+	//return "料号删除成功", nil
+}
+
+func (r *mutationResolver) CancelExport(ctx context.Context, opID string) (string, error) {
+	return "", nil
+	//err := logic.CancelExport(opID)
+	//if err != nil {
+	//	return "error", NewGQLError("取消导出失败", err.Error())
+	//}
+	//
+	//return "ok", nil
+}
+
+// Mutation returns generated.MutationResolver implementation.
+func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
+
+type mutationResolver struct{ *Resolver }

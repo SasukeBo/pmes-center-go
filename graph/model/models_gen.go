@@ -43,9 +43,10 @@ type Material struct {
 }
 
 type MaterialCreateInput struct {
-	Name          string  `json:"name"`
-	CustomerCode  *string `json:"customerCode"`
-	ProjectRemark *string `json:"projectRemark"`
+	Name          string              `json:"name"`
+	CustomerCode  *string             `json:"customerCode"`
+	ProjectRemark *string             `json:"projectRemark"`
+	Points        []*PointCreateInput `json:"points"`
 }
 
 type MaterialResult struct {
@@ -70,8 +71,15 @@ type Point struct {
 	ID         *int     `json:"id"`
 	Name       *string  `json:"name"`
 	UpperLimit *float64 `json:"upperLimit"`
-	Nominal   *float64 `json:"norminal"`
+	Nominal    *float64 `json:"nominal"`
 	LowerLimit *float64 `json:"lowerLimit"`
+}
+
+type PointCreateInput struct {
+	Name    string  `json:"name"`
+	Usl     float64 `json:"usl"`
+	Nominal float64 `json:"nominal"`
+	Lsl     float64 `json:"lsl"`
 }
 
 type PointResult struct {
@@ -153,9 +161,9 @@ type SystemConfig struct {
 }
 
 type User struct {
-	ID      *int    `json:"id"`
-	Account *string `json:"account"`
-	Admin   *bool   `json:"admin"`
+	ID      int    `json:"id"`
+	Account string `json:"account"`
+	Admin   bool   `json:"admin"`
 }
 
 type YieldWrap struct {

@@ -12,37 +12,34 @@ import (
 
 // connect make a connection for ftp server
 func connect() (*ftp.ServerConn, error) {
-	ftphostConf := orm.GetSystemConfig("ftp_host")
-	if ftphostConf == nil {
-		return nil, &FTPError{Message: "没有找到FTP服务器Host配置"}
+	var ftpHostConf, ftpPortConf, ftpUserConf, ftpPassConf orm.SystemConfig
+	if err := ftpHostConf.GetConfig("ftp_host"); err != nil {
+		return nil, &FTPError{Message: "没有找到FTP服务器Host配置", OriginErr: err}
 	}
 
-	ftpportConf := orm.GetSystemConfig("ftp_port")
-	if ftpportConf == nil {
-		return nil, &FTPError{Message: "没有找到FTP服务器Port配置"}
+	if err := ftpPortConf.GetConfig("ftp_port"); err != nil {
+		return nil, &FTPError{Message: "没有找到FTP服务器Port配置", OriginErr: err}
 	}
 
-	ftpuserConf := orm.GetSystemConfig("ftp_username")
-	if ftpuserConf == nil {
-		return nil, &FTPError{Message: "没有找到FTP服务器登录账号"}
+	if err := ftpUserConf.GetConfig("ftp_username"); err != nil {
+		return nil, &FTPError{Message: "没有找到FTP服务器登录账号", OriginErr: err}
 	}
 
-	ftppassConf := orm.GetSystemConfig("ftp_password")
-	if ftppassConf == nil {
-		return nil, &FTPError{Message: "没有找到FTP服务器登录密码"}
+	if err := ftpPassConf.GetConfig("ftp_password"); err != nil {
+		return nil, &FTPError{Message: "没有找到FTP服务器登录密码", OriginErr: err}
 	}
 
-	ftpConn, err := ftp.Dial(fmt.Sprintf("%v:%v", ftphostConf.Value, ftpportConf.Value), ftp.DialWithTimeout(4*time.Second))
+	ftpConn, err := ftp.Dial(fmt.Sprintf("%v:%v", ftpHostConf.Value, ftpPortConf.Value), ftp.DialWithTimeout(4*time.Second))
 	if err != nil {
 		return nil, &FTPError{
-			Message:   fmt.Sprintf("连接FTP服务器%s:%s失败", ftphostConf.Value, ftpportConf.Value),
+			Message:   fmt.Sprintf("连接FTP服务器%s:%s失败", ftpHostConf.Value, ftpPortConf.Value),
 			OriginErr: err,
 		}
 	}
-	err = ftpConn.Login(ftpuserConf.Value, ftppassConf.Value)
+	err = ftpConn.Login(ftpUserConf.Value, ftpPassConf.Value)
 	if err != nil {
 		return nil, &FTPError{
-			Message:   fmt.Sprintf("登录FTP服务器%s:%s失败", ftphostConf.Value, ftpportConf.Value),
+			Message:   fmt.Sprintf("登录FTP服务器%s:%s失败", ftpHostConf.Value, ftpPortConf.Value),
 			OriginErr: err,
 		}
 	}

@@ -8,6 +8,7 @@ require (
 	github.com/SasukeBo/lib v0.0.0-20200527114554-7d04dff0ae99
 	github.com/SasukeBo/log v1.0.0
 	github.com/ajg/form v1.5.1 // indirect
+	github.com/allegro/bigcache v1.2.1
 	github.com/dgryski/trifles v0.0.0-20191129005055-5a6159895336 // indirect
 	github.com/fasthttp-contrib/websocket v0.0.0-20160511215533-1f3b11f56072 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
@@ -19,6 +20,7 @@ require (
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/imkira/go-interpol v1.1.0 // indirect
+	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/jinzhu/gorm v1.9.12
 	github.com/jlaffaye/ftp v0.0.0-20200309171336-6841a2daa0d5
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect

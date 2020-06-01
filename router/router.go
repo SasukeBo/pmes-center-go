@@ -22,7 +22,7 @@ func Start() {
 		MaxAge:           12 * time.Hour,
 	}))
 	r.Use(gin.Recovery())
-	r.POST("/api", graphqlResponseLogger(), injectGinContext(), graphqlHandler())
+	r.POST("/api", authenticate(), graphqlResponseLogger(), injectGinContext(), graphqlHandler())
 	r.GET("/active", active)
 	r.GET("/", basicAuth, playgroundHandler())
 	r.GET("/downloads", download)

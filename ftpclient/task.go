@@ -5,14 +5,8 @@ package ftpclient
 import (
 	"fmt"
 	"github.com/SasukeBo/ftpviewer/orm"
-	stime "github.com/SasukeBo/lib/time"
-	"github.com/SasukeBo/log"
 	"regexp"
-	"runtime/debug"
 	"strconv"
-	"time"
-
-	"github.com/google/uuid"
 )
 
 var fetchQueue chan string
@@ -51,82 +45,78 @@ func FTPWorker() {
 
 // Store xlsx data into db
 func Store(xr *XLSXReader) {
-	defer func() {
-		err := recover()
-		if err != nil {
-			fmt.Println(err)
-			debug.PrintStack()
-		}
-	}()
-	materialName := xr.MaterialID
-	deviceName := xr.DeviceName
-	material := orm.GetMaterialWithName(materialName)
-	if material == nil {
-		fmt.Printf("material %s not found", materialName)
-		return
-	}
-
-	device := orm.GetDeviceWithName(deviceName)
-	if device == nil {
-		fmt.Printf("device %s not found", deviceName)
-		return
-	}
-
-	var sizeIDs []int
-	if err := orm.DB.Model(&orm.Size{}).Where("material_id = ?", material.ID).Pluck("id", &sizeIDs).Error; err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	var points []orm.Point
-	if err := orm.DB.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs).Find(&points).Error; err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	products := make([]interface{}, 0)
-	pointValues := make([]interface{}, 0)
-	for i, row := range xr.DataSet {
-		if !validRow(row) { // 过滤掉无效行和空行
-			log.Warn("empty row %v", i)
-			continue
-		}
-		qp := true
-		// 生产 product uuid
-		puuid := uuid.New().String()
-		productAt, err := stime.ParseTime(row[1], 8)
-		if err != nil {
-			t := time.Now()
-			productAt = &t
-		}
-		for _, v := range points {
-			value := parseFloat(row[v.Index])
-			if value < v.LowerLimit || value > v.UpperLimit {
-				qp = false
-			}
-			pv := []interface{}{v.ID, puuid, value}
-			pointValues = append(pointValues, pv...)
-		}
-
-		pv := []interface{}{puuid, material.ID, device.ID, qp, productAt, row[2], row[3], row[4], row[5], row[6]}
-		products = append(products, pv...)
-	}
-
-	finishChan := make(chan int, 0)
-	go execInsert(products, productValueCount, insertProductsTpl, productValueFieldTpl, xr.PathID, finishChan)
-	go execInsert(pointValues, pointValueCount, insertPointValuesTpl, pointValueFieldTpl, xr.PathID, finishChan)
-
-	f := 0
-	for {
-		c := <-finishChan
-		f = f + c
-		if f == 2 {
-			break
-		}
-	}
-
-	// 最后完成该文件
-	orm.DB.Model(&orm.File{}).Where("id = ?", xr.PathID).Update("finished", true)
+	// TODO: 重构
+	return
+	//defer func() {
+	//	err := recover()
+	//	if err != nil {
+	//		fmt.Println(err)
+	//		debug.PrintStack()
+	//	}
+	//}()
+	//materialName := xr.MaterialID
+	//deviceName := xr.DeviceName
+	//var material orm.Material
+	//if err := material.GetWithName(materialName); err != nil {
+	//	log.Error("get material with name %s failed: %v", materialName, err)
+	//	return
+	//}
+	//
+	//var device orm.Device
+	//if err := device.GetWithName(deviceName); err != nil {
+	//	log.Error("get device with name %s failed: %v", deviceName, err)
+	//	return
+	//}
+	//
+	//var points []orm.Point
+	//if err := orm.DB.Model(&orm.Point{}).Where("material_id = ?", material.ID).Find(&points).Error; err != nil {
+	//	fmt.Println(err)
+	//	return
+	//}
+	//
+	//products := make([]interface{}, 0)
+	//pointValues := make([]interface{}, 0)
+	//for i, row := range xr.DataSet {
+	//	if !validRow(row) { // 过滤掉无效行和空行
+	//		log.Warn("empty row %v", i)
+	//		continue
+	//	}
+	//	qp := true
+	//	// 生产 product uuid
+	//	puuid := uuid.New().String()
+	//	productAt, err := stime.ParseTime(row[1], 8)
+	//	if err != nil {
+	//		t := time.Now()
+	//		productAt = &t
+	//	}
+	//	for _, v := range points {
+	//		value := parseFloat(row[v.Index])
+	//		if value < v.LowerLimit || value > v.UpperLimit {
+	//			qp = false
+	//		}
+	//		pv := []interface{}{v.ID, puuid, value}
+	//		pointValues = append(pointValues, pv...)
+	//	}
+	//
+	//	pv := []interface{}{puuid, material.ID, device.ID, qp, productAt, row[2], row[3], row[4], row[5], row[6]}
+	//	products = append(products, pv...)
+	//}
+	//
+	//finishChan := make(chan int, 0)
+	//go execInsert(products, productValueCount, insertProductsTpl, productValueFieldTpl, xr.PathID, finishChan)
+	//go execInsert(pointValues, pointValueCount, insertPointValuesTpl, pointValueFieldTpl, xr.PathID, finishChan)
+	//
+	//f := 0
+	//for {
+	//	c := <-finishChan
+	//	f = f + c
+	//	if f == 2 {
+	//		break
+	//	}
+	//}
+	//
+	//// 最后完成该文件
+	//orm.DB.Model(&orm.File{}).Where("id = ?", xr.PathID).Update("finished", true)
 }
 
 func validRow(row []string) bool {
@@ -185,10 +175,10 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, fil
 }
 
 func updateFinishedRows(fileID, plus int) {
-	var file orm.File
-	orm.DB.Model(&file).Where("id = ?", fileID).First(&file)
-	orm.DB.Model(&orm.File{}).Where("id = ?", fileID).Update("finished_rows", file.FinishedRows+plus)
-	// fmt.Printf("-----------------------------------\nfinish udpate file id=%v finished rows=%v\n", fileID, file.FinishedRows+plus)
+	//var file orm.File
+	//orm.DB.Model(&file).Where("id = ?", fileID).First(&file)
+	//orm.DB.Model(&orm.File{}).Where("id = ?", fileID).Update("finished_rows", file.FinishedRows+plus)
+	//// fmt.Printf("-----------------------------------\nfinish udpate file id=%v finished rows=%v\n", fileID, file.FinishedRows+plus)
 }
 
 func parseFloat(v string) float64 {
