@@ -1,9 +1,4 @@
 type Mutation {
-    "登入"
-    login(loginInput: LoginInput!): User!
-    "登出"
-    logout: String!
-
     "添加系统设置"
     setting(settingInput: SettingInput!): SystemConfig!
 

@@ -13,19 +13,19 @@ import (
 // connect make a connection for ftp server
 func connect() (*ftp.ServerConn, error) {
 	var ftpHostConf, ftpPortConf, ftpUserConf, ftpPassConf orm.SystemConfig
-	if err := ftpHostConf.GetConfig("ftp_host"); err != nil {
+	if err := ftpHostConf.GetConfig(orm.SystemConfigFtpHostKey); err != nil {
 		return nil, &FTPError{Message: "没有找到FTP服务器Host配置", OriginErr: err}
 	}
 
-	if err := ftpPortConf.GetConfig("ftp_port"); err != nil {
+	if err := ftpPortConf.GetConfig(orm.SystemConfigFtpPortKey); err != nil {
 		return nil, &FTPError{Message: "没有找到FTP服务器Port配置", OriginErr: err}
 	}
 
-	if err := ftpUserConf.GetConfig("ftp_username"); err != nil {
+	if err := ftpUserConf.GetConfig(orm.SystemConfigFtpUsernameKey); err != nil {
 		return nil, &FTPError{Message: "没有找到FTP服务器登录账号", OriginErr: err}
 	}
 
-	if err := ftpPassConf.GetConfig("ftp_password"); err != nil {
+	if err := ftpPassConf.GetConfig(orm.SystemConfigFtpPasswordKey); err != nil {
 		return nil, &FTPError{Message: "没有找到FTP服务器登录密码", OriginErr: err}
 	}
 

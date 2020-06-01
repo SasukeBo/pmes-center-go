@@ -5,17 +5,9 @@ package resolver
 
 import (
 	"context"
-	//"fmt"
-	//"github.com/SasukeBo/ftpviewer/errormap"
-	"github.com/SasukeBo/ftpviewer/graph/logic"
-	//"github.com/SasukeBo/ftpviewer/orm"
-	//"github.com/google/uuid"
-	//"github.com/jinzhu/gorm"
-	//"math"
-	//"strings"
-	//"time"
 
 	"github.com/SasukeBo/ftpviewer/graph/generated"
+	"github.com/SasukeBo/ftpviewer/graph/logic"
 	"github.com/SasukeBo/ftpviewer/graph/model"
 )
 
@@ -56,7 +48,7 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	//	begin = &t
 	//}
 	//
-	//fileIDs, err := logic.NeedFetch(material, begin, end)
+	//fileIDs, err := logic.FetchMaterialData(material, begin, end)
 	//if err != nil {
 	//	status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(false), Message: stringP(err.Error())}
 	//	return &model.ProductWrap{Status: status}, nil
@@ -524,7 +516,7 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 	//	beginTime = &t
 	//}
 	//
-	//fileIDs, err := logic.NeedFetch(material, beginTime, endTime)
+	//fileIDs, err := logic.FetchMaterialData(material, beginTime, endTime)
 	//if err != nil {
 	//	return nil, err
 	//}
@@ -670,7 +662,7 @@ func (r *queryResolver) AnalyzeDevice(ctx context.Context, searchInput model.Sea
 	//	ID:   &device.ID,
 	//	Name: &device.Name,
 	//}
-	//fileIDs, err := logic.NeedFetch(material, beginTime, endTime)
+	//fileIDs, err := logic.FetchMaterialData(material, beginTime, endTime)
 	//if err != nil {
 	//	return nil, err
 	//}

@@ -80,6 +80,7 @@ type PointCreateInput struct {
 	Usl     float64 `json:"usl"`
 	Nominal float64 `json:"nominal"`
 	Lsl     float64 `json:"lsl"`
+	Index   int     `json:"index"`
 }
 
 type PointResult struct {
@@ -163,7 +164,7 @@ type SystemConfig struct {
 type User struct {
 	ID      int    `json:"id"`
 	Account string `json:"account"`
-	Admin   bool   `json:"admin"`
+	IsAdmin bool   `json:"isAdmin"`
 }
 
 type YieldWrap struct {

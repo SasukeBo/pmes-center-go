@@ -1,4 +1,4 @@
-package router
+package handler
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 	"io/ioutil"
 )
 
-func graphqlHandler() gin.HandlerFunc {
+func GraphqlHandler() gin.HandlerFunc {
 	h := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{}}))
 
 	return func(c *gin.Context) {
@@ -22,15 +22,15 @@ func graphqlHandler() gin.HandlerFunc {
 	}
 }
 
-func playgroundHandler() gin.HandlerFunc {
-	h := playground.Handler("GraphQL", "/api")
+func PlaygroundHandler() gin.HandlerFunc {
+	h := playground.Handler("GraphQL", "/api/v1")
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)
 	}
 }
 
 // injectGinContext inject gin.Context into context.Context
-func injectGinContext() gin.HandlerFunc {
+func InjectGinContext() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), "GinContext", c)
 		c.Request = c.Request.WithContext(ctx)
@@ -48,7 +48,7 @@ func (rw responseWriter) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(b)
 }
 
-func graphqlResponseLogger() gin.HandlerFunc {
+func GraphqlResponseLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if configer.GetEnv("env") == "prod" {
 			c.Next()
@@ -68,5 +68,3 @@ func graphqlResponseLogger() gin.HandlerFunc {
 		fmt.Printf("%s %s\n\n", color.Notice.Render("[Response Body]"), rw.body.String())
 	}
 }
-
-var basicAuth = gin.BasicAuth(gin.Accounts{"sasuke": "Wb922149@...S"})

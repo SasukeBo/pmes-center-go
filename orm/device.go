@@ -13,9 +13,10 @@ import (
 type Device struct {
 	gorm.Model
 	UUID           string `gorm:"column:uuid;unique_index;not null"`
-	Name           string `gorm:"not null;unique_index"`
+	Name           string `gorm:"not null"`                                    // 用于存储用户指定的设备名称，不指定时，默认为Remark的值
+	Remark         string `gorm:"not null;unique_index:uidx_name_material_id"` // 用于存储从数据文件解析出的名称
 	IP             string `gorm:"column:ip;"`
-	MaterialID     int    `gorm:"column:material_id;not null;index"`
+	MaterialID     uint   `gorm:"column:material_id;not null;unique_index:uidx_name_material_id"` // 同一料号下的设备remark不可重复
 	DeviceSupplier string
 	IsRealtime     bool `gorm:"default:false;not null"`
 	Address        string
@@ -33,4 +34,17 @@ func (d *Device) BeforeCreate() error {
 
 func (d *Device) GetWithName(name string) error {
 	return DB.Model(d).Where("name = ?", name).First(d).Error
+}
+
+func (d *Device) CreateIfNotExist(materialID uint, remark string) error {
+	DB.Model(d).Where("material_id = ? AND remark = ?", materialID, remark).First(d)
+	if d.ID == 0 {
+		d.Name = remark
+		d.MaterialID = materialID
+		d.Remark = remark
+		err := DB.Create(d).Error
+		return err
+	}
+
+	return nil
 }

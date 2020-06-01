@@ -12,6 +12,14 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
+const (
+	SystemConfigFtpHostKey              = "ftp_host"
+	SystemConfigFtpPortKey              = "ftp_port"
+	SystemConfigFtpUsernameKey          = "ftp_username"
+	SystemConfigFtpPasswordKey          = "ftp_password"
+	SystemConfigProductColumnHeadersKey = "product_column_headers"
+)
+
 // DB connection to database
 var DB *gorm.DB
 
@@ -27,10 +35,11 @@ func createUriWithDBName(name string) string {
 }
 
 func generateDefaultConfig() {
-	SetIfNotExist("ftp_host", configer.GetString("ftp_host"))
-	SetIfNotExist("ftp_port", configer.GetString("ftp_port"))
-	SetIfNotExist("ftp_username", configer.GetString("ftp_username"))
-	SetIfNotExist("ftp_password", configer.GetString("ftp_password"))
+	SetIfNotExist(SystemConfigFtpHostKey)
+	SetIfNotExist(SystemConfigFtpPortKey)
+	SetIfNotExist(SystemConfigFtpUsernameKey)
+	SetIfNotExist(SystemConfigFtpPasswordKey)
+	SetIfNotExist(SystemConfigProductColumnHeadersKey)
 }
 
 func alterTableUtf8(tbname string) {
@@ -51,8 +60,8 @@ func generateRootUser() {
 	err := DB.Model(&User{}).Where("username = ?", username).First(&root).Error
 	if err != nil {
 		root = User{
-			IsAdmin:    true,
-			Username: username,
+			IsAdmin:  true,
+			Account:  username,
 			Password: util.Encrypt(configer.GetString("root_pass")),
 		}
 		err := DB.Create(&root).Error
@@ -98,6 +107,8 @@ func init() {
 		&Product{},
 		&SystemConfig{},
 		&User{},
+		&UserLogin{},
+		&UserRole{},
 	).Error
 	if err != nil {
 		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
@@ -113,7 +124,6 @@ func init() {
 	if env == "prod" {
 		DB.LogMode(false)
 	} else {
-		log.Info("start service on %s mode", env)
 		DB.LogMode(true)
 	}
 }

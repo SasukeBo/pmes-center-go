@@ -7,110 +7,38 @@ package ftpclient
 import (
 	"errors"
 	"fmt"
+	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/SasukeBo/log"
 	"github.com/tealeg/xlsx"
-	"path/filepath"
-	"strconv"
 )
 
-type SL struct {
-	Index    int
-	USL      float64
-	Nominal float64
-	LSL      float64
-}
-
 type XLSXReader struct {
-	DataSet    [][]string    // only cache data of sheet 1
-	DimSL      map[string]SL // map cache key (dim) and value([uSL, lSL])
-	MaterialID string
-	DeviceName string
-	PathID     int // 读取文件路径id
+	DataSet        [][]string          // only cache data of sheet 1
+	Material       *orm.Material       // 导入的料号
+	Device         *orm.Device         // 导入设备
+	Record         *orm.ImportRecord   // 导入记录
+	DecodeTemplate *orm.DecodeTemplate // 解析模板
 }
 
-func NewXLSXReader() *XLSXReader {
+func NewXLSXReader(material *orm.Material, device *orm.Device, template *orm.DecodeTemplate) *XLSXReader {
 	return &XLSXReader{
-		DataSet: make([][]string, 0),
-		DimSL:   make(map[string]SL),
+		DataSet:        make([][]string, 0),
+		Material:       material,
+		Device:         device,
+		DecodeTemplate: template,
 	}
-}
-
-func (xr *XLSXReader) ReadSize(path string) error {
-	dataSheet, err := read(path)
-	if err != nil {
-		return err
-	}
-
-	var dimSet, USLSet, LSLSet *[]string
-	for i, row := range dataSheet {
-		if len(row) ==0 {
-			continue
-		}
-		switch row[0] {
-		case "Dim":
-			dimSet = &dataSheet[i]
-		case "USL":
-			USLSet = &dataSheet[i]
-		case "LSL":
-			LSLSet = &dataSheet[i]
-		}
-
-		if dimSet != nil && USLSet != nil && LSLSet != nil {
-			break
-		}
-	}
-
-	if dimSet == nil || USLSet == nil || LSLSet == nil {
-		err := errors.New(fmt.Sprintf("xlsx文件格式有误。%s", path))
-		log.Errorln(err)
-		return err
-	}
-
-	for i, k := range *dimSet {
-		if k == "" || k == "TEMP" || k == "Dim" {
-			continue
-		}
-		usl := parseFloat((*USLSet)[i])
-		lsl := parseFloat((*LSLSet)[i])
-		xr.DimSL[k] = SL{
-			USL:      usl,
-			Nominal: (usl + lsl) / 2,
-			LSL:      lsl,
-			Index:    i,
-		}
-	}
-
-	return nil
 }
 
 func (xr *XLSXReader) Read(path string) error {
-	result := reg.FindAllStringSubmatch(filepath.Base(path), -1)
-	if len(result) > 0 && len(result[0]) > 3 {
-		xr.MaterialID = result[0][1]
-		xr.DeviceName = result[0][2]
-	} else {
-		return &FTPError{
-			Message: fmt.Sprintf("文件名格式不正确，%s", path),
-		}
-	}
 	dataSheet, err := read(path)
 	if err != nil {
 		return err
 	}
-	var bIdx = 0
+	var bIdx = xr.DecodeTemplate.DataRowIndex - 1
 	var eIdx = 0
 	for i, row := range dataSheet {
-		if len(row) == 0 {
+		if len(row) == 0 && i > bIdx {
 			eIdx = i
-			continue
-		}
-		if bIdx == 0 {
-			_, err := strconv.Atoi(row[0])
-			if err == nil {
-				bIdx = i
-			}
-		}
-		if bIdx > 0 && eIdx > 0 && eIdx > bIdx {
 			break
 		}
 	}

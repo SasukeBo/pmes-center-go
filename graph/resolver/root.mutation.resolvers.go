@@ -5,18 +5,11 @@ package resolver
 
 import (
 	"context"
-	"github.com/SasukeBo/ftpviewer/graph/generated"
 	"github.com/SasukeBo/ftpviewer/graph/logic"
+
+	"github.com/SasukeBo/ftpviewer/graph/generated"
 	"github.com/SasukeBo/ftpviewer/graph/model"
 )
-
-func (r *mutationResolver) Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error) {
-	return logic.Login(ctx, loginInput)
-}
-
-func (r *mutationResolver) Logout(ctx context.Context) (string, error) {
-	return logic.Logout(ctx)
-}
 
 func (r *mutationResolver) Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error) {
 	return nil, nil
@@ -54,61 +47,7 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 }
 
 func (r *mutationResolver) AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error) {
-	return nil, nil
-	//if err := logic.Authenticate(ctx); err != nil {
-	//	return nil, err
-	//}
-	//
-	//if input.Name == "" {
-	//	return nil, NewGQLError("厂内料号不能为空", "empty material code")
-	//}
-	//
-	//if !logic.IsMaterialExist(input.Name) {
-	//	return nil, NewGQLError("FTP服务器现在没有该料号的数据。", "IsMaterialExist false")
-	//}
-	//
-	//material := orm.GetMaterialWithName(input.Name)
-	//if material != nil {
-	//	return nil, NewGQLError("料号已经存在，请确认你的输入。", "find material, can't create another one.")
-	//}
-	//
-	//m := orm.Material{Name: input.Name}
-	//if input.CustomerCode != nil {
-	//	m.CustomerCode = *input.CustomerCode
-	//}
-	//if input.ProjectRemark != nil {
-	//	m.ProjectRemark = *input.ProjectRemark
-	//}
-	//if err := orm.DB.Create(&m).Error; err != nil {
-	//	return nil, NewGQLError("创建料号失败", err.Error())
-	//}
-	//
-	//end := time.Now()
-	//// 默认取近一年的数据
-	//begin := end.AddDate(-1, 0, 0)
-	//fileIDs, _ := logic.NeedFetch(&m, &begin, &end)
-	//message := "创建料号成功"
-	//var status = model.FetchStatus{
-	//	Message: &message,
-	//	Pending: boolP(true),
-	//	FileIDs: fileIDs,
-	//}
-	//if len(fileIDs) == 0 {
-	//	status.Pending = boolP(false)
-	//	status.Message = stringP("已为您创建料号，但FTP服务器暂无该料号最近一个月的数据")
-	//}
-	//
-	//materialOut := model.Material{
-	//	ID:            m.ID,
-	//	Name:          m.Name,
-	//	CustomerCode:  stringP(m.CustomerCode),
-	//	ProjectRemark: stringP(m.ProjectRemark),
-	//}
-	//
-	//return &model.AddMaterialResponse{
-	//	Material: &materialOut,
-	//	Status:   &status,
-	//}, nil
+	return logic.AddMaterial(ctx, input)
 }
 
 func (r *mutationResolver) UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error) {

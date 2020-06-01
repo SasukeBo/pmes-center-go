@@ -91,8 +91,6 @@ type ComplexityRoot struct {
 		AddMaterial    func(childComplexity int, input model.MaterialCreateInput) int
 		CancelExport   func(childComplexity int, opID string) int
 		DeleteMaterial func(childComplexity int, id int) int
-		Login          func(childComplexity int, loginInput model.LoginInput) int
-		Logout         func(childComplexity int) int
 		Setting        func(childComplexity int, settingInput model.SettingInput) int
 		UpdateMaterial func(childComplexity int, input model.MaterialUpdateInput) int
 	}
@@ -183,8 +181,8 @@ type ComplexityRoot struct {
 
 	User struct {
 		Account func(childComplexity int) int
-		Admin   func(childComplexity int) int
 		ID      func(childComplexity int) int
+		IsAdmin func(childComplexity int) int
 	}
 
 	YieldWrap struct {
@@ -200,8 +198,6 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	Login(ctx context.Context, loginInput model.LoginInput) (*model.User, error)
-	Logout(ctx context.Context) (string, error)
 	Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error)
 	AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error)
 	UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error)
@@ -428,25 +424,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteMaterial(childComplexity, args["id"].(int)), true
-
-	case "Mutation.login":
-		if e.complexity.Mutation.Login == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_login_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.Login(childComplexity, args["loginInput"].(model.LoginInput)), true
-
-	case "Mutation.logout":
-		if e.complexity.Mutation.Logout == nil {
-			break
-		}
-
-		return e.complexity.Mutation.Logout(childComplexity), true
 
 	case "Mutation.setting":
 		if e.complexity.Mutation.Setting == nil {
@@ -938,19 +915,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Account(childComplexity), true
 
-	case "User.admin":
-		if e.complexity.User.Admin == nil {
-			break
-		}
-
-		return e.complexity.User.Admin(childComplexity), true
-
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
 		}
 
 		return e.complexity.User.ID(childComplexity), true
+
+	case "User.isAdmin":
+		if e.complexity.User.IsAdmin == nil {
+			break
+		}
+
+		return e.complexity.User.IsAdmin(childComplexity), true
 
 	case "YieldWrap.name":
 		if e.complexity.YieldWrap.Name == nil {
@@ -1169,6 +1146,7 @@ input PointCreateInput {
     usl: Float!
     nominal: Float!
     lsl: Float!
+    index: Int!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/product.graphql", Input: `type ExportResponse {
@@ -1201,11 +1179,6 @@ type ProductWrap {
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "graph/schema/root.mutation.graphql", Input: `type Mutation {
-    "登入"
-    login(loginInput: LoginInput!): User!
-    "登出"
-    logout: String!
-
     "添加系统设置"
     setting(settingInput: SettingInput!): SystemConfig!
 
@@ -1272,7 +1245,7 @@ type SizeWrap {
 	&ast.Source{Name: "graph/schema/user.graphql", Input: `type User {
     id: Int!
     account: String!
-    admin: Boolean!
+    isAdmin: Boolean!
 }
 
 input LoginInput {
@@ -1327,20 +1300,6 @@ func (ec *executionContext) field_Mutation_deleteMaterial_args(ctx context.Conte
 		}
 	}
 	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.LoginInput
-	if tmp, ok := rawArgs["loginInput"]; ok {
-		arg0, err = ec.unmarshalNLoginInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐLoginInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["loginInput"] = arg0
 	return args, nil
 }
 
@@ -2381,81 +2340,6 @@ func (ec *executionContext) _MaterialWrap_materials(ctx context.Context, field g
 	res := resTmp.([]*model.Material)
 	fc.Result = res
 	return ec.marshalOMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterialᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_login_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Login(rctx, args["loginInput"].(model.LoginInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_logout(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Logout(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_setting(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4693,7 +4577,7 @@ func (ec *executionContext) _User_account(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_admin(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_isAdmin(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4710,7 +4594,7 @@ func (ec *executionContext) _User_admin(ctx context.Context, field graphql.Colle
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Admin, nil
+		return obj.IsAdmin, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6063,6 +5947,12 @@ func (ec *executionContext) unmarshalInputPointCreateInput(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
+		case "index":
+			var err error
+			it.Index, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -6371,16 +6261,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "login":
-			out.Values[i] = ec._Mutation_login(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "logout":
-			out.Values[i] = ec._Mutation_logout(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "setting":
 			out.Values[i] = ec._Mutation_setting(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -6917,8 +6797,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "admin":
-			out.Values[i] = ec._User_admin(ctx, field, obj)
+		case "isAdmin":
+			out.Values[i] = ec._User_isAdmin(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7372,10 +7252,6 @@ func (ec *executionContext) marshalNInt2ᚕᚖint(ctx context.Context, sel ast.S
 	}
 
 	return ret
-}
-
-func (ec *executionContext) unmarshalNLoginInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐLoginInput(ctx context.Context, v interface{}) (model.LoginInput, error) {
-	return ec.unmarshalInputLoginInput(ctx, v)
 }
 
 func (ec *executionContext) marshalNMaterial2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterial(ctx context.Context, sel ast.SelectionSet, v model.Material) graphql.Marshaler {

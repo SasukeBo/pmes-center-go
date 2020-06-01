@@ -13,10 +13,6 @@ type Product struct {
 	DeviceID       int       `gorm:"column:device_id;not null;index"`
 	Qualified      bool      `gorm:"column:qualified;default:false"`
 	CreatedAt      time.Time `gorm:"index"`
-	D2Code         string    `gorm:"column:d2_code"`
-	LineID         string    `gorm:"column:line_id;index"`
-	JigID          string    `gorm:"column:jig_id;index"`
-	MouldID        string    `gorm:"column:mould_id;index"`
-	ShiftNumber    string    `gorm:"index"`
+	Attribute      types.Map `type:JSON;not null`
 	PointValues    types.Map `gorm:"type:JSON;not null"`
 }

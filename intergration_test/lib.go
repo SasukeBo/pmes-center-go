@@ -1,7 +1,6 @@
 package test
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/ftpviewer/orm"
@@ -36,21 +35,28 @@ func (t *tester) SetHeader(key string, value string) {
 	t.Headers[key] = value
 }
 
-// API post a api request
-func (t *tester) API(query string, variables interface{}) *request {
+// send a POST request with form data
+func (t *tester) POST(path string, variables interface{}, pathargs ...interface{}) *request {
+	rr := t.E.POST(path, pathargs...).WithHeaders(t.Headers).WithHeader("Cookie", accessTokenCookie).WithForm(variables)
+	return &request{rr}
+}
+
+// send a GET request with query
+func (t *tester) GET(path string, variables interface{}, pathargs ...interface{}) *request {
+	rr := t.E.GET(path, pathargs...).WithHeaders(t.Headers).WithHeader("Cookie", accessTokenCookie).WithQueryObject(variables)
+	return &request{rr}
+}
+
+// API1 post a api/v1 request
+func (t *tester) API1(query string, variables interface{}) *request {
 	payload := map[string]interface{}{
 		"operationName": "",
 		"query":         query,
 		"variables":     variables,
 	}
 
-	rr := t.E.POST("/api").WithHeaders(t.Headers).WithHeader("Cookie", accessTokenCookie).WithJSON(payload)
+	rr := t.E.POST("/api/v1").WithHeaders(t.Headers).WithHeader("Cookie", accessTokenCookie).WithJSON(payload)
 	return &request{rr}
-}
-
-// GET send a get request to url with query variables
-func (t *tester) GET(url string, variables ...interface{}) *httpexpect.Request {
-	return t.E.GET(url, variables...).WithHeaders(t.Headers)
 }
 
 // new a tester
@@ -62,21 +68,14 @@ func newTester(t httpexpect.LoggerReporter) *tester {
 }
 
 // login 测试环境下登录系统
-func login(account, password string) {
+func login(account, password string, remember bool) {
 	client := &http.Client{}
 	data := url.Values{}
-	variables := object{
-		"input": object{
-			"account":  account,
-			"password": password,
-		},
-	}
-	content, _ := json.Marshal(variables)
-	data.Set("operationName", "")
-	data.Set("query", loginGQL)
-	data.Set("variables", string(content))
+	data.Set("account", account)
+	data.Set("password", password)
+	data.Set("remember", fmt.Sprint(remember))
 
-	res, err := client.PostForm(fmt.Sprintf("%s%s", host, "/api"), data)
+	res, err := client.PostForm(fmt.Sprintf("%s%s", host, "/api/login"), data)
 	if err != nil {
 		panic(err)
 	}
@@ -90,7 +89,7 @@ func init() {
 	setup()
 	host = fmt.Sprintf("http://localhost:%v", configer.GetEnv("port"))
 	go router.Start()
-	login(data.User.Username, testUserPasswd)
+	login(data.User.Account, testUserPasswd, true)
 	orm.DB.LogMode(true)
 }
 
@@ -134,13 +133,13 @@ const (
 func setup() {
 	data.User = &orm.User{
 		IsAdmin:  false,
-		Username: testUserAccount,
+		Account:  testUserAccount,
 		Password: util.Encrypt(testUserPasswd),
 	}
 	orm.Create(data.User)
 	data.Admin = &orm.User{
 		IsAdmin:  true,
-		Username: testAdminAccount,
+		Account:  testAdminAccount,
 		Password: util.Encrypt(testAdminPasswd),
 	}
 	orm.Create(data.Admin)
