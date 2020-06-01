@@ -12,9 +12,9 @@ type ImportRecord struct {
 	DeviceID         int    `gorm:"not null;index"` // 关联设备ID
 	RowCount         int    // 数据行数
 	RowFinishedCount int    // 完成行数
-	Finished         bool   `gorm:"not null;default: false"` // 表示处理完成
+	Finished         bool   `gorm:"not null;default:false"` // 表示处理完成
 	FileSize         int
 	UserID           int
-	ImportType       string `gorm:"not null;default:SYSTEM"` // 导入方式，默认为系统
-	DecodeTemplateID int    `gorm:"not null"`                // 文件解析模板ID
+	ImportType       string `gorm:"not null;default:'SYSTEM'"` // 导入方式，默认为系统
+	DecodeTemplateID int    `gorm:"not null"`                   // 文件解析模板ID
 }

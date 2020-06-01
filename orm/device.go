@@ -30,3 +30,7 @@ func (d *Device) BeforeCreate() error {
 	d.UUID = uid.String()
 	return nil
 }
+
+func (d *Device) GetWithName(name string) error {
+	return DB.Model(d).Where("name = ?", name).First(d).Error
+}

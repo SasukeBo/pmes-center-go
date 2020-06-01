@@ -17,12 +17,11 @@ model:
   filename: graph/model/models_gen.go
   package: model
 
-# Uncomment to enable resolver generate
 # Where should the resolver implementations go?
-# resolver:
-#   layout: follow-schema
-#   dir: graph
-#   package: graph
+resolver:
+  layout: follow-schema
+  dir: graph/resolver
+  package: resolver
 
 # Optional: turn on use `gqlgen:"fieldName"` tags in your models
 # struct_tag: json

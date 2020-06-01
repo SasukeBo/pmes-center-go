@@ -51,7 +51,7 @@ func generateRootUser() {
 	err := DB.Model(&User{}).Where("username = ?", username).First(&root).Error
 	if err != nil {
 		root = User{
-			Admin:    true,
+			IsAdmin:    true,
 			Username: username,
 			Password: util.Encrypt(configer.GetString("root_pass")),
 		}
@@ -86,16 +86,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
-	if configer.GetString("env") == "prod" {
-		DB.LogMode(false)
-	} else {
-		DB.LogMode(true)
-	}
-
-	if err != nil {
-		panic(fmt.Errorf("open connection to db error: \n%v", err.Error()))
-	}
+	DB.LogMode(false)
+	env := configer.GetString("env")
 
 	err = DB.AutoMigrate(
 		&DecodeTemplate{},
@@ -111,11 +103,17 @@ func init() {
 		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
 	}
 
-	if configer.GetString("env") != "test" {
+	if env != "test" || env != "TEST" {
 		generateRootUser()
 	}
 	generateDefaultConfig()
-
 	tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users"}
 	utf8GeneralCI(tableNames)
+
+	if env == "prod" {
+		DB.LogMode(false)
+	} else {
+		log.Info("start service on %s mode", env)
+		DB.LogMode(true)
+	}
 }

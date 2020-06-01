@@ -7,3 +7,7 @@ type Material struct {
 	CustomerCode  string
 	ProjectRemark string
 }
+
+func (m *Material) GetWithName(name string) error {
+	return DB.Model(m).Where("name = ?", name).First(m).Error
+}

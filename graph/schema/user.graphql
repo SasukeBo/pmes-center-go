@@ -1,10 +1,11 @@
-type Size {
-    id: Int
-    name: String
-    MaterialID: Int
+type User {
+    id: Int!
+    account: String!
+    isAdmin: Boolean!
 }
 
-type SizeWrap {
-    total: Int
-    sizes: [Size!]
+input LoginInput {
+    account: String!
+    password: String!
 }
+

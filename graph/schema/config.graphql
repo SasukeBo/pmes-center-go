@@ -1,11 +1,12 @@
-type User {
+type SystemConfig {
     id: Int
-    account: String
-    admin: Boolean
+    key: String
+    value: String
+    createdAt: Time
+    updatedAt: Time
 }
 
-input LoginInput {
-    account: String!
-    password: String!
+input SettingInput {
+    key: String!
+    value: String!
 }
-

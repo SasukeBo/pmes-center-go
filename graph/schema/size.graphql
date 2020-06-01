@@ -1,0 +1,10 @@
+type Size {
+    id: Int
+    name: String
+    MaterialID: Int
+}
+
+type SizeWrap {
+    total: Int
+    sizes: [Size!]
+}

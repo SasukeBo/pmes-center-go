@@ -1,0 +1,28 @@
+type ExportResponse {
+    percent: Float!
+    message: String!
+    fileName: String
+    finished: Boolean!
+}
+
+type Product {
+    id: Int
+    uuid: String
+    materialID: Int
+    deviceID: Int
+    qualified: Boolean
+    pointValue: Map
+    createdAt: Time
+    d2code: String
+    lineID: String
+    jigID: String
+    mouldID: String
+    shiftNumber: String
+}
+
+type ProductWrap {
+    tableHeader: [String!]
+    products: [Product!]
+    status: fetchStatus
+    total: Int
+}

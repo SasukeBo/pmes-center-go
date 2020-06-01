@@ -1,0 +1,19 @@
+type Mutation {
+    "登入"
+    login(loginInput: LoginInput!): User!
+    "登出"
+    logout: String!
+
+    "添加系统设置"
+    setting(settingInput: SettingInput!): SystemConfig!
+
+    "增加料号"
+    addMaterial(input: MaterialCreateInput!): Material!
+    "编辑料号"
+    updateMaterial(input: MaterialUpdateInput!): Material!
+    "删除料号"
+    deleteMaterial(id: Int!): String!
+
+    "取消导出"
+    cancelExport(opID: String!): String!
+}
