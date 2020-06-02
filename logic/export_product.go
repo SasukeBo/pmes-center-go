@@ -93,7 +93,7 @@ func CreateXLSXHeader(sheet *xlsx.Sheet, points []orm.Point) {
 		nominalRow := rMap[CellNameNominal]
 		nominalCell := nominalRow.AddCell()
 		nominalCell.SetStyle(headerCellStyle)
-		nominalCell.SetValue(p.Norminal)
+		nominalCell.SetValue(p.Nominal)
 
 		lslRow := rMap[CellNameLSL]
 		lslCell := lslRow.AddCell()

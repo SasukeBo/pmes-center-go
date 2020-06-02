@@ -101,7 +101,7 @@ type ComplexityRoot struct {
 		ID         func(childComplexity int) int
 		LowerLimit func(childComplexity int) int
 		Name       func(childComplexity int) int
-		Norminal   func(childComplexity int) int
+		Nominal    func(childComplexity int) int
 		UpperLimit func(childComplexity int) int
 	}
 
@@ -493,12 +493,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Point.Name(childComplexity), true
 
-	case "Point.norminal":
-		if e.complexity.Point.Norminal == nil {
+	case "Point.nominal":
+		if e.complexity.Point.Nominal == nil {
 			break
 		}
 
-		return e.complexity.Point.Norminal(childComplexity), true
+		return e.complexity.Point.Nominal(childComplexity), true
 
 	case "Point.upperLimit":
 		if e.complexity.Point.UpperLimit == nil {
@@ -1169,7 +1169,7 @@ type Point {
   id: Int
   name: String
   upperLimit: Float
-  norminal: Float
+  nominal: Float
   lowerLimit: Float
 }
 
@@ -2737,7 +2737,7 @@ func (ec *executionContext) _Point_upperLimit(ctx context.Context, field graphql
 	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Point_norminal(ctx context.Context, field graphql.CollectedField, obj *model.Point) (ret graphql.Marshaler) {
+func (ec *executionContext) _Point_nominal(ctx context.Context, field graphql.CollectedField, obj *model.Point) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2754,7 +2754,7 @@ func (ec *executionContext) _Point_norminal(ctx context.Context, field graphql.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Norminal, nil
+		return obj.Nominal, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6364,8 +6364,8 @@ func (ec *executionContext) _Point(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = ec._Point_name(ctx, field, obj)
 		case "upperLimit":
 			out.Values[i] = ec._Point_upperLimit(ctx, field, obj)
-		case "norminal":
-			out.Values[i] = ec._Point_norminal(ctx, field, obj)
+		case "nominal":
+			out.Values[i] = ec._Point_nominal(ctx, field, obj)
 		case "lowerLimit":
 			out.Values[i] = ec._Point_lowerLimit(ctx, field, obj)
 		default:

@@ -78,12 +78,12 @@ type Point struct {
 	Index      int    `gorm:"not null"`
 	UpperLimit float64
 	LowerLimit float64
-	Norminal   float64
+	Nominal   float64
 }
 
 // NotValid 校验数据有效性
 func (p *Point) NotValid(v float64) bool {
-	return p.Norminal > 0 && v > p.Norminal*100
+	return p.Nominal > 0 && v > p.Nominal*100
 }
 
 // PointValue 点位值

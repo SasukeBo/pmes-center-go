@@ -168,7 +168,7 @@ func handleSizePoint(dimSet map[string]ftpclient.SL, materialID int) {
 				Index:      v.Index,
 				UpperLimit: v.USL,
 				LowerLimit: v.LSL,
-				Norminal:   v.Norminal,
+				Nominal:   v.Nominal,
 			}
 			tx.Create(point)
 		} else {
@@ -176,7 +176,7 @@ func handleSizePoint(dimSet map[string]ftpclient.SL, materialID int) {
 			point.Index = v.Index
 			point.LowerLimit = v.LSL
 			point.UpperLimit = v.USL
-			point.Norminal = v.Norminal
+			point.Nominal = v.Nominal
 			tx.Save(point)
 		}
 	}

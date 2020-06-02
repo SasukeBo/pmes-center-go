@@ -131,7 +131,7 @@ func (r *queryResolver) AnalyzePoint(ctx context.Context, searchInput model.Sear
 				ID:         &point.ID,
 				Name:       &point.Name,
 				UpperLimit: &point.UpperLimit,
-				Norminal:   &point.Norminal,
+				Nominal:    &point.Nominal,
 				LowerLimit: &point.LowerLimit,
 			},
 		}
@@ -283,6 +283,19 @@ func (r *queryResolver) TotalPointYield(ctx context.Context, searchInput model.S
 			Value: float64(ok) / float64(total),
 		}
 		out = append(out, o)
+	}
+
+	length := len(out)
+	for i := 0; i < length; i++ {
+		for j := 0; j < length-1-i; j++ {
+			if out[j].Value > out[j+1].Value {
+				out[j], out[j+1] = out[j+1], out[j]
+			}
+		}
+	}
+
+	if length > 20 {
+		return out[:20], nil
 	}
 
 	return out, nil
