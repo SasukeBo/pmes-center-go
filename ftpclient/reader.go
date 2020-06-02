@@ -41,7 +41,7 @@ func (cd *CSVDecoder) Decode(data []byte) error {
 type SL struct {
 	Index    int
 	USL      float64
-	Norminal float64
+	Nominal float64
 	LSL      float64
 }
 
@@ -99,7 +99,7 @@ func (xr *XLSXReader) ReadSize(path string) error {
 		lsl := parseFloat((*LSLSet)[i])
 		xr.DimSL[k] = SL{
 			USL:      usl,
-			Norminal: (usl + lsl) / 2,
+			Nominal: (usl + lsl) / 2,
 			LSL:      lsl,
 			Index:    i,
 		}
