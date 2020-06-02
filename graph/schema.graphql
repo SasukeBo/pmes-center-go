@@ -52,6 +52,7 @@ type ExportResponse {
 
 type YieldWrap {
   name: String!
+  ng: Int!
   value: Float!
 }
 

@@ -160,6 +160,7 @@ type User struct {
 
 type YieldWrap struct {
 	Name  string  `json:"name"`
+	Ng    int     `json:"ng"`
 	Value float64 `json:"value"`
 }
 
