@@ -280,6 +280,7 @@ func (r *queryResolver) TotalPointYield(ctx context.Context, searchInput model.S
 		}
 		o := &model.YieldWrap{
 			Name:  p.Name,
+			Ng: ng,
 			Value: float64(ng) / float64(total),
 		}
 		out = append(out, o)

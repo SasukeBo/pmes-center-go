@@ -189,6 +189,7 @@ type ComplexityRoot struct {
 
 	YieldWrap struct {
 		Name  func(childComplexity int) int
+		Ng    func(childComplexity int) int
 		Value func(childComplexity int) int
 	}
 
@@ -959,6 +960,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.YieldWrap.Name(childComplexity), true
 
+	case "YieldWrap.ng":
+		if e.complexity.YieldWrap.Ng == nil {
+			break
+		}
+
+		return e.complexity.YieldWrap.Ng(childComplexity), true
+
 	case "YieldWrap.value":
 		if e.complexity.YieldWrap.Value == nil {
 			break
@@ -1105,6 +1113,7 @@ type ExportResponse {
 
 type YieldWrap {
   name: String!
+  ng: Int!
   value: Float!
 }
 
@@ -4733,6 +4742,40 @@ func (ec *executionContext) _YieldWrap_name(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _YieldWrap_ng(ctx context.Context, field graphql.CollectedField, obj *model.YieldWrap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "YieldWrap",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ng, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _YieldWrap_value(ctx context.Context, field graphql.CollectedField, obj *model.YieldWrap) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -6867,6 +6910,11 @@ func (ec *executionContext) _YieldWrap(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = graphql.MarshalString("YieldWrap")
 		case "name":
 			out.Values[i] = ec._YieldWrap_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "ng":
+			out.Values[i] = ec._YieldWrap_ng(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
