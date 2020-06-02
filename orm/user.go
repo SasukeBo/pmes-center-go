@@ -10,7 +10,7 @@ type User struct {
 	gorm.Model
 	UUID     string `gorm:"unique_index;not null"`
 	IsAdmin  bool   `gorm:"default:false"`
-	Account string `gorm:"not null;unique_index"`
+	Account  string `gorm:"not null;unique_index"`
 	Password string `gorm:"not null"`
 }
 

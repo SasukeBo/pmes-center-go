@@ -5,9 +5,9 @@ package ftpclient
 import (
 	"fmt"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/ftpviewer/orm/types"
 	timer "github.com/SasukeBo/lib/time"
 	"github.com/SasukeBo/log"
-	"regexp"
 	"runtime/debug"
 	"strconv"
 	"time"
@@ -15,25 +15,23 @@ import (
 
 var fetchQueue chan string
 var cacheQueue chan *XLSXReader
-
 var (
-	reg               *regexp.Regexp
 	singleInsertLimit = 10000
-	filenamePattern   = `(.*)-(.*)-(.*)-([w|b])\.xlsx`
 	insertProductsTpl = `
-		INSERT INTO products (uuid, material_id, device_id, qualified, created_at, d2_code, line_id, jig_id, mould_id, shift_number)
+		INSERT INTO products (
+			import_record_id,
+			material_id,
+			device_id,
+			qualified,
+			created_at,
+			attribute,
+			point_values
+		)
 		VALUES
 		%s
 	`
-	productValueFieldTpl = `(?,?,?,?,?,?,?,?,?,?)`
-	productValueCount    = 10
-	insertPointValuesTpl = `
-		INSERT INTO point_values (point_id, product_uuid, v)
-		VALUES
-		%s
-	`
-	pointValueFieldTpl = `(?,?,?)`
-	pointValueCount    = 3
+	productValueFieldTpl = `(?,?,?,?,?,?,?)`
+	productValueCount    = 7
 )
 
 // FTPWorker _
@@ -57,94 +55,102 @@ func Store(xr *XLSXReader) {
 		}
 	}()
 
+	var time1 = time.Now()
+
 	var points []orm.Point
 	if err := orm.DB.Model(&orm.Point{}).Where("material_id = ?", xr.Material.ID).Find(&points).Error; err != nil {
 		// TODO: add log
 		return
 	}
 
-	columns, ok := xr.DecodeTemplate.ProductColumns["columns"].([]orm.Column)
+	iColumns := xr.DecodeTemplate.ProductColumns["columns"]
+	columns, ok := iColumns.([]interface{})
 	if !ok {
 		// TODO: add log
-		log.Errorln("decode template product columns error")
+		log.Error("decode template product columns error, got %+v\n", iColumns)
 		return
 	}
 
-	products := make([]interface{}, 0)
-	pointValues := make([]interface{}, 0)
+	productValueExpands := make([]interface{}, 0)
+
 	for _, row := range xr.DataSet {
-		if !validRow(row) { // 过滤掉无效行和空行
-			continue
-		}
-		var qp = true
-		for _, column := range columns {
-			// TODO: parse number
-			switch column.Type {
+		var createdAt time.Time
+		var qualified bool
+
+		attribute := make(types.Map)
+		for _, iColumn := range columns {
+			column := iColumn.(map[string]interface{})
+			index := int(column["Index"].(float64))
+			cType := column["Type"].(string)
+			name := column["Name"].(string)
+			value := row[index]
+
+			switch cType {
 			case orm.ProductColumnTypeDatetime:
+				t := timer.ParseTime(value, 8)
+				if t == nil {
+					now := time.Now()
+					t = &now
+				}
 
+				createdAt = *t
+				attribute[name] = *t
+
+			case orm.ProductColumnTypeFloat:
+				fv, err := strconv.ParseFloat(value, 64)
+				if err != nil {
+					fv = float64(0)
+				}
+				attribute[name] = fv
+			case orm.ProductColumnTypeInteger:
+				iv, err := strconv.ParseInt(value, 10, 64)
+				if err != nil {
+					iv = int64(0)
+				}
+				attribute[name] = iv
+			case orm.ProductColumnTypeString:
+				attribute[name] = fmt.Sprint(value)
 			}
+
 		}
 
-		// TODO: time zone config
-		// TODO: 在本地实现时间解析
-		productAt, err := timer.ParseTime(row[1], 8)
-		if err != nil {
-			t := time.Now()
-			productAt = &t
-		}
-
-
+		pointValues := make(types.Map)
 		for _, v := range points {
-			value := parseFloat(row[v.Index])
-			if value < v.LowerLimit || value > v.UpperLimit {
-				qp = false
+			ii, ok := xr.DecodeTemplate.PointColumns[v.Name]
+			if !ok { // 模板中没有该名称点位的解析配置
+				continue
 			}
-			pv := []interface{}{v.ID, puuid, value}
-			pointValues = append(pointValues, pv...)
+			idx := int(ii.(float64))
+			value := parseFloat(row[idx])
+			if value < v.LowerLimit || value > v.UpperLimit {
+				qualified = false
+			}
+			pointValues[v.Name] = value
 		}
-
-		pv := []interface{}{puuid, material.ID, device.ID, qp, productAt, row[2], row[3], row[4], row[5], row[6]}
-		products = append(products, pv...)
+		productValueExpands = append(productValueExpands,
+			xr.Record.ID,
+			xr.Material.ID,
+			xr.Device.ID,
+			qualified,
+			createdAt,
+			attribute,
+			pointValues,
+		)
 	}
 
-	finishChan := make(chan int, 0)
-	go execInsert(products, productValueCount, insertProductsTpl, productValueFieldTpl, xr.PathID, finishChan)
-	go execInsert(pointValues, pointValueCount, insertPointValuesTpl, pointValueFieldTpl, xr.PathID, finishChan)
+	execInsert(productValueExpands, productValueCount, insertProductsTpl, productValueFieldTpl, xr.Record)
+	xr.Record.Finished = true
+	orm.Save(xr.Record)
 
-	f := 0
-	for {
-		c := <-finishChan
-		f = f + c
-		if f == 2 {
-			break
-		}
-	}
-
-	// 最后完成该文件
-	orm.DB.Model(&orm.File{}).Where("id = ?", xr.PathID).Update("finished", true)
+	var time2 = time.Now()
+	fmt.Printf("___________________________ process duration is %v\n", time2.Sub(time1))
 }
 
-func validRow(row []string) bool {
-	if len(row) == 0 { // 过滤空行
-		return false
-	}
-	if row[0] == "" { // 过滤第一个单元格空的行
-		return false
-	}
-
-	if _, err := strconv.Atoi(row[0]); err != nil { // 过滤首单元格不可转数字的行
-		return false
-	}
-
-	return true
-}
-
-func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, fileID int, finishChan chan int) {
+func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, record *orm.ImportRecord) {
 	tx := orm.DB.Begin()
-	//tx.LogMode(true)
 	tx.LogMode(false)
-	datalen := len(dataset)
-	totalLen := datalen / itemLen
+	dataLen := len(dataset)
+	totalLen := dataLen / itemLen
 	vSQL := valuetpl
 	for i := 1; i < singleInsertLimit; i++ {
 		vSQL = vSQL + "," + valuetpl
@@ -157,7 +163,8 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, fil
 		if err != nil {
 			fmt.Printf("[execInsert] %v\n", err)
 		}
-		updateFinishedRows(fileID, singleInsertLimit)
+		record.RowFinishedCount = record.RowFinishedCount + singleInsertLimit
+		orm.Save(record)
 	}
 
 	restLen := totalLen % singleInsertLimit
@@ -166,24 +173,17 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, fil
 		for j := 1; j < restLen; j++ {
 			vSQL = vSQL + "," + valuetpl
 		}
-		end := datalen
-		begin := datalen - restLen*itemLen
+		end := dataLen
+		begin := dataLen - restLen*itemLen
 		err := tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...).Error
 		if err != nil {
 			fmt.Printf("[execInsert] %v\n", err)
 		}
-		updateFinishedRows(fileID, restLen)
+		record.RowFinishedCount = record.RowFinishedCount + restLen
+		orm.Save(record)
 	}
 
 	tx.Commit()
-	finishChan <- 1
-}
-
-func updateFinishedRows(fileID, plus int) {
-	//var file orm.File
-	//orm.DB.Model(&file).Where("id = ?", fileID).First(&file)
-	//orm.DB.Model(&orm.File{}).Where("id = ?", fileID).Update("finished_rows", file.FinishedRows+plus)
-	//// fmt.Printf("-----------------------------------\nfinish udpate file id=%v finished rows=%v\n", fileID, file.FinishedRows+plus)
 }
 
 func parseFloat(v string) float64 {
@@ -202,5 +202,4 @@ func PushStore(xr *XLSXReader) {
 func init() {
 	fetchQueue = make(chan string, 10)
 	cacheQueue = make(chan *XLSXReader, 10)
-	reg = regexp.MustCompile(filenamePattern)
 }

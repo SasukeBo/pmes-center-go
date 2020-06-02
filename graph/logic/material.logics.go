@@ -43,7 +43,7 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 	}
 
 	pointColumns := make(types.Map)
-	for i, pointInput := range input.Points {
+	for _, pointInput := range input.Points {
 		point := orm.Point{
 			Name:       pointInput.Name,
 			MaterialID: material.ID,
@@ -55,10 +55,7 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 			tx.Rollback()
 			return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateFailedError, err, "point")
 		}
-		pointColumns[fmt.Sprintf("v_%d", i)] = &orm.Column{
-			Name:  pointInput.Name,
-			Index: pointInput.Index,
-		}
+		pointColumns[pointInput.Name] = pointInput.Index
 	}
 
 	decodeTemplate := orm.DecodeTemplate{
@@ -143,8 +140,9 @@ func fetchMaterialData(material orm.Material, files []fetchItem, dt *orm.DecodeT
 			DeviceID:         f.Device.ID,
 			DecodeTemplateID: dt.ID,
 		}
-		if err := orm.Create(importRecord); err != nil {
+		if err := orm.Create(importRecord).Error; err != nil {
 			// TODO: add log
+			log.Errorln(err)
 			continue
 		}
 
@@ -156,8 +154,9 @@ func fetchMaterialData(material orm.Material, files []fetchItem, dt *orm.DecodeT
 				return
 			}
 			importRecord.RowCount = len(xr.DataSet)
-			if err := orm.Save(importRecord); err != nil {
+			if err := orm.Save(importRecord).Error; err != nil {
 				// TODO: add log
+				log.Errorln(err)
 				return
 			}
 			xr.Record = importRecord

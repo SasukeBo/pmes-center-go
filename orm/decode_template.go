@@ -57,3 +57,8 @@ type Column struct {
 	Index int
 	Type  string
 }
+
+type ColumnValue struct {
+	Label string
+	Value interface{}
+}

@@ -34,7 +34,7 @@ func createUriWithDBName(name string) string {
 	)
 }
 
-func generateDefaultConfig() {
+func GenerateDefaultConfig() {
 	SetIfNotExist(SystemConfigFtpHostKey)
 	SetIfNotExist(SystemConfigFtpPortKey)
 	SetIfNotExist(SystemConfigFtpUsernameKey)
@@ -42,8 +42,8 @@ func generateDefaultConfig() {
 	SetIfNotExist(SystemConfigProductColumnHeadersKey)
 }
 
-func alterTableUtf8(tbname string) {
-	DB.Exec(fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci", tbname))
+func alterTableUtf8(tbName string) {
+	DB.Exec(fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci", tbName))
 }
 
 func utf8GeneralCI(tableNames []string) {
@@ -55,13 +55,13 @@ func utf8GeneralCI(tableNames []string) {
 }
 
 func generateRootUser() {
-	username := configer.GetString("root_name")
+	account := configer.GetString("root_name")
 	var root User
-	err := DB.Model(&User{}).Where("username = ?", username).First(&root).Error
+	err := DB.Model(&User{}).Where("account = ?", account).First(&root).Error
 	if err != nil {
 		root = User{
 			IsAdmin:  true,
-			Account:  username,
+			Account:  account,
 			Password: util.Encrypt(configer.GetString("root_pass")),
 		}
 		err := DB.Create(&root).Error
@@ -116,10 +116,10 @@ func init() {
 
 	if env != "test" || env != "TEST" {
 		generateRootUser()
+		GenerateDefaultConfig()
+		tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users"}
+		utf8GeneralCI(tableNames)
 	}
-	generateDefaultConfig()
-	tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users"}
-	utf8GeneralCI(tableNames)
 
 	if env == "prod" {
 		DB.LogMode(false)

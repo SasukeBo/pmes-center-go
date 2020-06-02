@@ -16,6 +16,6 @@ func (m *Material) GetWithName(name string) error {
 
 func (m *Material) GetDefaultTemplate() (*DecodeTemplate, error) {
 	var template DecodeTemplate
-	err := DB.Model(&template).Where("material_id = ? AND default = 1", m.ID).First(&template).Error
+	err := DB.Model(&template).Where("material_id = ? AND `decode_templates`.`default` = ?", m.ID, true).First(&template).Error
 	return &template, err
 }

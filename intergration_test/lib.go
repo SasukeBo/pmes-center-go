@@ -109,7 +109,9 @@ func tearDown() {
 	for _, name := range tables {
 		cleanTable(name)
 	}
+	orm.GenerateDefaultConfig()
 	orm.DB.LogMode(true)
+
 }
 
 func cleanTable(tbName string) {

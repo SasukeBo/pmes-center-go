@@ -5,6 +5,8 @@ github.com/SasukeBo/configer v1.1.0 h1:E7ePBQcKHu0CB0rgpG2v5gpCipkLYEnBP8CAjc+5V
 github.com/SasukeBo/configer v1.1.0/go.mod h1:V4pc1VEL2ZpU9N7yK3l1ngzqaUA4gYuMjBDiejzBHcY=
 github.com/SasukeBo/lib v0.0.0-20200527114554-7d04dff0ae99 h1:kC0A4STxgCIH9u5Z/aVzFKOGDJ6mZAJrV6IU++S+U24=
 github.com/SasukeBo/lib v0.0.0-20200527114554-7d04dff0ae99/go.mod h1:nuJxlxGF6AfZKCDc6CnUjBr9W2abJ4526+cCkSwBj3Y=
+github.com/SasukeBo/lib v0.0.0-20200602063231-f30ff33e11ce h1:35joBCXptq2bwi3o2ufjeHMMKiEL9+pRnXLfFDXZzMc=
+github.com/SasukeBo/lib v0.0.0-20200602063231-f30ff33e11ce/go.mod h1:nuJxlxGF6AfZKCDc6CnUjBr9W2abJ4526+cCkSwBj3Y=
 github.com/SasukeBo/log v1.0.0 h1:wklEBgyTD4pH1ihTTu7Uw6KvushDfAlbTkkjQ4dFN4Y=
 github.com/SasukeBo/log v1.0.0/go.mod h1:3+Xt6o8Vv47/eRT/xqyNyVeYf3sLzyeRp7MFLLsex6o=
 github.com/SasukeBo/xlsx v1.0.5-fork h1:Lrsf0vFTE2LpcEQiFT/P1jQZxIvfCUZzKRcqV9c/3lU=

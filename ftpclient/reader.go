@@ -34,15 +34,15 @@ func (xr *XLSXReader) Read(path string) error {
 	if err != nil {
 		return err
 	}
-	var bIdx = xr.DecodeTemplate.DataRowIndex - 1
-	var eIdx = 0
+	var bIdx = xr.DecodeTemplate.DataRowIndex
+	var eIdx = len(dataSheet) - 1
 	for i, row := range dataSheet {
-		if len(row) == 0 && i > bIdx {
-			eIdx = i
+		if (len(row) == 0 || row[0] == "") && i > bIdx { // 空行 或 行首位空 为截至行，理想情况下不存在数据行中穿插空行
+			eIdx = i - 1
 			break
 		}
 	}
-	dataSet := dataSheet[bIdx : eIdx-1]
+	dataSet := dataSheet[bIdx : eIdx+1]
 	xr.DataSet = dataSet
 
 	log.Info("data begin idx: %v, end idx: %v\n", bIdx, eIdx)

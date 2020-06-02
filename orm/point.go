@@ -8,8 +8,8 @@ import "github.com/jinzhu/gorm"
 // Point 点位
 type Point struct {
 	gorm.Model
-	Name        string `gorm:"index;not null"`
-	MaterialID  uint   `gorm:"not null;index"`
+	Name        string `gorm:"unique_index:uidx_name_material_id;not null"`
+	MaterialID  uint   `gorm:"unique_index:uidx_name_material_id;not null"`
 	UpperLimit  float64
 	LowerLimit  float64
 	Nominal     float64
