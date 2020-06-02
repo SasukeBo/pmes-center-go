@@ -268,19 +268,19 @@ func (r *queryResolver) TotalPointYield(ctx context.Context, searchInput model.S
 	for _, p := range points {
 		data := mpvs[p.ID]
 		total := len(data)
-		ok := 0
+		ng := 0
 		for _, v := range data {
 			if p.NotValid(v) {
 				continue
 			}
 
-			if v >= p.LowerLimit && v <= p.UpperLimit {
-				ok++
+			if v < p.LowerLimit || v > p.UpperLimit {
+				ng++
 			}
 		}
 		o := &model.YieldWrap{
 			Name:  p.Name,
-			Value: float64(ok) / float64(total),
+			Value: float64(ng) / float64(total),
 		}
 		out = append(out, o)
 	}
@@ -288,7 +288,7 @@ func (r *queryResolver) TotalPointYield(ctx context.Context, searchInput model.S
 	length := len(out)
 	for i := 0; i < length; i++ {
 		for j := 0; j < length-1-i; j++ {
-			if out[j].Value > out[j+1].Value {
+			if out[j].Value < out[j+1].Value {
 				out[j], out[j+1] = out[j+1], out[j]
 			}
 		}
