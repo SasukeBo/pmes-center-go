@@ -13,7 +13,7 @@ const xlsxContentType = "application/vnd.openxmlformats-officedocument.spreadshe
 
 type object map[string]string
 
-func Download() gin.HandlerFunc {
+func DownloadCacheFile() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		fileName, ok := c.GetQuery("file_name")
 		if !ok {
@@ -34,5 +34,11 @@ func Download() gin.HandlerFunc {
 		os.Remove(filePath) // 删除临时文件
 		c.Header("Content-Disposition", "attachment; filename="+fileName)
 		c.Data(http.StatusOK, xlsxContentType, data)
+	}
+}
+
+func Download() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.JSON(http.StatusForbidden, object{"message": "接口未实现"})
 	}
 }

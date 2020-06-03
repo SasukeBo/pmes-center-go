@@ -74,9 +74,8 @@ func Store(xr *XLSXReader) {
 	productValueExpands := make([]interface{}, 0)
 
 	for _, row := range xr.DataSet {
-		var createdAt time.Time
-		var qualified bool
-
+		qualified := true
+		createdAt := timer.ParseTime(row[xr.DecodeTemplate.CreatedAtColumnIndex], 8)
 		attribute := make(types.Map)
 		for _, iColumn := range columns {
 			column := iColumn.(map[string]interface{})
@@ -93,7 +92,6 @@ func Store(xr *XLSXReader) {
 					t = &now
 				}
 
-				createdAt = *t
 				attribute[name] = *t
 
 			case orm.ProductColumnTypeFloat:
@@ -111,7 +109,6 @@ func Store(xr *XLSXReader) {
 			case orm.ProductColumnTypeString:
 				attribute[name] = fmt.Sprint(value)
 			}
-
 		}
 
 		pointValues := make(types.Map)
@@ -132,7 +129,7 @@ func Store(xr *XLSXReader) {
 			xr.Material.ID,
 			xr.Device.ID,
 			qualified,
-			createdAt,
+			*createdAt,
 			attribute,
 			pointValues,
 		)

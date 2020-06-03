@@ -12,4 +12,6 @@ type Mutation {
 
     "取消导出"
     cancelExport(opID: String!): String!
+    "导入检测项"
+    importPoints(file: Upload!, materialID: Int!): [Point]!
 }

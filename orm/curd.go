@@ -17,3 +17,7 @@ func Model(object interface{}) *gorm.DB {
 func Exec(sql string, variables ...interface{}) *gorm.DB {
 	return DB.Exec(sql, variables...)
 }
+
+func Begin() *gorm.DB {
+	return DB.Begin()
+}

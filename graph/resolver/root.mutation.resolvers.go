@@ -5,7 +5,7 @@ package resolver
 
 import (
 	"context"
-
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/SasukeBo/ftpviewer/graph/generated"
 	"github.com/SasukeBo/ftpviewer/graph/logic"
 	"github.com/SasukeBo/ftpviewer/graph/model"
@@ -138,6 +138,10 @@ func (r *mutationResolver) CancelExport(ctx context.Context, opID string) (strin
 	//}
 	//
 	//return "ok", nil
+}
+
+func (r *mutationResolver) ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*model.Point, error) {
+	return logic.ImportPoints(ctx, file, materialID)
 }
 
 // Mutation returns generated.MutationResolver implementation.

@@ -59,6 +59,12 @@ func (t *tester) API1(query string, variables interface{}) *request {
 	return &request{rr}
 }
 
+// send a POST request with form data
+func (t *tester) Upload(path string, pathargs ...interface{}) *request {
+	rr := t.E.POST(path, pathargs...).WithHeaders(t.Headers).WithHeader("Cookie", accessTokenCookie)
+	return &request{rr}
+}
+
 // new a tester
 func newTester(t httpexpect.LoggerReporter) *tester {
 	tst := &tester{}

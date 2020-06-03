@@ -23,11 +23,11 @@ type PointResult {
 }
 
 type Point {
-    id: Int
-    name: String
-    upperLimit: Float
-    nominal: Float
-    lowerLimit: Float
+    id: Int!
+    name: String!
+    upperLimit: Float!
+    nominal: Float!
+    lowerLimit: Float!
 }
 
 input PointCreateInput {

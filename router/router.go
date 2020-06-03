@@ -41,6 +41,7 @@ func Start() {
 	r.GET("/", handler.BasicAuth(), handler.PlaygroundHandler())
 
 	// Downloads
+	r.GET("/api/downloads/cache", handler.DownloadCacheFile()) // 下载缓存的文件，下载完成删除服务器端缓存文件
 	r.GET("/api/downloads", handler.Download())
 
 	log.Info("start service on [%s] mode", configer.GetEnv("env"))

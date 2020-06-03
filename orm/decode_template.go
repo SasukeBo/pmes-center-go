@@ -11,14 +11,15 @@ import (
 
 type DecodeTemplate struct {
 	gorm.Model
-	Name           string `gorm:"not null"`
-	MaterialID     uint   `gorm:"not null"`
-	UserID         uint
-	Description    string
-	DataRowIndex   int
-	ProductColumns types.Map `gorm:"type:JSON;not null"`
-	PointColumns   types.Map `gorm:"type:JSON;not null"`
-	Default        bool      `gorm:"default:false"` // 标识是否为默认模板
+	Name                 string `gorm:"not null"`
+	MaterialID           uint   `gorm:"not null"`
+	UserID               uint
+	Description          string
+	DataRowIndex         int
+	CreatedAtColumnIndex int       `gorm:"not null"`
+	ProductColumns       types.Map `gorm:"type:JSON;not null"`
+	PointColumns         types.Map `gorm:"type:JSON;not null"`
+	Default              bool      `gorm:"default:false"` // 标识是否为默认模板
 }
 
 func (d *DecodeTemplate) GenDefaultProductColumns() error {

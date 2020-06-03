@@ -59,13 +59,14 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 	}
 
 	decodeTemplate := orm.DecodeTemplate{
-		Name:         "默认模板",
-		MaterialID:   material.ID,
-		UserID:       user.ID,
-		Description:  "创建料号时自动生成的默认解析模板",
-		DataRowIndex: 15,
-		PointColumns: pointColumns,
-		Default:      true,
+		Name:                 "默认模板",
+		MaterialID:           material.ID,
+		UserID:               user.ID,
+		Description:          "创建料号时自动生成的默认解析模板",
+		DataRowIndex:         15,
+		CreatedAtColumnIndex: 1,
+		PointColumns:         pointColumns,
+		Default:              true,
 	}
 	if err := decodeTemplate.GenDefaultProductColumns(); err != nil {
 		tx.Rollback()

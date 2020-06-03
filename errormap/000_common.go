@@ -16,8 +16,9 @@ const (
 	ErrorCodeInternalError       = "E0000S0500N0001"
 	ErrorCodeSaveObjectError     = "E0000S0500N0002"
 	ErrorCodeDeleteObjectError   = "E0000S0500N0003"
-	ErrorCodeTransferObjectError = "E0000S0500N0004"
-	ErrorCodeCountObjectFailed   = "E0000S0500N0005"
+	ErrorCodeCreateObjectError   = "E0000S0500N0004"
+	ErrorCodeTransferObjectError = "E0000S0500N0005"
+	ErrorCodeCountObjectFailed   = "E0000S0500N0006"
 )
 
 func init() {
@@ -65,5 +66,9 @@ func init() {
 	register(ErrorCodeCountObjectFailed, http.StatusInternalServerError, langMap{
 		ZH_CN: "抱歉，统计{{.field_1}}数据总数时，发生了一些错误。",
 		EN:    "Sorry, count {{.field_1}} data failed with some errors.",
+	})
+	register(ErrorCodeCreateObjectError, http.StatusInternalServerError, langMap{
+		ZH_CN: "对不起，创建{{.field_1}}数据失败，发生了一些错误。",
+		EN:    "Sorry, failed to create the data of {{.field_1}} with some errors.",
 	})
 }

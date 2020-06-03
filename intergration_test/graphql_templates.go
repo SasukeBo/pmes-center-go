@@ -28,3 +28,4 @@ query($input: ProductSearch!, $limit: Int!, $offset: Int!) {
 	}
 }
 `
+var pointImportGQL = ` mutation($file: Upload!, $materialID: Int!) { response: importPoints(file: $file, materialID: $materialID) { id name upperLimit nominal lowerLimit } } `
