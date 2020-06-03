@@ -1,6 +1,9 @@
 package orm
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/SasukeBo/ftpviewer/errormap"
+	"github.com/jinzhu/gorm"
+)
 
 // 导入记录，用于记录用户从后台手动为设备导入的数据文件。
 // 用于支持以文件为单位撤销数据导入。
@@ -23,4 +26,12 @@ type ImportRecord struct {
 	UserID           uint
 	ImportType       string `gorm:"not null;default:'SYSTEM'"` // 导入方式，默认为系统
 	DecodeTemplateID uint    `gorm:"not null"`                  // 文件解析模板ID
+}
+
+func (i *ImportRecord) Get(id uint) *errormap.Error {
+	if err := DB.Model(i).Where("id = ?", id).First(i).Error; err != nil {
+		return handleError(err, "id", id)
+	}
+
+	return nil
 }

@@ -12,3 +12,19 @@ mutation($input: MaterialCreateInput!) {
 	}
 }
 `
+var productScrollFetchGQL = `
+query($input: ProductSearch!, $limit: Int!, $offset: Int!) {
+	response: productScrollFetch(searchInput: $input, limit: $limit, offset: $offset) {
+		data {
+			id
+			materialID
+			deviceID
+			qualified
+			createdAt
+			attribute
+			pointValues
+		}
+		total
+	}
+}
+`

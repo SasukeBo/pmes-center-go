@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
-	"github.com/SasukeBo/ftpviewer/graph/logic"
 
 	"github.com/SasukeBo/ftpviewer/graph/generated"
+	"github.com/SasukeBo/ftpviewer/graph/logic"
 	"github.com/SasukeBo/ftpviewer/graph/model"
 )
 

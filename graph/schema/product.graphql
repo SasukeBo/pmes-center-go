@@ -6,23 +6,26 @@ type ExportResponse {
 }
 
 type Product {
-    id: Int
-    uuid: String
-    materialID: Int
-    deviceID: Int
-    qualified: Boolean
-    pointValue: Map
-    createdAt: Time
-    d2code: String
-    lineID: String
-    jigID: String
-    mouldID: String
-    shiftNumber: String
+    id: Int!
+    materialID: Int!
+    deviceID: Int!
+    qualified: Boolean!
+    createdAt: Time!
+    attribute: Map!
+    pointValues: Map!
 }
 
 type ProductWrap {
-    tableHeader: [String!]
-    products: [Product!]
-    status: fetchStatus
-    total: Int
+    data: [Product]!
+    total: Int!
+}
+
+input ProductSearch {
+    materialID: Int!
+    importRecordID: Int
+    deviceID: Int
+    qualified: Boolean
+    begin: Time
+    end: Time
+    attributes: Map!
 }

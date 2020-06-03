@@ -121,8 +121,8 @@ func cleanTable(tbName string) {
 // generate fake data
 
 var data struct {
-	User  *orm.User
-	Admin *orm.User
+	User     *orm.User
+	Admin    *orm.User
 }
 
 const (

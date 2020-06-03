@@ -43,12 +43,12 @@ func GenerateDefaultConfig() {
 }
 
 func alterTableUtf8(tbName string) {
-	DB.Exec(fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci", tbName))
+	Exec(fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci", tbName))
 }
 
 func utf8GeneralCI(tableNames []string) {
-	DB.Exec("SET collation_connection = 'utf8_general_ci'")
-	DB.Exec(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET utf8 COLLATE utf8_general_ci", configer.GetString("db_name")))
+	Exec("SET collation_connection = 'utf8_general_ci'")
+	Exec(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET utf8 COLLATE utf8_general_ci", configer.GetString("db_name")))
 	for _, name := range tableNames {
 		alterTableUtf8(name)
 	}
@@ -57,7 +57,7 @@ func utf8GeneralCI(tableNames []string) {
 func generateRootUser() {
 	account := configer.GetString("root_name")
 	var root User
-	err := DB.Model(&User{}).Where("account = ?", account).First(&root).Error
+	err := Model(&User{}).Where("account = ?", account).First(&root).Error
 	if err != nil {
 		root = User{
 			IsAdmin:  true,

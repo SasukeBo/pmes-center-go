@@ -9,3 +9,11 @@ func Create(object interface{}) *gorm.DB {
 func Save(object interface{}) *gorm.DB {
 	return DB.Save(object)
 }
+
+func Model(object interface{}) *gorm.DB {
+	return DB.Model(object)
+}
+
+func Exec(sql string, variables ...interface{}) *gorm.DB {
+	return DB.Exec(sql, variables...)
+}

@@ -28,6 +28,19 @@ var (
 	errStore = make(errorStore)
 )
 
+type Error struct {
+	Message   string
+	ErrorCode string
+}
+
+func (e *Error) Error() string {
+	return e.Message
+}
+
+func (e *Error) GetCode() string {
+	return e.ErrorCode
+}
+
 type errorTemplate struct {
 	StatusCode int
 	Languages  langMap
@@ -115,14 +128,6 @@ func parseArguments(variables []interface{}, lang Lang) interface{} {
 	return out
 }
 
-// NewOrigin new一个origin error，并同时打印错误日志
-func NewOrigin(format string, a ...interface{}) error {
-	msg := fmt.Sprintf(format, a...)
-	err := errors.New(msg)
-	log.Errorln(err)
-	return err
-}
-
 // SendHttpError 返回http请求错误响应信息
 func SendHttpError(ctx *gin.Context, errorCode string, originErr error, variables ...interface{}) {
 	var lang Lang
@@ -145,4 +150,20 @@ func SendGQLError(ctx *gin.Context, errorCode string, originErr error, variables
 		lang = EN
 	}
 	return ErrorPresenter(errorCode, lang, originErr, variables...)
+}
+
+// NewCodeOrigin 创建一个携带 error code的origin error，同时打印日志
+func NewCodeOrigin(errorCode string, format string, a ...interface{}) *Error {
+	msg := fmt.Sprintf(format, a...)
+	err := &Error{
+		Message:   msg,
+		ErrorCode: errorCode,
+	}
+	log.Errorln(err)
+	return err
+}
+
+// NewOrigin new一个origin error，并同时打印错误日志
+func NewOrigin(format string, a ...interface{}) *Error {
+	return NewCodeOrigin("", format, a...)
 }

@@ -2,8 +2,8 @@ type Query {
     "获取当前用户"
     currentUser: User!
 
-    "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
-    products(searchInput: Search!, page: Int, limit: Int!, offset: Int): ProductWrap!
+    "获取产品数据，滑动加载接口"
+    productScrollFetch(searchInput: ProductSearch!, limit: Int!, offset: Int!): ProductWrap!
     "导出产品数据，返回opID，表示处理的uuid"
     exportProducts(searchInput: Search!): String!
 
@@ -23,9 +23,6 @@ type Query {
     analyzeDevice(searchInput: Search!): DeviceResult!
     "获取设备生产数据"
     devices(materialID: Int!): [Device]!
-
-    "获取尺寸数据"
-    sizes(page: Int!, limit: Int!, materialID: Int!): SizeWrap!
 
     "数据获取完成百分比"
     dataFetchFinishPercent(fileIDs: [Int]!): Float!

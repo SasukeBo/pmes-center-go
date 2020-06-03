@@ -6,6 +6,7 @@ package orm
 // 2.通过后台手动创建
 
 import (
+	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
 )
@@ -32,8 +33,20 @@ func (d *Device) BeforeCreate() error {
 	return nil
 }
 
-func (d *Device) GetWithName(name string) error {
-	return DB.Model(d).Where("name = ?", name).First(d).Error
+func (d *Device) GetWithName(name string) *errormap.Error {
+	if err := DB.Model(d).Where("name = ?", name).First(d).Error; err != nil {
+		return handleError(err, "name", name)
+	}
+
+	return nil
+}
+
+func (d *Device) Get(id uint) *errormap.Error {
+	if err := DB.Model(d).Where("id = ?", id).First(d).Error; err != nil {
+		return handleError(err, "id", id)
+	}
+
+	return nil
 }
 
 func (d *Device) CreateIfNotExist(materialID uint, remark string) error {

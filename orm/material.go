@@ -1,6 +1,9 @@
 package orm
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/SasukeBo/ftpviewer/errormap"
+	"github.com/jinzhu/gorm"
+)
 
 // Material 材料
 type Material struct {
@@ -10,8 +13,20 @@ type Material struct {
 	ProjectRemark string
 }
 
-func (m *Material) GetWithName(name string) error {
-	return DB.Model(m).Where("name = ?", name).First(m).Error
+func (m *Material) GetWithName(name string) *errormap.Error {
+	if err := DB.Model(m).Where("name = ?", name).First(m).Error; err != nil {
+		return handleError(err, "name", name)
+	}
+
+	return nil
+}
+
+func (m *Material) Get(id uint) *errormap.Error {
+	if err := DB.Model(m).Where("id = ?", id).First(m).Error; err != nil {
+		return handleError(err, "id", id)
+	}
+
+	return nil
 }
 
 func (m *Material) GetDefaultTemplate() (*DecodeTemplate, error) {
