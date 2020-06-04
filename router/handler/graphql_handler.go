@@ -7,23 +7,23 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/SasukeBo/configer"
-	"github.com/SasukeBo/ftpviewer/graph/generated"
-	"github.com/SasukeBo/ftpviewer/graph/resolver"
+	v1generatedadmin "github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
+	v1resolveradmin "github.com/SasukeBo/ftpviewer/api/v1/admin/resolver"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/gookit/color.v1"
 	"io/ioutil"
 )
 
-func GraphqlHandler() gin.HandlerFunc {
-	h := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{}}))
+func APIV1Admin() gin.HandlerFunc {
+	h := handler.NewDefaultServer(v1generatedadmin.NewExecutableSchema(v1generatedadmin.Config{Resolvers: &v1resolveradmin.Resolver{}}))
 
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)
 	}
 }
 
-func PlaygroundHandler() gin.HandlerFunc {
-	h := playground.Handler("GraphQL", "/api/v1")
+func PlaygroundGraphiQL(path string) gin.HandlerFunc {
+	h := playground.Handler("GraphQL", path)
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)
 	}

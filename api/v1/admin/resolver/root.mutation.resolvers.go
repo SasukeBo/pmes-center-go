@@ -5,10 +5,11 @@ package resolver
 
 import (
 	"context"
+
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/SasukeBo/ftpviewer/graph/generated"
-	"github.com/SasukeBo/ftpviewer/graph/logic"
-	"github.com/SasukeBo/ftpviewer/graph/model"
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 )
 
 func (r *mutationResolver) Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error) {

@@ -3,9 +3,9 @@ package logic
 import (
 	"context"
 	"fmt"
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/ftpclient"
-	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/SasukeBo/ftpviewer/orm/types"
 	"github.com/SasukeBo/log"

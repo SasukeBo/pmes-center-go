@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"github.com/SasukeBo/ftpviewer/graph/logic"
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

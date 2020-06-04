@@ -9,6 +9,6 @@ docker-compose.yml
 PLAN.md
 fileCache
 config/*.yaml
-graph/generated
-graph/model/models_gen.go
+api/v1/admin/generated
+api/v1/admin/model/models_gen.go
 

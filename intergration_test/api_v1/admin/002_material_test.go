@@ -1,7 +1,8 @@
-package test
+package admin
 
 import (
 	"github.com/SasukeBo/ftpviewer/ftpclient"
+	"github.com/SasukeBo/ftpviewer/intergration_test"
 	"testing"
 	"time"
 )
@@ -11,15 +12,15 @@ import (
 // - then create a directory named 1828
 // - put a data file into this directory
 func TestMaterial(t *testing.T) {
-	tester := newTester(t)
-	login(testAdminAccount, testAdminPasswd, true)
+	tester := test.NewTester(t)
+	test.Login(test.AdminAccount, test.AdminPasswd, true)
 	go ftpclient.FTPWorker()
-	tester.API1(createMaterialGQL, object{
-		"input": object{
+	tester.API1Admin(createMaterialGQL, test.Object{
+		"input": test.Object{
 			"name":          "1828",
 			"customerCode":  "613-12760",
 			"projectRemark": "D53 PRL TOP",
-			"points": []object{
+			"points": []test.Object{
 				{
 					"name":    "FAI3_G7",
 					"usl":     5.36,

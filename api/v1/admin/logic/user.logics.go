@@ -2,8 +2,8 @@ package logic
 
 import (
 	"context"
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
-	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/jinzhu/copier"
 )
 

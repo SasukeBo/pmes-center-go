@@ -13,68 +13,68 @@ import (
 )
 
 var host string
-var accessTokenCookie string
+var AccessTokenCookie string
 
-type object map[string]interface{}
+type Object map[string]interface{}
 
-type tester struct {
+type Tester struct {
 	E       *httpexpect.Expect
 	Headers map[string]string
 }
 
-type request struct {
+type Request struct {
 	*httpexpect.Request
 }
 
-func (r *request) GQLObject() *httpexpect.Object {
+func (r *Request) GQLObject() *httpexpect.Object {
 	return r.Expect().Status(http.StatusOK).JSON().Object()
 }
 
-// set tester header
-func (t *tester) SetHeader(key string, value string) {
+// set Tester header
+func (t *Tester) SetHeader(key string, value string) {
 	t.Headers[key] = value
 }
 
-// send a POST request with form data
-func (t *tester) POST(path string, variables interface{}, pathargs ...interface{}) *request {
-	rr := t.E.POST(path, pathargs...).WithHeaders(t.Headers).WithHeader("Cookie", accessTokenCookie).WithForm(variables)
-	return &request{rr}
+// send a POST Request with form data
+func (t *Tester) POST(path string, variables interface{}, pathargs ...interface{}) *Request {
+	rr := t.E.POST(path, pathargs...).WithHeaders(t.Headers).WithHeader("Cookie", AccessTokenCookie).WithForm(variables)
+	return &Request{rr}
 }
 
-// send a GET request with query
-func (t *tester) GET(path string, variables interface{}, pathargs ...interface{}) *request {
-	rr := t.E.GET(path, pathargs...).WithHeaders(t.Headers).WithHeader("Cookie", accessTokenCookie).WithQueryObject(variables)
-	return &request{rr}
+// send a GET Request with query
+func (t *Tester) GET(path string, variables interface{}, pathargs ...interface{}) *Request {
+	rr := t.E.GET(path, pathargs...).WithHeaders(t.Headers).WithHeader("Cookie", AccessTokenCookie).WithQueryObject(variables)
+	return &Request{rr}
 }
 
-// API1 post a api/v1 request
-func (t *tester) API1(query string, variables interface{}) *request {
+// API1Admin post a api/v1/admin Request
+func (t *Tester) API1Admin(query string, variables interface{}) *Request {
 	payload := map[string]interface{}{
 		"operationName": "",
 		"query":         query,
 		"variables":     variables,
 	}
 
-	rr := t.E.POST("/api/v1").WithHeaders(t.Headers).WithHeader("Cookie", accessTokenCookie).WithJSON(payload)
-	return &request{rr}
+	rr := t.E.POST("/api/v1/admin").WithHeaders(t.Headers).WithHeader("Cookie", AccessTokenCookie).WithJSON(payload)
+	return &Request{rr}
 }
 
-// send a POST request with form data
-func (t *tester) Upload(path string, pathargs ...interface{}) *request {
-	rr := t.E.POST(path, pathargs...).WithHeaders(t.Headers).WithHeader("Cookie", accessTokenCookie)
-	return &request{rr}
+// send a POST Request with form data
+func (t *Tester) Upload(path string, pathargs ...interface{}) *Request {
+	rr := t.E.POST(path, pathargs...).WithHeaders(t.Headers).WithHeader("Cookie", AccessTokenCookie)
+	return &Request{rr}
 }
 
-// new a tester
-func newTester(t httpexpect.LoggerReporter) *tester {
-	tst := &tester{}
+// new a Tester
+func NewTester(t httpexpect.LoggerReporter) *Tester {
+	tst := &Tester{}
 	tst.E = httpexpect.New(t, host)
 	tst.Headers = make(map[string]string)
 	return tst
 }
 
-// login 测试环境下登录系统
-func login(account, password string, remember bool) {
+// Login 测试环境下登录系统
+func Login(account, password string, remember bool) {
 	client := &http.Client{}
 	data := url.Values{}
 	data.Set("account", account)
@@ -86,7 +86,7 @@ func login(account, password string, remember bool) {
 		panic(err)
 	}
 	setCookies := strings.Split(res.Header.Get("Set-Cookie"), ";")
-	accessTokenCookie = setCookies[0]
+	AccessTokenCookie = setCookies[0]
 }
 
 func init() {
@@ -95,7 +95,7 @@ func init() {
 	setup()
 	host = fmt.Sprintf("http://localhost:%v", configer.GetEnv("port"))
 	go router.Start()
-	login(data.User.Account, testUserPasswd, true)
+	Login(data.User.Account, UserPasswd, true)
 	orm.DB.LogMode(true)
 }
 
@@ -127,28 +127,28 @@ func cleanTable(tbName string) {
 // generate fake data
 
 var data struct {
-	User     *orm.User
-	Admin    *orm.User
+	User  *orm.User
+	Admin *orm.User
 }
 
 const (
-	testUserAccount  = "test_user"
-	testUserPasswd   = "test_passwd"
-	testAdminAccount = "test_admin"
-	testAdminPasswd  = "test_admin_passwd"
+	UserAccount  = "test_user"
+	UserPasswd   = "test_passwd"
+	AdminAccount = "test_admin"
+	AdminPasswd  = "test_admin_passwd"
 )
 
 func setup() {
 	data.User = &orm.User{
 		IsAdmin:  false,
-		Account:  testUserAccount,
-		Password: util.Encrypt(testUserPasswd),
+		Account:  UserAccount,
+		Password: util.Encrypt(UserPasswd),
 	}
 	orm.Create(data.User)
 	data.Admin = &orm.User{
 		IsAdmin:  true,
-		Account:  testAdminAccount,
-		Password: util.Encrypt(testAdminPasswd),
+		Account:  AdminAccount,
+		Password: util.Encrypt(AdminPasswd),
 	}
 	orm.Create(data.Admin)
 }

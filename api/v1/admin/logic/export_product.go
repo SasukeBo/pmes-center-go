@@ -3,7 +3,7 @@ package logic
 import (
 	"errors"
 	"fmt"
-	"github.com/SasukeBo/ftpviewer/graph/model"
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/tealeg/xlsx"
 	"math"

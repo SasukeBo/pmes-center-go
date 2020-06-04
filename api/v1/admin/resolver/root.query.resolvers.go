@@ -6,9 +6,9 @@ package resolver
 import (
 	"context"
 
-	"github.com/SasukeBo/ftpviewer/graph/generated"
-	"github.com/SasukeBo/ftpviewer/graph/logic"
-	"github.com/SasukeBo/ftpviewer/graph/model"
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 )
 
 func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {

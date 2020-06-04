@@ -1,13 +1,14 @@
-package test
+package admin
 
 import (
+	"github.com/SasukeBo/ftpviewer/intergration_test"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"testing"
 	"time"
 )
 
 func TestProduct(t *testing.T) {
-	tester := newTester(t)
+	tester := test.NewTester(t)
 	material := &orm.Material{
 		Name:          "test_material",
 		CustomerCode:  "test_material_customer_code",
@@ -39,12 +40,12 @@ func TestProduct(t *testing.T) {
 	)
 
 	t.Run("Search with normal option", func(t *testing.T) {
-		ret := tester.API1(productScrollFetchGQL, object{
-			"input": object{
+		ret := tester.API1Admin(productScrollFetchGQL, test.Object{
+			"input": test.Object{
 				"materialID":     material.ID,
 				"importRecordID": importRecord.ID,
 				"deviceID":       device.ID,
-				"attributes":     object{},
+				"attributes":     test.Object{},
 			},
 			"limit":  100,
 			"offset": 0,
@@ -53,10 +54,10 @@ func TestProduct(t *testing.T) {
 	})
 
 	t.Run("Search with attributes", func(t *testing.T) {
-		ret := tester.API1(productScrollFetchGQL, object{
-			"input": object{
+		ret := tester.API1Admin(productScrollFetchGQL, test.Object{
+			"input": test.Object{
 				"materialID": material.ID,
-				"attributes": object{
+				"attributes": test.Object{
 					"NO.": 6,
 					"模号":  "A",
 				},

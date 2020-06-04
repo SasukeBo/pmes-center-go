@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
 	"github.com/SasukeBo/ftpviewer/ftpclient"
-	"github.com/SasukeBo/ftpviewer/graph/logic"
 	"github.com/SasukeBo/ftpviewer/router"
 )
 
