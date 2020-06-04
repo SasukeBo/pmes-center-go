@@ -1,0 +1,24 @@
+type ImportRecordsWrap {
+    total: Int!
+    importRecords: [ImportRecord]!
+}
+
+type ImportRecord {
+    id: Int!
+    fileName: String!
+    material: Material!
+    device: Device!
+    rowCount: Int!
+    rowFinishedCount: Int!
+    finished: Boolean!
+    error: String
+    fileSize: Int!
+    user: User
+    importType: ImportRecordImportType!
+    decodeTemplate: DecodeTemplate!
+}
+
+enum ImportRecordImportType {
+    SYSTEM
+    USER
+}

@@ -1,7 +1,5 @@
 package admin
 
-var currentUserGQL = ` query { currentUser { id account isAdmin } } `
-var loginGQL = ` mutation($input: LoginInput!) { login(loginInput: $input) { id account isAdmin } }`
 var createMaterialGQL = `
 mutation($input: MaterialCreateInput!) {
 	response: addMaterial(input: $input) {
@@ -9,6 +7,21 @@ mutation($input: MaterialCreateInput!) {
 		name
 		customerCode
 		projectRemark
+	}
+}
+`
+var listMaterialGQL = `
+query($pattern: String, $page: Int!, $limit: Int!) {
+	response: materials(pattern: $pattern, page: $page, limit: $limit) {
+		total
+		materials {
+			id
+			name
+			createdAt
+			updatedAt
+			customerCode
+			projectRemark
+		}
 	}
 }
 `
@@ -29,3 +42,29 @@ query($input: ProductSearch!, $limit: Int!, $offset: Int!) {
 }
 `
 var pointImportGQL = ` mutation($file: Upload!, $materialID: Int!) { response: importPoints(file: $file, materialID: $materialID) { id name upperLimit nominal lowerLimit } } `
+var listImportRecordsGQL = `
+query($materialID: Int!, $deviceID: Int, $page: Int!, $limit: Int!) {
+  response: importRecords(
+    materialID: $materialID
+    deviceID: $deviceID
+    page: $page
+    limit: $limit
+  ) {
+    total
+    importRecords {
+      id
+      fileName
+      material { id }
+      device { id }
+      rowCount
+      rowFinishedCount
+      finished
+      error
+      fileSize
+      user { id }
+      importType
+      decodeTemplate { id }
+    }
+  }
+}
+`

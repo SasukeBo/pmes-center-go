@@ -9,12 +9,22 @@ import (
 	"github.com/SasukeBo/configer"
 	v1generatedadmin "github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
 	v1resolveradmin "github.com/SasukeBo/ftpviewer/api/v1/admin/resolver"
+	v1generated "github.com/SasukeBo/ftpviewer/api/v1/generated"
+	v1resolver "github.com/SasukeBo/ftpviewer/api/v1/resolver"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/gookit/color.v1"
 	"io/ioutil"
 )
 
-func APIV1Admin() gin.HandlerFunc {
+func API1() gin.HandlerFunc {
+	h := handler.NewDefaultServer(v1generated.NewExecutableSchema(v1generated.Config{Resolvers: &v1resolver.Resolver{}}))
+
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
+}
+
+func API1Admin() gin.HandlerFunc {
 	h := handler.NewDefaultServer(v1generatedadmin.NewExecutableSchema(v1generatedadmin.Config{Resolvers: &v1resolveradmin.Resolver{}}))
 
 	return func(c *gin.Context) {

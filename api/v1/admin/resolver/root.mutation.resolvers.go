@@ -12,45 +12,6 @@ import (
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 )
 
-func (r *mutationResolver) Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error) {
-	return nil, nil
-	//if err := logic.Authenticate(ctx); err != nil {
-	//	return nil, err
-	//}
-	//
-	//user := logic.CurrentUser(ctx)
-	//if user == nil || !user.Admin {
-	//	return nil, NewGQLError("添加系统配置失败，您不是Admin", fmt.Sprintf("%+v", *user))
-	//}
-	//
-	//conf := orm.GetSystemConfig(settingInput.Key)
-	//if conf == nil {
-	//	conf = &orm.SystemConfig{
-	//		Key:   settingInput.Key,
-	//		Value: settingInput.Value,
-	//	}
-	//} else {
-	//	conf.Value = settingInput.Value
-	//}
-	//
-	//if err := orm.DB.Save(conf).Error; err != nil {
-	//	return nil, NewGQLError("添加系统配置失败", err.Error())
-	//}
-	//
-	//confID := int(conf.ID)
-	//return &model.SystemConfig{
-	//	ID:        &confID,
-	//	Key:       &conf.Key,
-	//	Value:     &conf.Value,
-	//	CreatedAt: &conf.CreatedAt,
-	//	UpdatedAt: &conf.UpdatedAt,
-	//}, nil
-}
-
-func (r *mutationResolver) AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error) {
-	return logic.AddMaterial(ctx, input)
-}
-
 func (r *mutationResolver) UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error) {
 	return nil, nil
 	//if err := logic.Authenticate(ctx); err != nil {
@@ -143,6 +104,45 @@ func (r *mutationResolver) CancelExport(ctx context.Context, opID string) (strin
 
 func (r *mutationResolver) ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*model.Point, error) {
 	return logic.ImportPoints(ctx, file, materialID)
+}
+
+func (r *mutationResolver) Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error) {
+	return nil, nil
+	//if err := logic.Authenticate(ctx); err != nil {
+	//	return nil, err
+	//}
+	//
+	//user := logic.CurrentUser(ctx)
+	//if user == nil || !user.Admin {
+	//	return nil, NewGQLError("添加系统配置失败，您不是Admin", fmt.Sprintf("%+v", *user))
+	//}
+	//
+	//conf := orm.GetSystemConfig(settingInput.Key)
+	//if conf == nil {
+	//	conf = &orm.SystemConfig{
+	//		Key:   settingInput.Key,
+	//		Value: settingInput.Value,
+	//	}
+	//} else {
+	//	conf.Value = settingInput.Value
+	//}
+	//
+	//if err := orm.DB.Save(conf).Error; err != nil {
+	//	return nil, NewGQLError("添加系统配置失败", err.Error())
+	//}
+	//
+	//confID := int(conf.ID)
+	//return &model.SystemConfig{
+	//	ID:        &confID,
+	//	Key:       &conf.Key,
+	//	Value:     &conf.Value,
+	//	CreatedAt: &conf.CreatedAt,
+	//	UpdatedAt: &conf.UpdatedAt,
+	//}, nil
+}
+
+func (r *mutationResolver) AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error) {
+	return logic.AddMaterial(ctx, input)
 }
 
 // Mutation returns generated.MutationResolver implementation.

@@ -1,0 +1,4 @@
+type Query {
+    "获取当前用户"
+    currentUser: User!
+}

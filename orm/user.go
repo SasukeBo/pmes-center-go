@@ -28,6 +28,10 @@ func (u *User) GetWithToken(token string) error {
 	return DB.Model(u).Where("token = ?", token).First(u).Error
 }
 
+func (u *User) Get(id uint) error {
+	return Model(u).Where("id = ?", id).First(u).Error
+}
+
 type UserLogin struct {
 	gorm.Model
 	UserID            uint `gorm:"not null"`

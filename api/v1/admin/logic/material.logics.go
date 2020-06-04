@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"fmt"
+	"github.com/SasukeBo/ftpviewer/api"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/ftpclient"
@@ -17,8 +18,8 @@ import (
 const fileNameDecodePattern = `([\w]*)-([\w]*)-.*-([A|B|w|b]?).xlsx`
 
 func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error) {
-	gc := getGinContext(ctx)
-	user := currentUser(gc)
+	gc := api.GetGinContext(ctx)
+	user := api.CurrentUser(gc)
 	if !user.IsAdmin {
 		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
 	}
@@ -191,4 +192,56 @@ func checkFile(materialID uint, fileName string) (bool, string) {
 
 func resolvePath(m, path string) string {
 	return fmt.Sprintf("./%s/%s", m, filepath.Base(path))
+}
+
+func Materials(ctx context.Context, pattern *string, page int, limit int) (*model.MaterialWrap, error) {
+	gc := api.GetGinContext(ctx)
+	user := api.CurrentUser(gc)
+	if !user.IsAdmin {
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	sql := orm.Model(&orm.Material{})
+	if pattern != nil {
+		search := fmt.Sprintf("%%%s%%", *pattern)
+		sql = sql.Where("name LIKE ? OR customer_code LIKE ? OR project_remark LIKE ?", search, search, search)
+	}
+
+	var materials []orm.Material
+	offset := (page - 1) * limit
+	if err := sql.Order("id desc").Limit(limit).Offset(offset).Find(&materials).Error; err != nil {
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeGetObjectFailed, err, "material")
+	}
+
+	var outs []*model.Material
+	for _, i := range materials {
+		var out model.Material
+		if err := copier.Copy(&out, &i); err != nil {
+			continue
+		}
+
+		outs = append(outs, &out)
+	}
+
+	var count int
+	if err := sql.Model(&orm.Material{}).Count(&count).Error; err != nil {
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCountObjectFailed, err, "material")
+	}
+	return &model.MaterialWrap{
+		Total:     count,
+		Materials: outs,
+	}, nil
+}
+
+func LoadMaterial(ctx context.Context, materialID uint) (*model.Material, error) {
+	var material orm.Material
+	if err := material.Get(materialID); err != nil {
+		return nil, err
+	}
+	var out model.Material
+	if err := copier.Copy(&out, &material); err != nil {
+		return nil, err
+	}
+
+	return &out, nil
 }

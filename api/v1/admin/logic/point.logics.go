@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/SasukeBo/ftpviewer/api"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm"
@@ -13,8 +14,8 @@ import (
 )
 
 func ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*model.Point, error) {
-	gc := getGinContext(ctx)
-	user := currentUser(gc)
+	gc := api.GetGinContext(ctx)
+	user := api.CurrentUser(gc)
 	if !user.IsAdmin {
 		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
 	}

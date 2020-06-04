@@ -28,11 +28,18 @@ func Start() {
 	r.Use(gin.Recovery())
 
 	// Auth
-	r.POST("/api/login", handler.Login())
-	r.GET("/api/logout", handler.Logout())
+	auth := r.Group("/auth")
+	{
+		auth.POST("/login", handler.Login())
+		auth.GET("/logout", handler.Logout())
+	}
 
 	// API v1
-	r.POST("/api/v1/admin", handler.Authenticate(), handler.GraphqlResponseLogger(), handler.InjectGinContext(), handler.APIV1Admin())
+	api1 := r.Group("/api", handler.Authenticate(), handler.GraphqlResponseLogger(), handler.InjectGinContext())
+	{
+		api1.POST("/v1", handler.API1())
+		api1.POST("/v1/admin", handler.API1Admin())
+	}
 
 	// Active
 	//r.GET("/active", handler.Active())
@@ -41,8 +48,8 @@ func Start() {
 	r.GET("/playground/v1/admin", handler.BasicAuth(), handler.PlaygroundGraphiQL("/api/v1/admin"))
 
 	// Downloads
-	r.GET("/api/downloads/cache", handler.DownloadCacheFile()) // 下载缓存的文件，下载完成删除服务器端缓存文件
-	r.GET("/api/downloads", handler.Download())
+	r.GET("/downloads/cache", handler.DownloadCacheFile()) // 下载缓存的文件，下载完成删除服务器端缓存文件
+	r.GET("/downloads", handler.Download())
 
 	log.Info("start service on [%s] mode", configer.GetEnv("env"))
 	r.Run(fmt.Sprintf(":%s", configer.GetString("port")))

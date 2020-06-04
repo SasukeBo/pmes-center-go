@@ -1,7 +1,4 @@
 type Query {
-    "获取当前用户"
-    currentUser: User!
-
     "获取产品数据，滑动加载接口"
     productScrollFetch(searchInput: ProductSearch!, limit: Int!, offset: Int!): ProductWrap!
     "导出产品数据，返回opID，表示处理的uuid"
@@ -14,8 +11,6 @@ type Query {
 
     "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
     analyzeMaterial(searchInput: Search!): MaterialResult!
-    "获取料号数据"
-    materials(page: Int!, limit: Int!): MaterialWrap!
     "获取料号数据，包括名称模糊搜索"
     materialsWithSearch(offset: Int!, limit: Int!, search: String): MaterialWrap!
 
@@ -28,4 +23,10 @@ type Query {
     dataFetchFinishPercent(fileIDs: [Int]!): Float!
     "数据导出完成比例"
     exportFinishPercent(opID: String!): ExportResponse!
+
+    ### new
+    "获取料号数据"
+    materials(pattern: String, page: Int!, limit: Int!): MaterialWrap!
+    "获取导入记录"
+    importRecords(materialID: Int!, deviceID: Int, page: Int!, limit: Int!): ImportRecordsWrap!
 }

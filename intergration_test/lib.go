@@ -35,7 +35,7 @@ func (t *Tester) SetHeader(key string, value string) {
 	t.Headers[key] = value
 }
 
-// send a POST Request with form data
+// send a POST Request with form Data
 func (t *Tester) POST(path string, variables interface{}, pathargs ...interface{}) *Request {
 	rr := t.E.POST(path, pathargs...).WithHeaders(t.Headers).WithHeader("Cookie", AccessTokenCookie).WithForm(variables)
 	return &Request{rr}
@@ -49,17 +49,26 @@ func (t *Tester) GET(path string, variables interface{}, pathargs ...interface{}
 
 // API1Admin post a api/v1/admin Request
 func (t *Tester) API1Admin(query string, variables interface{}) *Request {
+	return t.api("/api/v1/admin", query, variables)
+}
+
+// API1Admin post a api/v1 Request
+func (t *Tester) API1(query string, variables interface{}) *Request {
+	return t.api("/api/v1", query, variables)
+}
+
+func (t *Tester) api(path, query string, variables interface{}) *Request {
 	payload := map[string]interface{}{
 		"operationName": "",
 		"query":         query,
 		"variables":     variables,
 	}
 
-	rr := t.E.POST("/api/v1/admin").WithHeaders(t.Headers).WithHeader("Cookie", AccessTokenCookie).WithJSON(payload)
+	rr := t.E.POST(path).WithHeaders(t.Headers).WithHeader("Cookie", AccessTokenCookie).WithJSON(payload)
 	return &Request{rr}
 }
 
-// send a POST Request with form data
+// send a POST Request with form Data
 func (t *Tester) Upload(path string, pathargs ...interface{}) *Request {
 	rr := t.E.POST(path, pathargs...).WithHeaders(t.Headers).WithHeader("Cookie", AccessTokenCookie)
 	return &Request{rr}
@@ -81,7 +90,7 @@ func Login(account, password string, remember bool) {
 	data.Set("password", password)
 	data.Set("remember", fmt.Sprint(remember))
 
-	res, err := client.PostForm(fmt.Sprintf("%s%s", host, "/api/login"), data)
+	res, err := client.PostForm(fmt.Sprintf("%s%s", host, "/auth/login"), data)
 	if err != nil {
 		panic(err)
 	}
@@ -95,7 +104,7 @@ func init() {
 	setup()
 	host = fmt.Sprintf("http://localhost:%v", configer.GetEnv("port"))
 	go router.Start()
-	Login(data.User.Account, UserPasswd, true)
+	Login(Data.User.Account, UserPasswd, true)
 	orm.DB.LogMode(true)
 }
 
@@ -124,9 +133,9 @@ func cleanTable(tbName string) {
 	orm.DB.Exec(fmt.Sprintf("DELETE FROM %s WHERE 1 = 1", tbName))
 }
 
-// generate fake data
+// generate fake Data
 
-var data struct {
+var Data struct {
 	User  *orm.User
 	Admin *orm.User
 }
@@ -139,16 +148,16 @@ const (
 )
 
 func setup() {
-	data.User = &orm.User{
+	Data.User = &orm.User{
 		IsAdmin:  false,
 		Account:  UserAccount,
 		Password: util.Encrypt(UserPasswd),
 	}
-	orm.Create(data.User)
-	data.Admin = &orm.User{
+	orm.Create(Data.User)
+	Data.Admin = &orm.User{
 		IsAdmin:  true,
 		Account:  AdminAccount,
 		Password: util.Encrypt(AdminPasswd),
 	}
-	orm.Create(data.Admin)
+	orm.Create(Data.Admin)
 }

@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"fmt"
+	"github.com/SasukeBo/ftpviewer/api"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm"
@@ -12,7 +13,7 @@ import (
 )
 
 func ProductScrollFetch(ctx context.Context, searchInput model.ProductSearch, limit int, offset int) (*model.ProductWrap, error) {
-	gc := getGinContext(ctx)
+	gc := api.GetGinContext(ctx)
 	var material orm.Material
 	if err := material.Get(uint(searchInput.MaterialID)); err != nil {
 		return nil, errormap.SendGQLError(gc, err.GetCode(), err, "material")

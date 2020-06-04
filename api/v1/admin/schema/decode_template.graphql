@@ -1,0 +1,14 @@
+type DecodeTemplate {
+    id: Int!
+    name: String!
+    material: Material!
+    user: User!
+    description: String!
+    dataRowIndex: Int!
+    createdAtColumnIndex: Int!
+    productColumns: Map!
+    pointColumns: Map!
+    default: Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+}

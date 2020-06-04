@@ -16,6 +16,7 @@ const (
 type ImportRecord struct {
 	gorm.Model
 	FileName         string `gorm:"not null"`       // 文件名称
+	Path             string `gorm:"not null"`       // 存储路径
 	MaterialID       uint   `gorm:"not null;index"` // 关联料号ID
 	DeviceID         uint   `gorm:"not null;index"` // 关联设备ID
 	RowCount         int    // 数据行数
@@ -25,7 +26,7 @@ type ImportRecord struct {
 	FileSize         int
 	UserID           uint
 	ImportType       string `gorm:"not null;default:'SYSTEM'"` // 导入方式，默认为系统
-	DecodeTemplateID uint    `gorm:"not null"`                  // 文件解析模板ID
+	DecodeTemplateID uint   `gorm:"not null"`                  // 文件解析模板ID
 }
 
 func (i *ImportRecord) Get(id uint) *errormap.Error {

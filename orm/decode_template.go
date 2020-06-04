@@ -46,6 +46,10 @@ func (d *DecodeTemplate) GenDefaultProductColumns() error {
 	return nil
 }
 
+func (d *DecodeTemplate) Get(id uint) error {
+	return Model(d).Where("id = ?", id).First(d).Error
+}
+
 const (
 	ProductColumnTypeString   = "String"
 	ProductColumnTypeInteger  = "Integer"

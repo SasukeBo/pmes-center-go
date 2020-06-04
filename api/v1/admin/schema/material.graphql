@@ -1,15 +1,3 @@
-type Material {
-    id: Int!
-    name: String!
-    customerCode: String
-    projectRemark: String
-}
-
-type MaterialWrap {
-    total: Int
-    materials: [Material!]
-}
-
 type AddMaterialResponse {
     material: Material
     status: fetchStatus
@@ -52,4 +40,19 @@ input Search {
     endTime: Time
     "其他查询条件以map形式传递"
     extra: Map
+}
+
+#### new
+type Material {
+    id: Int!
+    name: String!
+    customerCode: String!
+    projectRemark: String!
+    createdAt: Time!
+    updatedAt: Time!
+}
+
+type MaterialWrap {
+    total: Int!
+    materials: [Material!]
 }

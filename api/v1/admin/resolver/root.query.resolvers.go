@@ -11,10 +11,6 @@ import (
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 )
 
-func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
-	return logic.CurrentUser(ctx)
-}
-
 func (r *queryResolver) ProductScrollFetch(ctx context.Context, searchInput model.ProductSearch, limit int, offset int) (*model.ProductWrap, error) {
 	return logic.ProductScrollFetch(ctx, searchInput, limit, offset)
 }
@@ -410,36 +406,6 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 	//}, nil
 }
 
-func (r *queryResolver) Materials(ctx context.Context, page int, limit int) (*model.MaterialWrap, error) {
-	return nil, nil
-	//var materials []orm.Material
-	//if page < 1 {
-	//	return nil, NewGQLError("页数不能小于1", "page < 1")
-	//}
-	//offset := (page - 1) * limit
-	//if err := orm.DB.Order("id desc").Limit(limit).Offset(offset).Find(&materials).Error; err != nil {
-	//	return nil, NewGQLError("获取料号信息失败", err.Error())
-	//}
-	//var outs []*model.Material
-	//for _, i := range materials {
-	//	v := i
-	//	outs = append(outs, &model.Material{
-	//		ID:            v.ID,
-	//		Name:          v.Name,
-	//		CustomerCode:  stringP(v.CustomerCode),
-	//		ProjectRemark: stringP(v.ProjectRemark),
-	//	})
-	//}
-	//var count int
-	//if err := orm.DB.Model(&orm.Material{}).Count(&count).Error; err != nil {
-	//	return nil, NewGQLError("统计料号数量失败", err.Error())
-	//}
-	//return &model.MaterialWrap{
-	//	Total:     &count,
-	//	Materials: outs,
-	//}, nil
-}
-
 func (r *queryResolver) MaterialsWithSearch(ctx context.Context, offset int, limit int, search *string) (*model.MaterialWrap, error) {
 	return nil, nil
 	//var materials []orm.Material
@@ -577,6 +543,14 @@ func (r *queryResolver) ExportFinishPercent(ctx context.Context, opID string) (*
 	//}
 	//
 	//return rsp, nil
+}
+
+func (r *queryResolver) Materials(ctx context.Context, pattern *string, page int, limit int) (*model.MaterialWrap, error) {
+	return logic.Materials(ctx, pattern, page, limit)
+}
+
+func (r *queryResolver) ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int) (*model.ImportRecordsWrap, error) {
+	return logic.ImportRecords(ctx, materialID, deviceID, page, limit)
 }
 
 // Query returns generated.QueryResolver implementation.

@@ -1,10 +1,4 @@
-# hello
 type Mutation {
-    "添加系统设置"
-    setting(settingInput: SettingInput!): SystemConfig!
-
-    "增加料号"
-    addMaterial(input: MaterialCreateInput!): Material!
     "编辑料号"
     updateMaterial(input: MaterialUpdateInput!): Material!
     "删除料号"
@@ -14,4 +8,10 @@ type Mutation {
     cancelExport(opID: String!): String!
     "导入检测项"
     importPoints(file: Upload!, materialID: Int!): [Point]!
+
+    #### new
+    "添加系统设置"
+    setting(settingInput: SettingInput!): SystemConfig!
+    "新增料号"
+    addMaterial(input: MaterialCreateInput!): Material!
 }
