@@ -14,4 +14,6 @@ type Mutation {
     setting(settingInput: SettingInput!): SystemConfig!
     "新增料号"
     addMaterial(input: MaterialCreateInput!): Material!
+    "保存解析模板"
+    saveDecodeTemplate(input: DecodeTemplateInput!): DecodeTemplate!
 }

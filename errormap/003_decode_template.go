@@ -1,14 +1,17 @@
 package errormap
 
+import "net/http"
+
 // ErrorCode E0003
 
 const (
 	// 400
+	ErrorCodeDecodeTemplateSetDefaultFailed = "E0003S0400N0001"
 )
 
 func init() {
-	//register(ErrorCodeMaterialAlreadyExists, http.StatusForbidden, langMap{
-	//	ZH_CN: "对不起，您创建的料号已经存在，请确认您的输入。",
-	//	EN:    "Sorry, the material you created is already exists, please check your input.",
-	//})
+	register(ErrorCodeDecodeTemplateSetDefaultFailed, http.StatusForbidden, langMap{
+		ZH_CN: "对不起，设置料号默认模板时发生错误。",
+		EN:    "Sorry, failed to set default decode template for the material with some errors.",
+	})
 }

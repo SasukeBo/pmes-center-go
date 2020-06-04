@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type ImportRecord struct {
 	ID               int                    `json:"id"`
 	FileName         string                 `json:"fileName"`
@@ -13,4 +15,19 @@ type ImportRecord struct {
 	UserID           uint                   `json:"userID"`
 	ImportType       ImportRecordImportType `json:"importType"`
 	DecodeTemplateID uint                   `json:"decodeTemplateID"`
+}
+
+type DecodeTemplate struct {
+	ID                   int                    `json:"id"`
+	Name                 string                 `json:"name"`
+	MaterialID           uint                   `json:"materialID"`
+	UserID               uint                   `json:"userID"`
+	Description          string                 `json:"description"`
+	DataRowIndex         int                    `json:"dataRowIndex"`
+	CreatedAtColumnIndex int                    `json:"createdAtColumnIndex"`
+	ProductColumns       []*ProductColumn       `json:"productColumns"`
+	PointColumns         map[string]interface{} `json:"pointColumns"`
+	Default              bool                   `json:"default"`
+	CreatedAt            time.Time              `json:"createdAt"`
+	UpdatedAt            time.Time              `json:"updatedAt"`
 }

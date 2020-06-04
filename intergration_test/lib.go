@@ -136,8 +136,9 @@ func cleanTable(tbName string) {
 // generate fake Data
 
 var Data struct {
-	User  *orm.User
-	Admin *orm.User
+	User     *orm.User
+	Admin    *orm.User
+	Material *orm.Material
 }
 
 const (
@@ -160,4 +161,10 @@ func setup() {
 		Password: util.Encrypt(AdminPasswd),
 	}
 	orm.Create(Data.Admin)
+	Data.Material = &orm.Material{
+		Name:          "mock_material",
+		CustomerCode:  "mock_material_customer_code",
+		ProjectRemark: "mock_material_project_remark",
+	}
+	orm.Create(Data.Material)
 }

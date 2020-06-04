@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
-	"github.com/SasukeBo/ftpviewer/api/v1/logic"
 
 	"github.com/SasukeBo/ftpviewer/api/v1/generated"
+	"github.com/SasukeBo/ftpviewer/api/v1/logic"
 	"github.com/SasukeBo/ftpviewer/api/v1/model"
 )
 

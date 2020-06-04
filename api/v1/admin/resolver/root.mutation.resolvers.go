@@ -145,6 +145,10 @@ func (r *mutationResolver) AddMaterial(ctx context.Context, input model.Material
 	return logic.AddMaterial(ctx, input)
 }
 
+func (r *mutationResolver) SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*model.DecodeTemplate, error) {
+	return logic.SaveDecodeTemplate(ctx, input)
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
