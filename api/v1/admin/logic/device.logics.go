@@ -23,16 +23,15 @@ func LoadDevice(ctx context.Context, deviceID uint) (*model.Device, error) {
 }
 
 func SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	var device orm.Device
 	if input.ID != nil {
 		if err := device.Get(uint(*input.ID)); err != nil {
-			return nil, errormap.SendGQLError(gc, err.ErrorCode, err, "device")
+			return nil, errormap.SendGQLError(ctx, err.ErrorCode, err, "device")
 		}
 	}
 	device.Name = input.Name
@@ -52,12 +51,12 @@ func SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, er
 	device.IsRealtime = input.IsRealtime
 
 	if err := orm.Save(&device).Error; err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeSaveObjectError, err, "device")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "device")
 	}
 
 	var out model.Device
 	if err := copier.Copy(&out, &device); err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeTransferObjectError, err, "device")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "device")
 	}
 
 	return &out, nil

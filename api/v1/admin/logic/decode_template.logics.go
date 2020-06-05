@@ -26,17 +26,16 @@ func LoadDecodeTemplate(ctx context.Context, templateID uint) (*model.DecodeTemp
 }
 
 func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*model.DecodeTemplate, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	tx := orm.Begin()
 	var template orm.DecodeTemplate
 	if input.ID != nil {
 		if err := template.Get(uint(*input.ID)); err != nil {
-			return nil, errormap.SendGQLError(gc, err.ErrorCode, err, "decode_template")
+			return nil, errormap.SendGQLError(ctx, err.ErrorCode, err, "decode_template")
 		}
 	}
 
@@ -66,29 +65,29 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*
 	if input.Default != nil {
 		if err := tx.Model(&orm.DecodeTemplate{}).Where("material_id = ? AND decode_templates.default = ?", input.MaterialID, true).Update("default", false).Error; err != nil {
 			tx.Rollback()
-			return nil, errormap.SendGQLError(gc, errormap.ErrorCodeDecodeTemplateSetDefaultFailed, err)
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeDecodeTemplateSetDefaultFailed, err)
 		}
 		template.Default = *input.Default
 	}
 
 	if err := tx.Save(&template).Error; err != nil {
 		tx.Rollback()
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeSaveObjectError, err, "decode_template")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "decode_template")
 	}
 	var freshTemplate orm.DecodeTemplate
 	if err := tx.Model(&freshTemplate).Where("id = ?", template.ID).First(&freshTemplate).Error; err != nil {
 		tx.Rollback()
 		if err == gorm.ErrRecordNotFound {
-			return nil, errormap.SendGQLError(gc, errormap.ErrorCodeObjectNotFound, err, "decode_template")
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeObjectNotFound, err, "decode_template")
 		}
 
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeGetObjectFailed, err, "decode_template")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "decode_template")
 	}
 
 	out, err := convertDecodeTemplateOutput(&freshTemplate)
 	if err != nil {
 		tx.Rollback()
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeTransferObjectError, err, "decode_template")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "decode_template")
 	}
 
 	tx.Commit()
@@ -96,15 +95,14 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*
 }
 
 func ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	var templates []orm.DecodeTemplate
 	if err := orm.Model(&orm.DecodeTemplate{}).Where("material_id = ?", materialID).Find(&templates).Error; err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeGetObjectFailed, err, "decode_template")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "decode_template")
 	}
 
 	var outs []*model.DecodeTemplate
@@ -157,23 +155,22 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 }
 
 func DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	var template orm.DecodeTemplate
 	if err := template.Get(uint(id)); err != nil {
-		return model.ResponseStatusError, errormap.SendGQLError(gc, err.ErrorCode, err, "decode_template")
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, err.ErrorCode, err, "decode_template")
 	}
 
 	if template.Default {
-		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeDecodeTemplateDefaultDeleteProtect, nil)
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDecodeTemplateDefaultDeleteProtect, nil)
 	}
 
 	if err := orm.Delete(&template).Error; err != nil {
-		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeDeleteObjectError, err, "decode_template")
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "decode_template")
 	}
 
 	return model.ResponseStatusOk, nil

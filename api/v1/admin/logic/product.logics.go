@@ -3,7 +3,6 @@ package logic
 import (
 	"context"
 	"fmt"
-	"github.com/SasukeBo/ftpviewer/api"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm"
@@ -13,14 +12,13 @@ import (
 )
 
 func ProductScrollFetch(ctx context.Context, searchInput model.ProductSearch, limit int, offset int) (*model.ProductWrap, error) {
-	gc := api.GetGinContext(ctx)
 	var material orm.Material
 	if err := material.Get(uint(searchInput.MaterialID)); err != nil {
-		return nil, errormap.SendGQLError(gc, err.GetCode(), err, "material")
+		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
 	}
 
 	if offset < 0 || limit < 0 {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeBadRequestParams, errormap.NewOrigin("limit and offset cannot little than 0: limit=%v offset=%v", limit, offset))
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errormap.NewOrigin("limit and offset cannot little than 0: limit=%v offset=%v", limit, offset))
 	}
 
 	sql := orm.Model(&orm.Product{}).Where("material_id = ?", material.ID)
@@ -62,12 +60,12 @@ func ProductScrollFetch(ctx context.Context, searchInput model.ProductSearch, li
 
 	var total int
 	if err := sql.Count(&total).Error; err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCountObjectFailed, err, "product")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "product")
 	}
 
 	var products []orm.Product
 	if err := sql.Order("id asc").Offset(offset).Limit(limit).Find(&products).Error; err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeGetObjectFailed, err, "product")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "product")
 	}
 
 	var outData []*model.Product

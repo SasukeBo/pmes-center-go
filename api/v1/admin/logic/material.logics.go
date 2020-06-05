@@ -18,17 +18,16 @@ import (
 const fileNameDecodePattern = `([\w]*)-([\w]*)-.*-([A|B|w|b]?).xlsx`
 
 func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	tx := orm.DB.Begin()
 	var material orm.Material
 	tx.Model(&material).Where("name = ?", input.Name).First(&material)
 	if material.ID != 0 {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeMaterialAlreadyExists, nil)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeMaterialAlreadyExists, nil)
 	}
 
 	material.Name = input.Name
@@ -40,7 +39,7 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 	}
 	if err := tx.Create(&material).Error; err != nil {
 		tx.Rollback()
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateFailedError, err, "material")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateFailedError, err, "material")
 	}
 	decodeTemplate := orm.DecodeTemplate{
 		Name:                 "默认模板",
@@ -54,7 +53,7 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 	columnLength, err := decodeTemplate.GenDefaultProductColumns()
 	if err != nil {
 		tx.Rollback()
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateFailedError, err, "material_default_decode_template")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateFailedError, err, "material_default_decode_template")
 	}
 
 	pointColumns := make(types.Map)
@@ -68,7 +67,7 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 		}
 		if err := tx.Create(&point).Error; err != nil {
 			tx.Rollback()
-			return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateFailedError, err, "point")
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateFailedError, err, "point")
 		}
 		pointColumns[point.Name] = i + columnLength
 	}
@@ -76,19 +75,19 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 
 	if err := tx.Create(&decodeTemplate).Error; err != nil {
 		tx.Rollback()
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateFailedError, err, "material_default_decode_template")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateFailedError, err, "material_default_decode_template")
 	}
 
 	tx.Commit()
 
 	var out model.Material
 	if err := copier.Copy(&out, &material); err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeTransferObjectError, err, "material")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "material")
 	}
 
 	// 解析FTP服务器指定料号路径下的所有未解析文件
 	if err := FetchMaterialData(&material); err != nil {
-		return &out, errormap.SendGQLError(gc, errormap.ErrorCodeCreateSuccessButFetchFailed, err)
+		return &out, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateSuccessButFetchFailed, err)
 	}
 
 	return &out, nil
@@ -196,10 +195,9 @@ func resolvePath(m, path string) string {
 }
 
 func Materials(ctx context.Context, pattern *string, page int, limit int) (*model.MaterialWrap, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	sql := orm.Model(&orm.Material{})
@@ -211,7 +209,7 @@ func Materials(ctx context.Context, pattern *string, page int, limit int) (*mode
 	var materials []orm.Material
 	offset := (page - 1) * limit
 	if err := sql.Order("id desc").Limit(limit).Offset(offset).Find(&materials).Error; err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeGetObjectFailed, err, "material")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material")
 	}
 
 	var outs []*model.Material
@@ -226,7 +224,7 @@ func Materials(ctx context.Context, pattern *string, page int, limit int) (*mode
 
 	var count int
 	if err := sql.Model(&orm.Material{}).Count(&count).Error; err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCountObjectFailed, err, "material")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "material")
 	}
 	return &model.MaterialWrap{
 		Total:     count,
@@ -248,31 +246,30 @@ func LoadMaterial(ctx context.Context, materialID uint) (*model.Material, error)
 }
 
 func DeleteMaterial(ctx context.Context, id int) (model.ResponseStatus, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	tx := orm.Begin()
 	var material orm.Material
 	if err := material.Get(uint(id)); err != nil {
-		return model.ResponseStatusError, errormap.SendGQLError(gc, err.ErrorCode, err, "material")
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, err.ErrorCode, err, "material")
 	}
 
 	if err := tx.Delete(orm.Device{}, "material_id = ?", material.ID).Error; err != nil {
 		tx.Rollback()
-		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeDeleteObjectError, err, "material_devices")
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "material_devices")
 	}
 
 	if err := tx.Delete(orm.ImportRecord{}, "material_id = ?", material.ID).Error; err != nil {
 		tx.Rollback()
-		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeDeleteObjectError, err, "material_import_records")
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "material_import_records")
 	}
 
 	if err := tx.Delete(orm.DecodeTemplate{}, "material_id = ?", material.ID).Error; err != nil {
 		tx.Rollback()
-		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeDeleteObjectError, err, "material_decode_templates")
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "material_decode_templates")
 	}
 
 	tx.Commit()
@@ -280,15 +277,14 @@ func DeleteMaterial(ctx context.Context, id int) (model.ResponseStatus, error) {
 }
 
 func UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	var material orm.Material
 	if err := material.Get(uint(input.ID)); err != nil {
-		return nil, errormap.SendGQLError(gc, err.ErrorCode, err, "material")
+		return nil, errormap.SendGQLError(ctx, err.ErrorCode, err, "material")
 	}
 
 	if input.ProjectRemark != nil {
@@ -298,11 +294,11 @@ func UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*mode
 		material.CustomerCode = *input.CustomerCode
 	}
 	if err := orm.Save(&material).Error; err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeSaveObjectError, err, "material")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "material")
 	}
 	var out model.Material
 	if err := copier.Copy(&out, &material); err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeTransferObjectError, err, "material")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "material")
 	}
 	return &out, nil
 }

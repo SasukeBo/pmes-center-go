@@ -9,15 +9,14 @@ import (
 )
 
 func CurrentUser(ctx context.Context) (*model.User, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if user == nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeUnauthenticated, nil)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeUnauthenticated, nil)
 	}
 
 	var out model.User
 	if err := copier.Copy(&out, user); err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeTransferObjectError, err, "user")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "user")
 	}
 
 	return &out, nil

@@ -2,6 +2,7 @@ package errormap
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
@@ -150,8 +151,10 @@ func SendHttpError(ctx *gin.Context, errorCode string, originErr error, variable
 }
 
 // SendGQLError 返回 *gqlerror.Error
-func SendGQLError(ctx *gin.Context, errorCode string, originErr error, variables ...interface{}) *gqlerror.Error {
-	lang := ctx.Request.Header.Get(LangHeader)
+func SendGQLError(ctx context.Context, errorCode string, originErr error, variables ...interface{}) *gqlerror.Error {
+	c := ctx.Value("GinContext")
+	gc := c.(*gin.Context)
+	lang := gc.Request.Header.Get(LangHeader)
 	if lang == "" {
 		lang = EN
 	}

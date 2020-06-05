@@ -10,10 +10,9 @@ import (
 )
 
 func ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int) (*model.ImportRecordsWrap, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	sql := orm.Model(&orm.ImportRecord{}).Where("material_id = ?", materialID)
@@ -22,13 +21,13 @@ func ImportRecords(ctx context.Context, materialID int, deviceID *int, page int,
 	}
 	var count int
 	if err := sql.Count(&count).Error; err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCountObjectFailed, err, "import_record")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "import_record")
 	}
 
 	var records []orm.ImportRecord
 	offset := (page - 1) * limit
 	if err := sql.Order("created_at desc").Offset(offset).Limit(limit).Find(&records).Error; err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeGetObjectFailed, err, "import_record")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "import_record")
 	}
 
 	var outs []*model.ImportRecord

@@ -14,24 +14,23 @@ import (
 )
 
 func ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*model.Point, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	if filepath.Ext(file.Filename) != ".xlsx" {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeFileExtensionError, nil, ".xlsx")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeFileExtensionError, nil, ".xlsx")
 	}
 
 	content, err := ioutil.ReadAll(file.File)
 	if err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeFileHandleError, err)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeFileHandleError, err)
 	}
 
 	xFile, err := xlsx.OpenBinary(content)
 	if err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeFileHandleError, err)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeFileHandleError, err)
 	}
 
 	sheet := xFile.Sheets[0]
@@ -56,12 +55,12 @@ func ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*
 		}
 		if err := orm.Create(&point).Error; err != nil {
 			tx.Rollback()
-			return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateObjectError, err, "point")
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "point")
 		}
 		var out model.Point
 		if err := copier.Copy(&out, &point); err != nil {
 			tx.Rollback()
-			return nil, errormap.SendGQLError(gc, errormap.ErrorCodeTransferObjectError, err, "point")
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "point")
 		}
 		outs = append(outs, &out)
 	}
@@ -71,10 +70,9 @@ func ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*
 }
 
 func SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	tx := orm.Begin()
@@ -82,7 +80,7 @@ func SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCre
 	for _, id := range deleteItems {
 		if err := tx.Delete(orm.Point{}, "id = ?", id).Error; err != nil {
 			tx.Rollback()
-			return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeDeleteObjectError, err, "point")
+			return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "point")
 		}
 	}
 
@@ -98,7 +96,7 @@ func SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCre
 		point.Nominal = saveItem.Nominal
 		if err := tx.Save(&point).Error; err != nil {
 			tx.Rollback()
-			return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeSaveObjectError, err, "point")
+			return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "point")
 		}
 	}
 
@@ -107,22 +105,21 @@ func SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCre
 }
 
 func ListMaterialPoints(ctx context.Context, materialID int, page int, limit int) (*model.PointWrap, error) {
-	gc := api.GetGinContext(ctx)
-	user := api.CurrentUser(gc)
+	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	sql := orm.Model(&orm.Point{}).Where("material_id = ?", materialID)
 
 	var total int
 	if err := sql.Count(&total).Error; err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCountObjectFailed, err, "material_points")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "material_points")
 	}
 
 	var points []orm.Point
 	if err := sql.Offset((page - 1) * limit).Limit(limit).Find(&points).Error; err != nil {
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeGetObjectFailed, err, "material_points")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material_points")
 	}
 
 	var outs []*model.Point

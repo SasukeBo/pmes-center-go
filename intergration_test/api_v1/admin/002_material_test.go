@@ -97,9 +97,9 @@ func TestMaterial(t *testing.T) {
 	// delete material
 	t.Run("DELETE_MATERIAL", func(t *testing.T) {
 		material := orm.Material{
-			Name:          "test_material_1",
-			CustomerCode:  "test_customer_code_1",
-			ProjectRemark: "apple",
+			Name:          "DELETE_MATERIAL",
+			CustomerCode:  "DELETE_MATERIAL",
+			ProjectRemark: "DELETE_MATERIAL",
 		}
 		orm.Create(&material)
 		tester.API1Admin(deleteMaterialGQL, test.Object{"id": material.ID}).GQLObject().Path("$.data.response").Equal("OK")
@@ -108,9 +108,9 @@ func TestMaterial(t *testing.T) {
 	// update material
 	t.Run("UPDATE_MATERIAL", func(t *testing.T) {
 		material := orm.Material{
-			Name:          "test_material_1",
-			CustomerCode:  "test_customer_code_1",
-			ProjectRemark: "apple",
+			Name:          "UPDATE_MATERIAL",
+			CustomerCode:  "UPDATE_MATERIAL",
+			ProjectRemark: "UPDATE_MATERIAL",
 		}
 		orm.Create(&material)
 		ret := tester.API1Admin(updateMaterialGQL, test.Object{
