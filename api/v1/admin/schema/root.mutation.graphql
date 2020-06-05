@@ -1,9 +1,7 @@
 type Mutation {
-
+    # TODO: 废弃的接口
     "取消导出"
     cancelExport(opID: String!): String!
-    "导入检测项"
-    importPoints(file: Upload!, materialID: Int!): [Point]!
 
     ############################ new ############################
 
@@ -12,7 +10,7 @@ type Mutation {
     # setting(settingInput: SettingInput!): SystemConfig!
 
     # 料号
-    "新增料号"
+    "新增料号，附带创建的默认解析模板中，对检测项的定位取决于检测项的创建顺序。"
     addMaterial(input: MaterialCreateInput!): Material!
     "删除料号"
     deleteMaterial(id: Int!): ResponseStatus!
@@ -24,4 +22,10 @@ type Mutation {
     saveDecodeTemplate(input: DecodeTemplateInput!): DecodeTemplate!
     "删除解析模板"
     deleteDecodeTemplate(id: Int!): ResponseStatus!
+
+    # 检测项
+    "导入检测项"
+    importPoints(file: Upload!, materialID: Int!): [Point]!
+    "保存检测项，处理删除的、修改的和新建的检测项"
+    savePoints(materialID: Int!, saveItems: [PointCreateInput]!, deleteItems: [Int!]!): ResponseStatus!
 }

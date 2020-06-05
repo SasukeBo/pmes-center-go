@@ -42,9 +42,23 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 		tx.Rollback()
 		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateFailedError, err, "material")
 	}
+	decodeTemplate := orm.DecodeTemplate{
+		Name:                 "默认模板",
+		MaterialID:           material.ID,
+		UserID:               user.ID,
+		Description:          "创建料号时自动生成的默认解析模板",
+		DataRowIndex:         15,
+		CreatedAtColumnIndex: 1,
+		Default:              true,
+	}
+	columnLength, err := decodeTemplate.GenDefaultProductColumns()
+	if err != nil {
+		tx.Rollback()
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateFailedError, err, "material_default_decode_template")
+	}
 
 	pointColumns := make(types.Map)
-	for _, pointInput := range input.Points {
+	for i, pointInput := range input.Points {
 		point := orm.Point{
 			Name:       pointInput.Name,
 			MaterialID: material.ID,
@@ -56,26 +70,13 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 			tx.Rollback()
 			return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateFailedError, err, "point")
 		}
-		pointColumns[pointInput.Name] = pointInput.Index
+		pointColumns[point.Name] = i + columnLength
 	}
+	decodeTemplate.PointColumns = pointColumns
 
-	decodeTemplate := orm.DecodeTemplate{
-		Name:                 "默认模板",
-		MaterialID:           material.ID,
-		UserID:               user.ID,
-		Description:          "创建料号时自动生成的默认解析模板",
-		DataRowIndex:         15,
-		CreatedAtColumnIndex: 1,
-		PointColumns:         pointColumns,
-		Default:              true,
-	}
-	if err := decodeTemplate.GenDefaultProductColumns(); err != nil {
-		tx.Rollback()
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateFailedError, err, "decode_templates")
-	}
 	if err := tx.Create(&decodeTemplate).Error; err != nil {
 		tx.Rollback()
-		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateFailedError, err, "decode_templates")
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCreateFailedError, err, "material_default_decode_template")
 	}
 
 	tx.Commit()

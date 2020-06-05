@@ -69,3 +69,74 @@ func ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*
 
 	return outs, nil
 }
+
+func SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error) {
+	gc := api.GetGinContext(ctx)
+	user := api.CurrentUser(gc)
+	if !user.IsAdmin {
+		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	tx := orm.Begin()
+
+	for _, id := range deleteItems {
+		if err := tx.Delete(orm.Point{}, "id = ?", id).Error; err != nil {
+			tx.Rollback()
+			return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeDeleteObjectError, err, "point")
+		}
+	}
+
+	for _, saveItem := range saveItems {
+		var point orm.Point
+		if saveItem.ID != nil {
+			point.Get(uint(*saveItem.ID))
+		}
+		point.MaterialID = uint(materialID)
+		point.Name = saveItem.Name
+		point.UpperLimit = saveItem.Usl
+		point.LowerLimit = saveItem.Lsl
+		point.Nominal = saveItem.Nominal
+		if err := tx.Save(&point).Error; err != nil {
+			tx.Rollback()
+			return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeSaveObjectError, err, "point")
+		}
+	}
+
+	tx.Commit()
+	return model.ResponseStatusOk, nil
+}
+
+func ListMaterialPoints(ctx context.Context, materialID int, page int, limit int) (*model.PointWrap, error) {
+	gc := api.GetGinContext(ctx)
+	user := api.CurrentUser(gc)
+	if !user.IsAdmin {
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	sql := orm.Model(&orm.Point{}).Where("material_id = ?", materialID)
+
+	var total int
+	if err := sql.Count(&total).Error; err != nil {
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeCountObjectFailed, err, "material_points")
+	}
+
+	var points []orm.Point
+	if err := sql.Offset((page - 1) * limit).Limit(limit).Find(&points).Error; err != nil {
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeGetObjectFailed, err, "material_points")
+	}
+
+	var outs []*model.Point
+	for _, point := range points {
+		var out model.Point
+		if err := copier.Copy(&out, &point); err != nil {
+			continue
+		}
+
+		outs = append(outs, &out)
+	}
+
+	return &model.PointWrap{
+		Points: outs,
+		Total:  total,
+	}, nil
+}

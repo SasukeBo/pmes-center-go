@@ -16,7 +16,8 @@ func TestMaterial(t *testing.T) {
 	tester := test.NewTester(t)
 	test.Login(test.AdminAccount, test.AdminPasswd, true)
 
-	t.Run("Create material and load data", func(t *testing.T) {
+	// Create material and load data
+	t.Run("CREATE_MATERIAL_AND_LOAD_DATA", func(t *testing.T) {
 		go ftpclient.FTPWorker()
 		tester.API1Admin(createMaterialGQL, test.Object{
 			"input": test.Object{
@@ -29,35 +30,30 @@ func TestMaterial(t *testing.T) {
 						"usl":     5.36,
 						"nominal": 5.31,
 						"lsl":     5.26,
-						"index":   7,
 					},
 					{
 						"name":    "FAI3_G8",
 						"usl":     5.36,
 						"nominal": 5.31,
 						"lsl":     5.26,
-						"index":   8,
 					},
 					{
 						"name":    "FAI4_G1",
 						"usl":     4.28,
 						"nominal": 4.23,
 						"lsl":     4.18,
-						"index":   9,
 					},
 					{
 						"name":    "FAI4_G2",
 						"usl":     4.28,
 						"nominal": 4.23,
 						"lsl":     4.18,
-						"index":   10,
 					},
 					{
 						"name":    "FAI4_G3",
 						"usl":     4.28,
 						"nominal": 4.23,
 						"lsl":     4.18,
-						"index":   11,
 					},
 				},
 			},

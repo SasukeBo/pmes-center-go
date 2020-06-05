@@ -21,4 +21,8 @@ func init() {
 		ZH_CN: "该料号的解析模板",
 		EN:    "decode templates of the material",
 	})
+	registerArg("material_default_decode_template", langMap{
+		ZH_CN: "该料号的默认解析模板",
+		EN:    "the default decode template of the material",
+	})
 }

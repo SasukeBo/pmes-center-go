@@ -23,12 +23,12 @@ type DecodeTemplate struct {
 	Default              bool      `gorm:"default:false"` // 标识是否为默认模板
 }
 
-func (d *DecodeTemplate) GenDefaultProductColumns() error {
+func (d *DecodeTemplate) GenDefaultProductColumns() (int, error) {
 	productColumns := make(types.Map)
 	var config SystemConfig
 	err := config.GetConfig(SystemConfigProductColumnHeadersKey)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	headers := strings.Split(config.Value, ";")
@@ -44,7 +44,7 @@ func (d *DecodeTemplate) GenDefaultProductColumns() error {
 
 	productColumns["columns"] = columns
 	d.ProductColumns = productColumns
-	return nil
+	return len(columns), nil
 }
 
 func (d *DecodeTemplate) Get(id uint) *errormap.Error {

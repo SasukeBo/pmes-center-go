@@ -12,10 +12,6 @@ import (
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 )
 
-func (r *mutationResolver) UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error) {
-	return logic.UpdateMaterial(ctx, input)
-}
-
 func (r *mutationResolver) CancelExport(ctx context.Context, opID string) (string, error) {
 	return "", nil
 	//err := logic.CancelExport(opID)
@@ -26,10 +22,6 @@ func (r *mutationResolver) CancelExport(ctx context.Context, opID string) (strin
 	//return "ok", nil
 }
 
-func (r *mutationResolver) ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*model.Point, error) {
-	return logic.ImportPoints(ctx, file, materialID)
-}
-
 func (r *mutationResolver) AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error) {
 	return logic.AddMaterial(ctx, input)
 }
@@ -38,12 +30,24 @@ func (r *mutationResolver) DeleteMaterial(ctx context.Context, id int) (model.Re
 	return logic.DeleteMaterial(ctx, id)
 }
 
+func (r *mutationResolver) UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error) {
+	return logic.UpdateMaterial(ctx, input)
+}
+
 func (r *mutationResolver) SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*model.DecodeTemplate, error) {
 	return logic.SaveDecodeTemplate(ctx, input)
 }
 
 func (r *mutationResolver) DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, error) {
 	return logic.DeleteDecodeTemplate(ctx, id)
+}
+
+func (r *mutationResolver) ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*model.Point, error) {
+	return logic.ImportPoints(ctx, file, materialID)
+}
+
+func (r *mutationResolver) SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error) {
+	return logic.SavePoints(ctx, materialID, saveItems, deleteItems)
 }
 
 // Mutation returns generated.MutationResolver implementation.
