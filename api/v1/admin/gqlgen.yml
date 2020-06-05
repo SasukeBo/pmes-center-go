@@ -58,3 +58,5 @@ models:
     model: github.com/SasukeBo/ftpviewer/api/v1/admin/model.ImportRecord
   DecodeTemplate:
     model: github.com/SasukeBo/ftpviewer/api/v1/admin/model.DecodeTemplate
+  Device:
+    model: github.com/SasukeBo/ftpviewer/api/v1/admin/model.Device

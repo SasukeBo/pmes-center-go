@@ -150,3 +150,19 @@ query($materialID: Int!, $page: Int!, $limit: Int!) {
     }
   }
 }`
+var saveDeviceGQL = `
+mutation($input: DeviceInput!) {
+  response: saveDevice(input: $input) {
+    id
+    uuid
+    name
+    remark
+    ip
+    material {
+      id
+    }
+    deviceSupplier
+    isRealtime
+    address
+  }
+}`

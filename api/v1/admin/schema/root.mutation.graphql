@@ -31,5 +31,5 @@ type Mutation {
 
     # 设备
     "保存设备"
-    saveDevice()
+    saveDevice(input: DeviceInput!): Device!
 }

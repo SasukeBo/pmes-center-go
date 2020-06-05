@@ -31,3 +31,15 @@ type DecodeTemplate struct {
 	CreatedAt            time.Time              `json:"createdAt"`
 	UpdatedAt            time.Time              `json:"updatedAt"`
 }
+
+type Device struct {
+	ID             int    `json:"id"`
+	UUID           string `json:"uuid"`
+	Name           string `json:"name"`
+	Remark         string `json:"remark"`
+	IP             string `json:"ip"`
+	MaterialID     uint   `json:"materialID"`
+	DeviceSupplier string `json:"deviceSupplier"`
+	IsRealtime     bool   `json:"isRealtime"`
+	Address        string `json:"address"`
+}

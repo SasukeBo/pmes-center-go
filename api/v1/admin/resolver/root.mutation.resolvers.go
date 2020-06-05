@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
@@ -48,6 +47,10 @@ func (r *mutationResolver) ImportPoints(ctx context.Context, file graphql.Upload
 
 func (r *mutationResolver) SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error) {
 	return logic.SavePoints(ctx, materialID, saveItems, deleteItems)
+}
+
+func (r *mutationResolver) SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, error) {
+	return logic.SaveDevice(ctx, input)
 }
 
 // Mutation returns generated.MutationResolver implementation.
