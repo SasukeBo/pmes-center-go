@@ -28,4 +28,8 @@ type Mutation {
     importPoints(file: Upload!, materialID: Int!): [Point]!
     "保存检测项，处理删除的、修改的和新建的检测项"
     savePoints(materialID: Int!, saveItems: [PointCreateInput]!, deleteItems: [Int!]!): ResponseStatus!
+
+    # 设备
+    "保存设备"
+    saveDevice()
 }

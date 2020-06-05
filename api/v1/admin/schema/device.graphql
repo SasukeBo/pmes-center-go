@@ -1,11 +1,15 @@
-type Device {
-    id: Int
-    name: String
-}
-
 type DeviceResult {
     device: Device
     ok: Int
     ng: Int
     status: fetchStatus
+}
+
+############################ new ############################
+
+type Device {
+    id: Int!
+    uuid: String!
+    name: String!
+    
 }
