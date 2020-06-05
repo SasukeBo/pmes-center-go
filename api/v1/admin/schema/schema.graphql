@@ -1,3 +1,8 @@
 scalar Time
 scalar Map
 scalar Upload
+
+enum ResponseStatus {
+    OK
+    ERROR
+}

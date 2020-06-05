@@ -13,13 +13,15 @@ import (
 )
 
 type object map[string]interface{}
-type Lang string
-type langMap map[Lang]string
+type langMap map[string]string
+
+const (
+	LangHeader = "Lang"
+	ZH_CN      = "zh_cn"
+	EN         = "en"
+)
 
 var (
-	ZH_CN Lang = "zh_cn"
-	EN    Lang = "en"
-
 	internalErr = langMap{
 		ZH_CN: "系统错误。",
 		EN:    "Internal error.",
@@ -59,11 +61,19 @@ func register(errorCode string, statusCode int, languages langMap) {
 	}
 }
 
+// key 参数Key
+// languages 为 语言-模板 构成的hash表
+func registerArg(key string, languages langMap) {
+	errStore[key] = errorTemplate{
+		Languages: languages,
+	}
+}
+
 // ErrorPresenter 将error处理为 gqlerror.Error
 // errorCode 为错误代码
 // lang 为 语言
 // variables 为 模板参数值
-func ErrorPresenter(errorCode string, lang Lang, originErr error, variables ...interface{}) *gqlerror.Error {
+func ErrorPresenter(errorCode string, lang string, originErr error, variables ...interface{}) *gqlerror.Error {
 	errTemplate := errStore[errorCode]
 	statusCode := errTemplate.StatusCode
 	tmp := errTemplate.Languages[lang]
@@ -112,7 +122,7 @@ func ErrorPresenter(errorCode string, lang Lang, originErr error, variables ...i
 // parseArguments 解析参数，参数也会根据语言而返回对应值
 // variables 参数数组
 // lang 语言
-func parseArguments(variables []interface{}, lang Lang) interface{} {
+func parseArguments(variables []interface{}, lang string) interface{} {
 	out := make(map[string]interface{})
 	for i, v := range variables {
 		value := v
@@ -130,10 +140,8 @@ func parseArguments(variables []interface{}, lang Lang) interface{} {
 
 // SendHttpError 返回http请求错误响应信息
 func SendHttpError(ctx *gin.Context, errorCode string, originErr error, variables ...interface{}) {
-	var lang Lang
-	langv := ctx.Request.Header.Get("Lang")
-	lang = Lang(langv)
-	if langv == "" {
+	lang := ctx.Request.Header.Get(LangHeader)
+	if lang == "" {
 		lang = EN
 	}
 	err := ErrorPresenter(errorCode, lang, originErr, variables...)
@@ -143,10 +151,8 @@ func SendHttpError(ctx *gin.Context, errorCode string, originErr error, variable
 
 // SendGQLError 返回 *gqlerror.Error
 func SendGQLError(ctx *gin.Context, errorCode string, originErr error, variables ...interface{}) *gqlerror.Error {
-	var lang Lang
-	langv := ctx.Request.Header.Get("Lang")
-	lang = Lang(langv)
-	if langv == "" {
+	lang := ctx.Request.Header.Get(LangHeader)
+	if lang == "" {
 		lang = EN
 	}
 	return ErrorPresenter(errorCode, lang, originErr, variables...)

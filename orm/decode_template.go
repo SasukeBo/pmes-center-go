@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm/types"
 	"github.com/jinzhu/gorm"
 	"strings"
@@ -46,8 +47,12 @@ func (d *DecodeTemplate) GenDefaultProductColumns() error {
 	return nil
 }
 
-func (d *DecodeTemplate) Get(id uint) error {
-	return Model(d).Where("id = ?", id).First(d).Error
+func (d *DecodeTemplate) Get(id uint) *errormap.Error {
+	if err := Model(d).Where("id = ?", id).First(d).Error; err != nil {
+		return handleError(err, "id", id)
+	}
+
+	return nil
 }
 
 const (

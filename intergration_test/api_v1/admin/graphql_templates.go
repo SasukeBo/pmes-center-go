@@ -90,3 +90,34 @@ mutation($input: DecodeTemplateInput!) {
   }
 }
 `
+var listDecodeTemplateGQL = `
+query($materialID: Int!) {
+  response: listDecodeTemplate(materialID: $materialID) {
+    id
+    name
+    material {
+      id
+    }
+    user {
+      id
+    }
+    description
+    dataRowIndex
+    createdAtColumnIndex
+    productColumns {
+      name
+      index
+      type
+    }
+    pointColumns
+    default
+    createdAt
+    updatedAt
+  }
+}
+`
+var deleteDecodeTemplateGQL = `
+mutation($id: Int!) {
+  response: deleteDecodeTemplate(id: $id)
+}
+`

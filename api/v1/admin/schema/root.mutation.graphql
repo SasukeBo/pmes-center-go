@@ -16,4 +16,6 @@ type Mutation {
     addMaterial(input: MaterialCreateInput!): Material!
     "保存解析模板"
     saveDecodeTemplate(input: DecodeTemplateInput!): DecodeTemplate!
+    "删除解析模板"
+    deleteDecodeTemplate(id: Int!): ResponseStatus!
 }

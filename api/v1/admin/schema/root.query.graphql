@@ -29,4 +29,6 @@ type Query {
     materials(pattern: String, page: Int!, limit: Int!): MaterialWrap!
     "获取导入记录"
     importRecords(materialID: Int!, deviceID: Int, page: Int!, limit: Int!): ImportRecordsWrap!
+    "解析模板列表"
+    listDecodeTemplate(materialID: Int!): [DecodeTemplate]!
 }

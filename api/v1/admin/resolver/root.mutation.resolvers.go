@@ -149,6 +149,10 @@ func (r *mutationResolver) SaveDecodeTemplate(ctx context.Context, input model.D
 	return logic.SaveDecodeTemplate(ctx, input)
 }
 
+func (r *mutationResolver) DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, error) {
+	return logic.DeleteDecodeTemplate(ctx, id)
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

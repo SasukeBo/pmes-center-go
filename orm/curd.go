@@ -10,6 +10,10 @@ func Save(object interface{}) *gorm.DB {
 	return DB.Save(object)
 }
 
+func Delete(object interface{}, where ...interface{}) *gorm.DB {
+	return DB.Delete(object, where...)
+}
+
 func Model(object interface{}) *gorm.DB {
 	return DB.Model(object)
 }

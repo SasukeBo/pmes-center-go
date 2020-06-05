@@ -553,6 +553,10 @@ func (r *queryResolver) ImportRecords(ctx context.Context, materialID int, devic
 	return logic.ImportRecords(ctx, materialID, deviceID, page, limit)
 }
 
+func (r *queryResolver) ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error) {
+	return logic.ListDecodeTemplate(ctx, materialID)
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
