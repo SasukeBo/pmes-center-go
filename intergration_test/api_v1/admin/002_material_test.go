@@ -97,4 +97,35 @@ func TestMaterial(t *testing.T) {
 		ret.Value("total").Equal(3)
 		ret.Value("materials").Array().Length().Equal(2)
 	})
+
+	// delete material
+	t.Run("DELETE_MATERIAL", func(t *testing.T) {
+		material := orm.Material{
+			Name:          "test_material_1",
+			CustomerCode:  "test_customer_code_1",
+			ProjectRemark: "apple",
+		}
+		orm.Create(&material)
+		tester.API1Admin(deleteMaterialGQL, test.Object{"id": material.ID}).GQLObject().Path("$.data.response").Equal("OK")
+	})
+
+	// update material
+	t.Run("UPDATE_MATERIAL", func(t *testing.T) {
+		material := orm.Material{
+			Name:          "test_material_1",
+			CustomerCode:  "test_customer_code_1",
+			ProjectRemark: "apple",
+		}
+		orm.Create(&material)
+		ret := tester.API1Admin(updateMaterialGQL, test.Object{
+			"input": test.Object{
+				"id":            material.ID,
+				"customerCode":  "changed customer code",
+				"projectRemark": "changed project remark",
+			},
+		}).GQLObject().Path("$.data.response").Object()
+		ret.Value("id").Equal(material.ID)
+		ret.Value("customerCode").Equal("changed customer code")
+		ret.Value("createdAt").NotNull()
+	})
 }

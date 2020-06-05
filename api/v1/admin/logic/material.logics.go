@@ -245,3 +245,63 @@ func LoadMaterial(ctx context.Context, materialID uint) (*model.Material, error)
 
 	return &out, nil
 }
+
+func DeleteMaterial(ctx context.Context, id int) (model.ResponseStatus, error) {
+	gc := api.GetGinContext(ctx)
+	user := api.CurrentUser(gc)
+	if !user.IsAdmin {
+		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	tx := orm.Begin()
+	var material orm.Material
+	if err := material.Get(uint(id)); err != nil {
+		return model.ResponseStatusError, errormap.SendGQLError(gc, err.ErrorCode, err, "material")
+	}
+
+	if err := tx.Delete(orm.Device{}, "material_id = ?", material.ID).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeDeleteObjectError, err, "material_devices")
+	}
+
+	if err := tx.Delete(orm.ImportRecord{}, "material_id = ?", material.ID).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeDeleteObjectError, err, "material_import_records")
+	}
+
+	if err := tx.Delete(orm.DecodeTemplate{}, "material_id = ?", material.ID).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(gc, errormap.ErrorCodeDeleteObjectError, err, "material_decode_templates")
+	}
+
+	tx.Commit()
+	return model.ResponseStatusOk, nil
+}
+
+func UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error) {
+	gc := api.GetGinContext(ctx)
+	user := api.CurrentUser(gc)
+	if !user.IsAdmin {
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	var material orm.Material
+	if err := material.Get(uint(input.ID)); err != nil {
+		return nil, errormap.SendGQLError(gc, err.ErrorCode, err, "material")
+	}
+
+	if input.ProjectRemark != nil {
+		material.ProjectRemark = *input.ProjectRemark
+	}
+	if input.CustomerCode != nil {
+		material.CustomerCode = *input.CustomerCode
+	}
+	if err := orm.Save(&material).Error; err != nil {
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeSaveObjectError, err, "material")
+	}
+	var out model.Material
+	if err := copier.Copy(&out, &material); err != nil {
+		return nil, errormap.SendGQLError(gc, errormap.ErrorCodeTransferObjectError, err, "material")
+	}
+	return &out, nil
+}

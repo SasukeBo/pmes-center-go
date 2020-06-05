@@ -1,19 +1,25 @@
 type Mutation {
-    "编辑料号"
-    updateMaterial(input: MaterialUpdateInput!): Material!
-    "删除料号"
-    deleteMaterial(id: Int!): String!
 
     "取消导出"
     cancelExport(opID: String!): String!
     "导入检测项"
     importPoints(file: Upload!, materialID: Int!): [Point]!
 
-    #### new
-    "添加系统设置"
-    setting(settingInput: SettingInput!): SystemConfig!
+    ############################ new ############################
+
+    # 系统设置
+    # "添加系统设置"
+    # setting(settingInput: SettingInput!): SystemConfig!
+
+    # 料号
     "新增料号"
     addMaterial(input: MaterialCreateInput!): Material!
+    "删除料号"
+    deleteMaterial(id: Int!): ResponseStatus!
+    "编辑料号"
+    updateMaterial(input: MaterialUpdateInput!): Material!
+
+    # 解析模板
     "保存解析模板"
     saveDecodeTemplate(input: DecodeTemplateInput!): DecodeTemplate!
     "删除解析模板"

@@ -116,8 +116,17 @@ query($materialID: Int!) {
   }
 }
 `
-var deleteDecodeTemplateGQL = `
-mutation($id: Int!) {
-  response: deleteDecodeTemplate(id: $id)
+var deleteDecodeTemplateGQL = ` mutation($id: Int!) { response: deleteDecodeTemplate(id: $id) } `
+var deleteMaterialGQL = ` mutation($id: Int!) { response: deleteMaterial(id: $id) } `
+var updateMaterialGQL = `
+mutation($input: MaterialUpdateInput!) {
+  response: updateMaterial(input: $input) {
+    id
+    name
+    customerCode
+    projectRemark
+    createdAt
+    updatedAt
+  }
 }
 `
