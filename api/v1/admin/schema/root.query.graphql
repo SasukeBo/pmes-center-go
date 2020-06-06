@@ -9,8 +9,6 @@ type Query {
     "查询所有点位良率"
     totalPointYield(searchInput: Search!, pattern: String): [YieldWrap]!
 
-    "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
-    analyzeMaterial(searchInput: Search!): MaterialResult!
     "获取料号数据，包括名称模糊搜索"
     materialsWithSearch(offset: Int!, limit: Int!, search: String): MaterialWrap!
 

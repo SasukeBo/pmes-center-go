@@ -1,0 +1,7 @@
+input MaterialChartSearch {
+    id: Int! # 料号ID
+    deviceID: Int # 设备ID
+    beginTime: Time # 时间范围开始时间
+    endTime: Time # 时间范围结束时间
+}
+

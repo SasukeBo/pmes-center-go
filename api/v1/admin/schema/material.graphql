@@ -29,19 +29,6 @@ type fetchStatus {
     fileIDs: [Int!]
 }
 
-input Search {
-    "料号，指定料号"
-    materialID: Int
-    "设备名称，如果不为空则指定该设备生产"
-    deviceID: Int
-    "查询时间范围起始时间"
-    beginTime: Time
-    "查询时间范围结束时间"
-    endTime: Time
-    "其他查询条件以map形式传递"
-    extra: Map
-}
-
 ############################ new ############################
 
 type Material {
