@@ -44,9 +44,6 @@ func Start() {
 	// Active
 	//r.GET("/active", handler.Active())
 
-	// GraphiQL
-	r.GET("/playground/v1/admin", handler.BasicAuth(), handler.PlaygroundGraphiQL("/api/v1/admin"))
-
 	// Downloads
 	r.GET("/downloads/cache", handler.DownloadCacheFile()) // 下载缓存的文件，下载完成删除服务器端缓存文件
 	r.GET("/downloads", handler.Download())

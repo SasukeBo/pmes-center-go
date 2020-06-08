@@ -16,6 +16,13 @@ import (
 
 func Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		isGraphiQL := c.GetBool("isGraphiQL")
+		fmt.Println(isGraphiQL)
+		if isGraphiQL {
+			c.Next()
+			return
+		}
+
 		sessionID, err := c.Cookie("access_token")
 		if err != nil {
 			errormap.SendHttpError(
@@ -81,10 +88,6 @@ func Authenticate() gin.HandlerFunc {
 		c.Set("current_user", user)
 		c.Next()
 	}
-}
-
-func BasicAuth() gin.HandlerFunc {
-	return gin.BasicAuth(gin.Accounts{"sasuke": "Wb922149@...S"})
 }
 
 func Login() gin.HandlerFunc {
