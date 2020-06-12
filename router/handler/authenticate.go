@@ -55,7 +55,7 @@ func Authenticate() gin.HandlerFunc {
 				return
 			}
 
-			err = orm.DB.Model(&orm.User{}).Where("uuid = ?", userLogin.UserID).First(&user).Error
+			err = orm.DB.Model(&orm.User{}).Where("id = ?", userLogin.UserID).First(&user).Error
 			if err != nil { // 获取用户失败
 				errormap.SendHttpError(
 					c, errormap.ErrorCodeUnauthenticated,

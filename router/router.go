@@ -45,8 +45,7 @@ func Start() {
 	//r.GET("/active", handler.Active())
 
 	// Downloads
-	r.GET("/downloads/cache", handler.DownloadCacheFile()) // 下载缓存的文件，下载完成删除服务器端缓存文件
-	r.GET("/downloads", handler.Download())
+	r.GET("/downloads/xlsx", handler.DownloadXlsxFile()) // 下载xlsx文件
 
 	log.Info("start service on [%s] mode", configer.GetEnv("env"))
 	r.Run(fmt.Sprintf(":%s", configer.GetString("port")))

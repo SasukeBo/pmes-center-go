@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 )
 
-func ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*model.Point, error) {
+func ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
@@ -40,31 +40,19 @@ func ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*
 	lslRow := sheet.Row(3)
 
 	var outs []*model.Point
-	tx := orm.Begin()
 	for i := 1; i < len(dimRow.Cells); i++ {
 		name := dimRow.Cells[i].String()
 		usl, _ := uslRow.Cells[i].Float()
 		nominal, _ := nominalRow.Cells[i].Float()
 		lsl, _ := lslRow.Cells[i].Float()
-		point := orm.Point{
+		out := model.Point{
 			Name:       name,
-			MaterialID: uint(materialID),
 			UpperLimit: usl,
 			LowerLimit: lsl,
 			Nominal:    nominal,
 		}
-		if err := orm.Create(&point).Error; err != nil {
-			tx.Rollback()
-			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "point")
-		}
-		var out model.Point
-		if err := copier.Copy(&out, &point); err != nil {
-			tx.Rollback()
-			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "point")
-		}
 		outs = append(outs, &out)
 	}
-	tx.Commit()
 
 	return outs, nil
 }

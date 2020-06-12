@@ -24,8 +24,8 @@ type Mutation {
     deleteDecodeTemplate(id: Int!): ResponseStatus!
 
     # 检测项
-    "导入检测项"
-    importPoints(file: Upload!, materialID: Int!): [Point]!
+    "解析导入的检测项，非创建"
+    parseImportPoints(file: Upload!): [Point]!
     "保存检测项，处理删除的、修改的和新建的检测项"
     savePoints(materialID: Int!, saveItems: [PointCreateInput]!, deleteItems: [Int!]!): ResponseStatus!
 

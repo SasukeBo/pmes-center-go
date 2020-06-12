@@ -5,6 +5,8 @@ package resolver
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
@@ -25,6 +27,10 @@ func (r *importRecordResolver) User(ctx context.Context, obj *model.ImportRecord
 
 func (r *importRecordResolver) DecodeTemplate(ctx context.Context, obj *model.ImportRecord) (*model.DecodeTemplate, error) {
 	return logic.LoadDecodeTemplate(ctx, obj.DecodeTemplateID)
+}
+
+func (r *importRecordResolver) CreatedAt(ctx context.Context, obj *model.ImportRecord) (*time.Time, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // ImportRecord returns generated.ImportRecordResolver implementation.

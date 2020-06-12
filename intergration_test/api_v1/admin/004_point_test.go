@@ -23,13 +23,14 @@ func TestPointsImport(t *testing.T) {
 		}
 
 		formData := test.Object{
-			"operations": fmt.Sprintf("{\"query\": \"%s\", \"variables\": {\"materialID\": %v, \"file\": null }}", pointImportGQL, test.Data.Material.ID),
+			"operations": fmt.Sprintf("{\"query\": \"%s\", \"variables\": {\"file\": null }}", pointImportParseGQL),
 			"map":        `{"template": ["variables.file"]}`,
 		}
 		ret := tester.Upload("/api/v1/admin").WithMultipart().WithForm(formData).WithFile("template", "import_points_template.xlsx", file).Expect().Status(http.StatusOK)
 		ret1 := ret.JSON().Object().Path("$.data.response").Array()
 		ret1.Length().Equal(19)
 		ret1.First().Object().Value("name").Equal("FAI3_G7")
+		ret1.First().Object().Value("id").Equal(0)
 		ret1.Last().Object().Value("name").Equal("Profile")
 	})
 

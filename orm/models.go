@@ -34,7 +34,7 @@ func createUriWithDBName(name string) string {
 	)
 }
 
-func GenerateDefaultConfig() {
+func setupDefaultConfig() {
 	SetIfNotExist(SystemConfigFtpHostKey)
 	SetIfNotExist(SystemConfigFtpPortKey)
 	SetIfNotExist(SystemConfigFtpUsernameKey)
@@ -42,11 +42,15 @@ func GenerateDefaultConfig() {
 	SetIfNotExist(SystemConfigProductColumnHeadersKey)
 }
 
+func GenerateDefaultConfig() {
+	setupDefaultConfig()
+}
+
 func alterTableUtf8(tbName string) {
 	Exec(fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci", tbName))
 }
 
-func utf8GeneralCI(tableNames []string) {
+func setupUTF8GeneralCI(tableNames []string) {
 	Exec("SET collation_connection = 'utf8_general_ci'")
 	Exec(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET utf8 COLLATE utf8_general_ci", configer.GetString("db_name")))
 	for _, name := range tableNames {
@@ -54,7 +58,7 @@ func utf8GeneralCI(tableNames []string) {
 	}
 }
 
-func generateRootUser() {
+func setupRootUser() {
 	account := configer.GetString("root_name")
 	var root User
 	err := Model(&User{}).Where("account = ?", account).First(&root).Error
@@ -109,16 +113,18 @@ func init() {
 		&User{},
 		&UserLogin{},
 		&UserRole{},
+		&File{},
 	).Error
 	if err != nil {
 		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
 	}
 
-	if env != "test" || env != "TEST" {
-		generateRootUser()
-		GenerateDefaultConfig()
-		tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users"}
-		utf8GeneralCI(tableNames)
+	if env != "test" && env != "TEST" {
+		tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users", "files"}
+		setupUTF8GeneralCI(tableNames)
+		setupRootUser()
+		setupDefaultConfig()
+		setupPointsImportTemplate()
 	}
 
 	if env == "prod" {

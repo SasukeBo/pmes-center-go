@@ -41,7 +41,7 @@ query($input: ProductSearch!, $limit: Int!, $offset: Int!) {
 	}
 }
 `
-var pointImportGQL = ` mutation($file: Upload!, $materialID: Int!) { response: importPoints(file: $file, materialID: $materialID) { id name upperLimit nominal lowerLimit } } `
+var pointImportParseGQL = ` mutation($file: Upload!) { response: parseImportPoints(file: $file) { id name upperLimit nominal lowerLimit } } `
 var listImportRecordsGQL = `
 query($materialID: Int!, $deviceID: Int, $page: Int!, $limit: Int!) {
   response: importRecords(

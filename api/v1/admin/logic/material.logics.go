@@ -272,6 +272,11 @@ func DeleteMaterial(ctx context.Context, id int) (model.ResponseStatus, error) {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "material_decode_templates")
 	}
 
+	if err := tx.Delete(&material).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "material")
+	}
+
 	tx.Commit()
 	return model.ResponseStatusOk, nil
 }

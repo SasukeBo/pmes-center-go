@@ -41,8 +41,8 @@ func (r *mutationResolver) DeleteDecodeTemplate(ctx context.Context, id int) (mo
 	return logic.DeleteDecodeTemplate(ctx, id)
 }
 
-func (r *mutationResolver) ImportPoints(ctx context.Context, file graphql.Upload, materialID int) ([]*model.Point, error) {
-	return logic.ImportPoints(ctx, file, materialID)
+func (r *mutationResolver) ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error) {
+	return logic.ParseImportPoints(ctx, file)
 }
 
 func (r *mutationResolver) SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error) {
