@@ -75,6 +75,10 @@ func setupRootUser() {
 	}
 }
 
+func createIndex() {
+	DB.Model(&Material{}).AddUniqueIndex("uidx_deleted_at_material_name", "deleted_at", "name")
+}
+
 func init() {
 	var err error
 	var uri = createUriWithDBName("mysql")
@@ -118,6 +122,7 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
 	}
+	createIndex()
 
 	if env != "test" && env != "TEST" {
 		tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users", "files"}

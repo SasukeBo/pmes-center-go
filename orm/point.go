@@ -3,7 +3,6 @@ package orm
 import (
 	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/ftpviewer/errormap"
-	"github.com/jinzhu/gorm"
 	"io/ioutil"
 	"os"
 	"path"
@@ -15,7 +14,7 @@ import (
 
 // Point 点位
 type Point struct {
-	gorm.Model
+	ID         uint   `gorm:"primary_key;column:id"`
 	Name       string `gorm:"unique_index:uidx_name_material_id;not null"`
 	MaterialID uint   `gorm:"unique_index:uidx_name_material_id;not null"`
 	UpperLimit float64

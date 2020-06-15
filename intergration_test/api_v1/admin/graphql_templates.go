@@ -134,20 +134,13 @@ mutation($materialID: Int!, $saveItems: [PointCreateInput]!, $deleteItems: [Int!
   response: savePoints(materialID: $materialID, saveItems: $saveItems, deleteItems: $deleteItems)
 }`
 var listMaterialPointGQL = `
-query($materialID: Int!, $page: Int!, $limit: Int!) {
-  response: listMaterialPoints(
-    materialID: $materialID
-    page: $page
-    limit: $limit
-  ) {
-    total
-    points {
-      id
-      name
-      upperLimit
-      nominal
-      lowerLimit
-    }
+query($materialID: Int!) {
+  response: listMaterialPoints( materialID: $materialID ) {
+  	id
+  	name
+  	upperLimit
+  	nominal
+  	lowerLimit
   }
 }`
 var saveDeviceGQL = `

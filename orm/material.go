@@ -8,7 +8,7 @@ import (
 // Material 材料
 type Material struct {
 	gorm.Model
-	Name          string `gorm:"not null;unique_index"`
+	Name          string `gorm:"not null"`
 	CustomerCode  string
 	ProjectRemark string
 }

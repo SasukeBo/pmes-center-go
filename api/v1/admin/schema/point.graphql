@@ -22,20 +22,7 @@ type PointResult {
     point: Point
 }
 
-input PointCreateInput {
-    id: Int
-    name: String!
-    usl: Float!
-    nominal: Float!
-    lsl: Float!
-}
-
 ############################ new ############################
-
-type PointWrap {
-    points: [Point]!
-    total: Int!
-}
 
 type Point {
     id: Int!
@@ -45,3 +32,10 @@ type Point {
     lowerLimit: Float!
 }
 
+input PointCreateInput {
+    id: Int
+    name: String!
+    upperLimit: Float!
+    nominal: Float!
+    lowerLimit: Float!
+}

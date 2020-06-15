@@ -97,14 +97,8 @@ func TestPointsImport(t *testing.T) {
 			Nominal:    2.2,
 		})
 
-		ret := tester.API1Admin(listMaterialPointGQL, test.Object{
-			"materialID": material.ID,
-			"page":       1,
-			"limit":      1,
-		}).GQLObject().Path("$.data.response").Object()
-		ret.Value("total").Equal(2)
-		arr := ret.Value("points").Array()
-		arr.Length().Equal(1)
-		arr.First().Object().Value("name").Equal("test_point_1")
+		ret := tester.API1Admin(listMaterialPointGQL, test.Object{"materialID": material.ID}).GQLObject().Path("$.data.response").Array()
+		ret.Length().Equal(2)
+		ret.First().Object().Value("name").Equal("test_point_1")
 	})
 }

@@ -35,7 +35,7 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 		material.CustomerCode = *input.CustomerCode
 	}
 	if input.ProjectRemark != nil {
-		material.ProjectRemark = *input.CustomerCode
+		material.ProjectRemark = *input.ProjectRemark
 	}
 	if err := tx.Create(&material).Error; err != nil {
 		tx.Rollback()
@@ -61,8 +61,8 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 		point := orm.Point{
 			Name:       pointInput.Name,
 			MaterialID: material.ID,
-			UpperLimit: pointInput.Usl,
-			LowerLimit: pointInput.Lsl,
+			UpperLimit: pointInput.UpperLimit,
+			LowerLimit: pointInput.LowerLimit,
 			Nominal:    pointInput.Nominal,
 		}
 		if err := tx.Create(&point).Error; err != nil {
@@ -305,5 +305,19 @@ func UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*mode
 	if err := copier.Copy(&out, &material); err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "material")
 	}
+	return &out, nil
+}
+
+func Material(ctx context.Context, id int) (*model.Material, error) {
+	var material orm.Material
+	if err := material.Get(uint(id)); err != nil {
+		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
+	}
+
+	var out model.Material
+	if err := copier.Copy(&out, &material); err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "material")
+	}
+
 	return &out, nil
 }

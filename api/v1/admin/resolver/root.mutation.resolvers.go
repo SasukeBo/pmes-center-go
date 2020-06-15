@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"

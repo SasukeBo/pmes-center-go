@@ -11,6 +11,7 @@ import (
 	"github.com/tealeg/xlsx"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 )
 
 func ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error) {
@@ -74,16 +75,21 @@ func SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCre
 
 	for _, saveItem := range saveItems {
 		var point orm.Point
-		if saveItem.ID != nil {
+
+		if saveItem.ID != nil && *saveItem.ID != 0 {
 			point.Get(uint(*saveItem.ID))
 		}
+
 		point.MaterialID = uint(materialID)
 		point.Name = saveItem.Name
-		point.UpperLimit = saveItem.Usl
-		point.LowerLimit = saveItem.Lsl
+		point.UpperLimit = saveItem.UpperLimit
+		point.LowerLimit = saveItem.LowerLimit
 		point.Nominal = saveItem.Nominal
 		if err := tx.Save(&point).Error; err != nil {
 			tx.Rollback()
+			if strings.Contains(err.Error(), "Error 1062") {
+				return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePointAlreadyExists, err)
+			}
 			return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "point")
 		}
 	}
@@ -92,21 +98,14 @@ func SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCre
 	return model.ResponseStatusOk, nil
 }
 
-func ListMaterialPoints(ctx context.Context, materialID int, page int, limit int) (*model.PointWrap, error) {
+func ListMaterialPoints(ctx context.Context, materialID int) ([]*model.Point, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
-	sql := orm.Model(&orm.Point{}).Where("material_id = ?", materialID)
-
-	var total int
-	if err := sql.Count(&total).Error; err != nil {
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "material_points")
-	}
-
 	var points []orm.Point
-	if err := sql.Offset((page - 1) * limit).Limit(limit).Find(&points).Error; err != nil {
+	if err := orm.Model(&orm.Point{}).Where("material_id = ?", materialID).Find(&points).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material_points")
 	}
 
@@ -120,8 +119,5 @@ func ListMaterialPoints(ctx context.Context, materialID int, page int, limit int
 		outs = append(outs, &out)
 	}
 
-	return &model.PointWrap{
-		Points: outs,
-		Total:  total,
-	}, nil
+	return outs, nil
 }

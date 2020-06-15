@@ -16,13 +16,6 @@ input MaterialUpdateInput {
     projectRemark: String
 }
 
-input MaterialCreateInput {
-    name: String!
-    customerCode: String
-    projectRemark: String
-    points: [PointCreateInput]!
-}
-
 type fetchStatus {
     message: String
     pending: Boolean
@@ -43,4 +36,11 @@ type Material {
 type MaterialWrap {
     total: Int!
     materials: [Material!]
+}
+
+input MaterialCreateInput {
+    name: String!
+    customerCode: String
+    projectRemark: String
+    points: [PointCreateInput]!
 }
