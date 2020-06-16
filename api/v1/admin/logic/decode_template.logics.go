@@ -10,6 +10,8 @@ import (
 	"github.com/SasukeBo/log"
 	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
+	"math"
+	"strings"
 )
 
 func LoadDecodeTemplate(ctx context.Context, templateID uint) (*model.DecodeTemplate, error) {
@@ -50,7 +52,8 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*
 		template.Description = *input.Description
 	}
 	template.DataRowIndex = input.DataRowIndex
-	template.CreatedAtColumnIndex = input.CreatedAtColumnIndex
+	template.CreatedAtColumnIndex = parseIndexFromColumnCode(input.CreatedAtColumnIndex) - 1
+	log.Warn("parse createdAtColumnIndex from %v to %v", input.CreatedAtColumnIndex, template.CreatedAtColumnIndex)
 
 	var productColumns []orm.Column
 	for _, iColumn := range input.ProductColumns {
@@ -58,10 +61,19 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*
 		if err := copier.Copy(&column, &iColumn); err != nil {
 			continue
 		}
+		column.Index = parseIndexFromColumnCode(iColumn.Index) - 1
 		productColumns = append(productColumns, column)
 	}
 	template.ProductColumns = types.Map{"columns": productColumns}
-	template.PointColumns = input.PointColumns
+	pointColumns := make(types.Map)
+
+	for k, v := range input.PointColumns {
+		if code, ok := v.(string); ok {
+			pointColumns[k] = parseIndexFromColumnCode(code) - 1
+		}
+	}
+
+	template.PointColumns = pointColumns
 	if input.Default != nil {
 		if err := tx.Model(&orm.DecodeTemplate{}).Where("material_id = ? AND decode_templates.default = ?", input.MaterialID, true).Update("default", false).Error; err != nil {
 			tx.Rollback()
@@ -124,6 +136,7 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 		return nil, err
 	}
 
+	out.CreatedAtColumnIndex = parseColumnCodeFromIndex(template.CreatedAtColumnIndex + 1)
 	var oProductColumns []*model.ProductColumn
 	iProductColumns, ok := template.ProductColumns["columns"].([]interface{})
 	if !ok {
@@ -141,9 +154,11 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 		if name, ok := column["Name"].(string); ok {
 			oColumn.Name = name
 		}
-		if index, ok := column["Index"].(int); ok {
-			oColumn.Index = index
+
+		if idx, ok := column["Index"].(float64); ok {
+			oColumn.Index = parseColumnCodeFromIndex(int(idx) + 1)
 		}
+
 		if cType, ok := column["Type"].(string); ok {
 			oColumn.Type = model.ProductColumnType(cType)
 		}
@@ -151,6 +166,15 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 		oProductColumns = append(oProductColumns, &oColumn)
 	}
 	out.ProductColumns = oProductColumns
+
+	oPointColumns := make(map[string]interface{})
+	for k, v := range template.PointColumns {
+		if idx, ok := v.(float64); ok {
+			oPointColumns[k] = parseColumnCodeFromIndex(int(idx) + 1)
+		}
+	}
+
+	out.PointColumns = oPointColumns
 	return &out, nil
 }
 
@@ -174,4 +198,40 @@ func DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, er
 	}
 
 	return model.ResponseStatusOk, nil
+}
+
+func parseIndexFromColumnCode(columnCode string) int {
+	rs := []rune(columnCode)
+	length := len(rs)
+	var sum int
+	for i, r := range rs {
+		ascii := int(r)
+		sum = sum + int(math.Pow(26, float64(length-1-i)))*(ascii-64)
+	}
+	return sum
+}
+
+const charAASCII = 65
+
+func parseColumnCodeFromIndex(index int) string {
+	offsets := make([]int, 0)
+	for {
+		if index <= 26 {
+			offsets = append(offsets, index)
+			break
+		}
+
+		offsets = append(offsets, index%26)
+		index = index / 26
+	}
+
+	codes := make([]string, 0)
+	length := len(offsets)
+	for i := length - 1; i >= 0; i-- {
+		ascii := charAASCII - 1 + offsets[i]
+		code := string(ascii)
+		codes = append(codes, code)
+	}
+
+	return strings.Join(codes, "")
 }

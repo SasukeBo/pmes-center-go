@@ -5,7 +5,7 @@ type DecodeTemplate {
     user: User!
     description: String!
     dataRowIndex: Int!
-    createdAtColumnIndex: Int!
+    createdAtColumnIndex: String!
     productColumns: [ProductColumn]!
     pointColumns: Map!
     default: Boolean!
@@ -19,7 +19,7 @@ input DecodeTemplateInput {
     materialID: Int!
     description: String
     dataRowIndex: Int!
-    createdAtColumnIndex: Int!
+    createdAtColumnIndex: String!
     productColumns: [ProductColumnInput]!
     pointColumns: Map!
     default: Boolean
@@ -27,13 +27,13 @@ input DecodeTemplateInput {
 
 input ProductColumnInput {
     name: String!
-    index: Int!
+    index: String!
     type: ProductColumnType!
 }
 
 type ProductColumn {
     name: String!
-    index: Int!
+    index: String!
     type: ProductColumnType!
 }
 

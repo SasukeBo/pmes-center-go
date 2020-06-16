@@ -21,18 +21,18 @@ func TestDecodeTemplate(t *testing.T) {
 				"materialID":           test.Data.Material.ID,
 				"description":          "test decode template description",
 				"dataRowIndex":         15,
-				"createdAtColumnIndex": 3,
+				"createdAtColumnIndex": "B",
 				"productColumns": []test.Object{
-					{"name": "No.", "index": 1, "type": "Integer"},
-					{"name": "日期", "index": 2, "type": "Datetime"},
-					{"name": "线体号", "index": 3, "type": "String"},
-					{"name": "精度", "index": 4, "type": "Float"},
+					{"name": "No.", "index": "A", "type": "Integer"},
+					{"name": "日期", "index": "B", "type": "Datetime"},
+					{"name": "线体号", "index": "C", "type": "String"},
+					{"name": "精度", "index": "D", "type": "Float"},
 				},
 				"pointColumns": test.Object{
-					"FAI_G5": 5,
-					"FAI_G6": 6,
-					"FAI_G7": 7,
-					"FAI_G8": 8,
+					"FAI_G5": "E",
+					"FAI_G6": "F",
+					"FAI_G7": "G",
+					"FAI_G8": "ABC",
 				},
 				"default": true,
 			},
@@ -40,9 +40,10 @@ func TestDecodeTemplate(t *testing.T) {
 		productColumns := ret.Value("productColumns").Array()
 		productColumns.Length().Equal(4)
 		productColumns.First().Object().Value("name").Equal("No.")
+		productColumns.First().Object().Value("index").Equal("A")
 
 		pointColumns := ret.Value("pointColumns").Object()
-		pointColumns.Value("FAI_G5").Equal(5)
+		pointColumns.Value("FAI_G5").Equal("E")
 		ret.Path("$.user.id").Equal(test.Data.Admin.ID)
 	})
 
@@ -65,18 +66,18 @@ func TestDecodeTemplate(t *testing.T) {
 				"materialID":           100,
 				"description":          "changed description",
 				"dataRowIndex":         15,
-				"createdAtColumnIndex": 3,
+				"createdAtColumnIndex": "C",
 				"productColumns": []test.Object{
-					{"name": "No.", "index": 1, "type": "Integer"},
-					{"name": "日期", "index": 2, "type": "Datetime"},
-					{"name": "线体号", "index": 3, "type": "String"},
-					{"name": "精度", "index": 4, "type": "Float"},
+					{"name": "No.", "index": "A", "type": "Integer"},
+					{"name": "日期", "index": "B", "type": "Datetime"},
+					{"name": "线体号", "index": "C", "type": "String"},
+					{"name": "精度", "index": "D", "type": "Float"},
 				},
 				"pointColumns": test.Object{
-					"FAI_G5": 5,
-					"FAI_G6": 6,
-					"FAI_G7": 7,
-					"FAI_G8": 8,
+					"FAI_G5": "E",
+					"FAI_G6": "F",
+					"FAI_G7": "G",
+					"FAI_G8": "H",
 				},
 				"default": true,
 			},
@@ -85,14 +86,15 @@ func TestDecodeTemplate(t *testing.T) {
 		ret.Path("$.material.id").Equal(test.Data.Material.ID) // 所属料号不可更改
 		ret.Path("$.user.id").Equal(test.Data.User.ID)         // 创建人不变
 		ret.Value("description").Equal("changed description")  // 描述可更改
-		ret.Value("createdAtColumnIndex").Equal(3)             // 生产日期数据列序号可更改
+		ret.Value("createdAtColumnIndex").Equal("C")           // 生产日期数据列序号可更改
 		ret.Value("default").Equal(true)                       // 可设置为默认模板
 		productColumns := ret.Value("productColumns").Array()
 		productColumns.Length().Equal(4)
 		productColumns.First().Object().Value("name").Equal("No.")
+		productColumns.First().Object().Value("index").Equal("A")
 
 		pointColumns := ret.Value("pointColumns").Object()
-		pointColumns.Value("FAI_G5").Equal(5)
+		pointColumns.Value("FAI_G5").Equal("E")
 	})
 
 	// Test list decode_templates

@@ -24,7 +24,7 @@ type DecodeTemplate struct {
 	UserID               uint                   `json:"userID"`
 	Description          string                 `json:"description"`
 	DataRowIndex         int                    `json:"dataRowIndex"`
-	CreatedAtColumnIndex int                    `json:"createdAtColumnIndex"`
+	CreatedAtColumnIndex string                    `json:"createdAtColumnIndex"`
 	ProductColumns       []*ProductColumn       `json:"productColumns"`
 	PointColumns         map[string]interface{} `json:"pointColumns"`
 	Default              bool                   `json:"default"`
