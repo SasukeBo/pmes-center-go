@@ -42,10 +42,18 @@ func ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point
 
 	var outs []*model.Point
 	for i := 1; i < len(dimRow.Cells); i++ {
-		name := dimRow.Cells[i].String()
-		usl, _ := uslRow.Cells[i].Float()
-		nominal, _ := nominalRow.Cells[i].Float()
-		lsl, _ := lslRow.Cells[i].Float()
+		var name string
+		var usl, lsl, nominal float64
+		name = dimRow.Cells[i].String()
+		if usl, err = uslRow.Cells[i].Float(); err != nil {
+			usl = 0
+		}
+		if nominal, err = nominalRow.Cells[i].Float(); err != nil {
+			nominal = 0
+		}
+		if lsl, err = lslRow.Cells[i].Float(); err != nil {
+			lsl = 0
+		}
 		out := model.Point{
 			Name:       name,
 			UpperLimit: usl,
