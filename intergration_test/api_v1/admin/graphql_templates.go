@@ -58,8 +58,9 @@ query($materialID: Int!, $deviceID: Int, $page: Int!, $limit: Int!) {
       device { id }
       rowCount
       rowFinishedCount
-      finished
-      error
+      status
+      errorMessage
+      originErrorMessage
       fileSize
       user { id }
       importType

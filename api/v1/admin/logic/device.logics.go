@@ -9,17 +9,17 @@ import (
 	"github.com/jinzhu/copier"
 )
 
-func LoadDevice(ctx context.Context, deviceID uint) (*model.Device, error) {
+func LoadDevice(ctx context.Context, deviceID uint) *model.Device {
 	var device orm.Device
 	if err := device.Get(deviceID); err != nil {
-		return nil, err
+		return nil
 	}
 	var out model.Device
 	if err := copier.Copy(&out, &device); err != nil {
-		return nil, err
+		return nil
 	}
 
-	return &out, nil
+	return &out
 }
 
 func SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, error) {

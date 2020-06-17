@@ -7,15 +7,15 @@ import (
 	"github.com/jinzhu/copier"
 )
 
-func LoadUser(ctx context.Context, userID uint) (*model.User, error) {
+func LoadUser(ctx context.Context, userID uint) *model.User {
 	var user orm.User
 	if err := user.Get(userID); err != nil {
-		return nil, err
+		return nil
 	}
 	var out model.User
 	if err := copier.Copy(&out, &user); err != nil {
-		return nil, err
+		return nil
 	}
 
-	return &out, nil
+	return &out
 }

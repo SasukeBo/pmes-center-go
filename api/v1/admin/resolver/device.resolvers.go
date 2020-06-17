@@ -12,7 +12,7 @@ import (
 )
 
 func (r *deviceResolver) Material(ctx context.Context, obj *model.Device) (*model.Material, error) {
-	return logic.LoadMaterial(ctx, obj.MaterialID)
+	return logic.LoadMaterial(ctx, obj.MaterialID), nil
 }
 
 // Device returns generated.DeviceResolver implementation.

@@ -14,17 +14,17 @@ import (
 	"strings"
 )
 
-func LoadDecodeTemplate(ctx context.Context, templateID uint) (*model.DecodeTemplate, error) {
+func LoadDecodeTemplate(ctx context.Context, templateID uint) *model.DecodeTemplate {
 	var template orm.DecodeTemplate
 	if err := template.Get(templateID); err != nil {
-		return nil, err
+		return nil
 	}
 	var out model.DecodeTemplate
 	if err := copier.Copy(&out, &template); err != nil {
-		return nil, err
+		return nil
 	}
 
-	return &out, nil
+	return &out
 }
 
 func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*model.DecodeTemplate, error) {

@@ -44,3 +44,30 @@ func ImportRecords(ctx context.Context, materialID int, deviceID *int, page int,
 		ImportRecords: outs,
 	}, nil
 }
+
+func RevertImport(ctx context.Context, id int) (model.ResponseStatus, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	var record orm.ImportRecord
+	if err := record.Get(uint(id)); err != nil {
+		return "", errormap.SendGQLError(ctx, err.GetCode(), err, "import_record")
+	}
+
+	tx := orm.Begin()
+	if err := tx.Where("import_record_id = ?", record.ID).Delete(&orm.Product{}).Error; err != nil {
+		tx.Rollback()
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeRevertImportFailed, err)
+	}
+
+	err := tx.Model(&orm.ImportRecord{}).Where("id = ?", record.ID).Update("status", orm.ImportStatusReverted).Error
+	if err != nil {
+		tx.Rollback()
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeRevertImportFailed, err)
+	}
+
+	tx.Commit()
+	return model.ResponseStatusOk, nil
+}

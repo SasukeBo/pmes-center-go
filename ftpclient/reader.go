@@ -18,6 +18,7 @@ type XLSXReader struct {
 	Device         *orm.Device         // 导入设备
 	Record         *orm.ImportRecord   // 导入记录
 	DecodeTemplate *orm.DecodeTemplate // 解析模板
+	Size           int                 // 文件大小
 }
 
 func NewXLSXReader(material *orm.Material, device *orm.Device, template *orm.DecodeTemplate) *XLSXReader {
@@ -30,7 +31,7 @@ func NewXLSXReader(material *orm.Material, device *orm.Device, template *orm.Dec
 }
 
 func (xr *XLSXReader) Read(path string) error {
-	dataSheet, err := read(path)
+	dataSheet, size, err := read(path)
 	if err != nil {
 		return err
 	}
@@ -44,21 +45,23 @@ func (xr *XLSXReader) Read(path string) error {
 	}
 	dataSet := dataSheet[bIdx : eIdx+1]
 	xr.DataSet = dataSet
+	xr.Size = size
 
 	log.Info("data begin idx: %v, end idx: %v\n", bIdx, eIdx)
 	return nil
 }
 
-func read(path string) ([][]string, error) {
+func read(path string) ([][]string, int, error) {
 	content, err := ReadFile(path)
+	size := len(content)
 	if err != nil {
 		if fe, ok := err.(*FTPError); ok {
 			fe.Logger()
-			return nil, err
+			return nil, 0, err
 		}
 
 		log.Errorln(err)
-		return nil, &FTPError{
+		return nil, 0, &FTPError{
 			Message:   fmt.Sprintf("从FTP服务器读取文件%s失败", path),
 			OriginErr: err,
 		}
@@ -66,16 +69,16 @@ func read(path string) ([][]string, error) {
 
 	file, err := xlsx.OpenBinary(content)
 	if err != nil {
-		return nil, fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
+		return nil, 0, fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
 	}
 
 	originData, err := file.ToSlice()
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if len(originData) == 0 {
-		return nil, errors.New("xlsx文件内容是空的。")
+		return nil, 0, errors.New("xlsx文件内容是空的。")
 	}
 
-	return originData[0], nil
+	return originData[0], size, nil
 }

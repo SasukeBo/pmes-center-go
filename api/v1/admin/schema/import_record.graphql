@@ -6,20 +6,28 @@ type ImportRecordsWrap {
 type ImportRecord {
     id: Int!
     fileName: String!
-    material: Material!
-    device: Device!
+    material: Material
+    device: Device
     rowCount: Int!
     rowFinishedCount: Int!
-    finished: Boolean!
-    error: String
+    status: ImportStatus!
+    errorMessage: String
+    originErrorMessage: String
     fileSize: Int!
     user: User
     importType: ImportRecordImportType!
-    decodeTemplate: DecodeTemplate!
+    decodeTemplate: DecodeTemplate
     createdAt: Time!
 }
 
 enum ImportRecordImportType {
     SYSTEM
     USER
+}
+
+enum ImportStatus {
+    Loading
+    Finished
+    Failed
+    Reverted
 }

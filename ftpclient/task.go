@@ -4,6 +4,7 @@ package ftpclient
 // 注册ftp获取文件队列，worker
 import (
 	"fmt"
+	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/SasukeBo/ftpviewer/orm/types"
 	timer "github.com/SasukeBo/lib/time"
@@ -51,6 +52,7 @@ func Store(xr *XLSXReader) {
 		err := recover()
 		if err != nil {
 			fmt.Println(err)
+			_ = xr.Record.Failed(errormap.ErrorCodeImportFailedWithPanic, err)
 			debug.PrintStack()
 		}
 	}()
@@ -59,14 +61,14 @@ func Store(xr *XLSXReader) {
 
 	var points []orm.Point
 	if err := orm.DB.Model(&orm.Point{}).Where("material_id = ?", xr.Material.ID).Find(&points).Error; err != nil {
-		// TODO: add log
+		_ = xr.Record.Failed(errormap.ErrorCodeImportGetPointsFailed, err)
 		return
 	}
 
 	iColumns := xr.DecodeTemplate.ProductColumns["columns"]
 	columns, ok := iColumns.([]interface{})
 	if !ok {
-		// TODO: add log
+		_ = xr.Record.Failed(errormap.ErrorCodeImportWithIllegalDecodeTemplate, "product columns stored in db is not a list")
 		log.Error("decode template product columns error, got %+v\n", iColumns)
 		return
 	}
@@ -136,8 +138,7 @@ func Store(xr *XLSXReader) {
 	}
 
 	execInsert(productValueExpands, productValueCount, insertProductsTpl, productValueFieldTpl, xr.Record)
-	xr.Record.Finished = true
-	orm.Save(xr.Record)
+	_ = xr.Record.Finish()
 
 	var time2 = time.Now()
 	fmt.Printf("___________________________ process duration is %v\n", time2.Sub(time1))

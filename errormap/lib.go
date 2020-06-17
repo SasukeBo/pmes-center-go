@@ -176,3 +176,16 @@ func NewCodeOrigin(errorCode string, format string, a ...interface{}) *Error {
 func NewOrigin(format string, a ...interface{}) *Error {
 	return NewCodeOrigin("", format, a...)
 }
+
+// DecodeError 解析ErrorCode为错误信息
+func DecodeError(ctx context.Context, errorCode string) string {
+	c := ctx.Value("GinContext")
+	gc := c.(*gin.Context)
+	lang := gc.Request.Header.Get(LangHeader)
+	if lang == "" {
+		lang = EN
+	}
+
+	err := ErrorPresenter(errorCode, lang, nil, nil)
+	return err.Message
+}

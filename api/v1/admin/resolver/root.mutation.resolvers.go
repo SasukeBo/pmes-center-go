@@ -58,6 +58,10 @@ func (r *mutationResolver) SaveDevice(ctx context.Context, input model.DeviceInp
 	return logic.SaveDevice(ctx, input)
 }
 
+func (r *mutationResolver) RevertImport(ctx context.Context, id int) (model.ResponseStatus, error) {
+	return logic.RevertImport(ctx, id)
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"github.com/SasukeBo/ftpviewer/errormap"
 	test "github.com/SasukeBo/ftpviewer/intergration_test"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"testing"
@@ -30,15 +31,17 @@ func TestImportRecord(t *testing.T) {
 		}
 		orm.Create(&device)
 		record1 := orm.ImportRecord{
-			FileName:         "record1_file_name",
-			Path:             "record1_file_path",
-			MaterialID:       material.ID,
-			DeviceID:         device.ID,
-			RowCount:         100,
-			RowFinishedCount: 100,
-			Finished:         true,
-			UserID:           test.Data.User.ID,
-			DecodeTemplateID: template.ID,
+			FileName:           "record1_file_name",
+			Path:               "record1_file_path",
+			MaterialID:         material.ID,
+			DeviceID:           device.ID,
+			RowCount:           100,
+			RowFinishedCount:   100,
+			Status:             orm.ImportStatusFailed,
+			ErrorCode:          errormap.ErrorCodeImportFailedWithPanic,
+			OriginErrorMessage: "unknown error",
+			UserID:             test.Data.User.ID,
+			DecodeTemplateID:   template.ID,
 		}
 		orm.Create(&record1)
 		record2 := orm.ImportRecord{
@@ -48,12 +51,13 @@ func TestImportRecord(t *testing.T) {
 			DeviceID:         device.ID,
 			RowCount:         100,
 			RowFinishedCount: 100,
-			Finished:         true,
+			Status:           orm.ImportStatusFinished,
 			UserID:           test.Data.Admin.ID,
 			DecodeTemplateID: template.ID,
 		}
 		orm.Create(&record2)
 
+		tester.SetHeader("Lang", errormap.ZH_CN)
 		ret := tester.API1Admin(listImportRecordsGQL, test.Object{
 			"materialID": material.ID,
 			"deviceID":   device.ID,

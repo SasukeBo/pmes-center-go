@@ -137,9 +137,12 @@ func fetchMaterialData(material orm.Material, files []fetchItem, dt *orm.DecodeT
 		path := resolvePath(material.Name, f.FileName)
 
 		importRecord := &orm.ImportRecord{
-			FileName:         f.FileName,
+			FileName:         filepath.Base(f.FileName),
+			Path:             path,
 			MaterialID:       material.ID,
 			DeviceID:         f.Device.ID,
+			Status:           orm.ImportStatusLoading,
+			ImportType:       orm.ImportRecordTypeSystem,
 			DecodeTemplateID: dt.ID,
 		}
 		if err := orm.Create(importRecord).Error; err != nil {
@@ -156,6 +159,7 @@ func fetchMaterialData(material orm.Material, files []fetchItem, dt *orm.DecodeT
 				return
 			}
 			importRecord.RowCount = len(xr.DataSet)
+			importRecord.FileSize = xr.Size
 			if err := orm.Save(importRecord).Error; err != nil {
 				// TODO: add log
 				log.Errorln(err)
@@ -232,17 +236,17 @@ func Materials(ctx context.Context, pattern *string, page int, limit int) (*mode
 	}, nil
 }
 
-func LoadMaterial(ctx context.Context, materialID uint) (*model.Material, error) {
+func LoadMaterial(ctx context.Context, materialID uint) *model.Material {
 	var material orm.Material
 	if err := material.Get(materialID); err != nil {
-		return nil, err
+		return nil
 	}
 	var out model.Material
 	if err := copier.Copy(&out, &material); err != nil {
-		return nil, err
+		return nil
 	}
 
-	return &out, nil
+	return &out
 }
 
 func DeleteMaterial(ctx context.Context, id int) (model.ResponseStatus, error) {

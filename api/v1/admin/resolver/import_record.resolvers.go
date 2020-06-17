@@ -5,8 +5,7 @@ package resolver
 
 import (
 	"context"
-	"fmt"
-	"time"
+	"github.com/SasukeBo/ftpviewer/errormap"
 
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
@@ -14,23 +13,28 @@ import (
 )
 
 func (r *importRecordResolver) Material(ctx context.Context, obj *model.ImportRecord) (*model.Material, error) {
-	return logic.LoadMaterial(ctx, obj.MaterialID)
+	return logic.LoadMaterial(ctx, obj.MaterialID), nil
 }
 
 func (r *importRecordResolver) Device(ctx context.Context, obj *model.ImportRecord) (*model.Device, error) {
-	return logic.LoadDevice(ctx, obj.DeviceID)
+	return logic.LoadDevice(ctx, obj.DeviceID), nil
+}
+
+func (r *importRecordResolver) ErrorMessage(ctx context.Context, obj *model.ImportRecord) (*string, error) {
+	if obj.ErrorCode != nil {
+		message := errormap.DecodeError(ctx, *obj.ErrorCode)
+		return &message, nil
+	}
+
+	return nil, nil
 }
 
 func (r *importRecordResolver) User(ctx context.Context, obj *model.ImportRecord) (*model.User, error) {
-	return logic.LoadUser(ctx, obj.UserID)
+	return logic.LoadUser(ctx, obj.UserID), nil
 }
 
 func (r *importRecordResolver) DecodeTemplate(ctx context.Context, obj *model.ImportRecord) (*model.DecodeTemplate, error) {
-	return logic.LoadDecodeTemplate(ctx, obj.DecodeTemplateID)
-}
-
-func (r *importRecordResolver) CreatedAt(ctx context.Context, obj *model.ImportRecord) (*time.Time, error) {
-	panic(fmt.Errorf("not implemented"))
+	return logic.LoadDecodeTemplate(ctx, obj.DecodeTemplateID), nil
 }
 
 // ImportRecord returns generated.ImportRecordResolver implementation.
