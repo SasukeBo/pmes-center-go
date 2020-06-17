@@ -117,6 +117,7 @@ query($materialID: Int!) {
 }
 `
 var deleteDecodeTemplateGQL = ` mutation($id: Int!) { response: deleteDecodeTemplate(id: $id) } `
+var changeDefaultTemplateGQL = ` mutation($id: Int!, $isDefault: Boolean!) { response: changeDefaultTemplate(id: $id, isDefault: $isDefault) } `
 var deleteMaterialGQL = ` mutation($id: Int!) { response: deleteMaterial(id: $id) } `
 var updateMaterialGQL = `
 mutation($input: MaterialUpdateInput!) {

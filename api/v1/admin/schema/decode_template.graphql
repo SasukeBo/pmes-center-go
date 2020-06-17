@@ -22,7 +22,7 @@ input DecodeTemplateInput {
     createdAtColumnIndex: String!
     productColumns: [ProductColumnInput]!
     pointColumns: Map!
-    default: Boolean
+    default: Boolean!
 }
 
 input ProductColumnInput {

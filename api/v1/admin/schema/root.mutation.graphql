@@ -22,6 +22,8 @@ type Mutation {
     saveDecodeTemplate(input: DecodeTemplateInput!): DecodeTemplate!
     "删除解析模板"
     deleteDecodeTemplate(id: Int!): ResponseStatus!
+    "变更默认解析模板"
+    changeDefaultTemplate(id: Int!, isDefault: Boolean!): ResponseStatus!
 
     # 检测项
     "解析导入的检测项，非创建"

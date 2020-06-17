@@ -100,10 +100,10 @@ func TestDecodeTemplate(t *testing.T) {
 	// Test list decode_templates
 	t.Run("TEST_LIST_DECODE_TEMPLATES", func(t *testing.T) {
 		columns := []orm.Column{
-			{"No.", 1, "Integer"},
-			{"日期", 2, "Datetime"},
-			{"线体号", 3, "String"},
-			{"精度", 4, "Float"},
+			{"No.", 0, "Integer"},
+			{"日期", 1, "Datetime"},
+			{"线体号", 2, "String"},
+			{"精度", 3, "Float"},
 		}
 		template := orm.DecodeTemplate{
 			Name:                 "template1",
@@ -111,14 +111,14 @@ func TestDecodeTemplate(t *testing.T) {
 			UserID:               test.Data.User.ID,
 			Description:          "test description",
 			DataRowIndex:         15,
-			CreatedAtColumnIndex: 2,
+			CreatedAtColumnIndex: 1,
 			Default:              false,
 			ProductColumns:       types.Map{"columns": columns},
 			PointColumns: types.Map{
-				"FAI_G5": 5,
-				"FAI_G6": 6,
-				"FAI_G7": 7,
-				"FAI_G8": 8,
+				"FAI_G5": 4,
+				"FAI_G6": 5,
+				"FAI_G7": 6,
+				"FAI_G8": 7,
 			},
 		}
 		orm.Create(&template)
@@ -139,9 +139,10 @@ func TestDecodeTemplate(t *testing.T) {
 		productColumns := ret.First().Object().Value("productColumns").Array()
 		productColumns.Length().Equal(4)
 		productColumns.First().Object().Value("name").Equal("No.")
+		productColumns.First().Object().Value("index").Equal("A")
 
 		pointColumns := ret.First().Object().Value("pointColumns").Object()
-		pointColumns.Value("FAI_G5").Equal(5)
+		pointColumns.Value("FAI_G5").Equal("E")
 	})
 
 	// Test delete decode template
@@ -176,5 +177,31 @@ func TestDecodeTemplate(t *testing.T) {
 		template.ID = 0
 		orm.Create(&template)
 		tester.API1Admin(deleteDecodeTemplateGQL, test.Object{"id": template.ID}).GQLObject().Value("errors").Array().First().Object().Path("$.extensions.code").Equal(http.StatusBadRequest)
+	})
+
+	// Test change default decode template
+	t.Run("TEST_CHANGE_DEFAULT_DECODE_TEMPLATE", func(t *testing.T) {
+		template1 := orm.DecodeTemplate{
+			Name:                 "template1",
+			MaterialID:           test.Data.Material.ID,
+			UserID:               test.Data.User.ID,
+			Description:          "test description",
+			DataRowIndex:         15,
+			CreatedAtColumnIndex: 1,
+			Default:              true,
+			ProductColumns:       types.Map{"columns": []orm.Column{}},
+			PointColumns:         types.Map{},
+		}
+		orm.Create(&template1)
+		template2 := template1
+		template2.ID = 0
+		template2.Name = "template2"
+		template2.Default = false
+		orm.Create(&template2)
+
+		tester.API1Admin(changeDefaultTemplateGQL, test.Object{
+			"id":        template2.ID,
+			"isDefault": true,
+		}).GQLObject().Path("$.data.response").Equal("OK")
 	})
 }

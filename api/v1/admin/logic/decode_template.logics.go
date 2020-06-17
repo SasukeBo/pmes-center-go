@@ -52,7 +52,7 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*
 		template.Description = *input.Description
 	}
 	template.DataRowIndex = input.DataRowIndex
-	template.CreatedAtColumnIndex = parseIndexFromColumnCode(input.CreatedAtColumnIndex) - 1
+	template.CreatedAtColumnIndex = parseIndexFromColumnCode(input.CreatedAtColumnIndex)
 	log.Warn("parse createdAtColumnIndex from %v to %v", input.CreatedAtColumnIndex, template.CreatedAtColumnIndex)
 
 	var productColumns []orm.Column
@@ -61,7 +61,7 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*
 		if err := copier.Copy(&column, &iColumn); err != nil {
 			continue
 		}
-		column.Index = parseIndexFromColumnCode(iColumn.Index) - 1
+		column.Index = parseIndexFromColumnCode(iColumn.Index)
 		productColumns = append(productColumns, column)
 	}
 	template.ProductColumns = types.Map{"columns": productColumns}
@@ -69,17 +69,17 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*
 
 	for k, v := range input.PointColumns {
 		if code, ok := v.(string); ok {
-			pointColumns[k] = parseIndexFromColumnCode(code) - 1
+			pointColumns[k] = parseIndexFromColumnCode(code)
 		}
 	}
 
 	template.PointColumns = pointColumns
-	if input.Default != nil {
+	template.Default = input.Default
+	if template.Default {
 		if err := tx.Model(&orm.DecodeTemplate{}).Where("material_id = ? AND decode_templates.default = ?", input.MaterialID, true).Update("default", false).Error; err != nil {
 			tx.Rollback()
 			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeDecodeTemplateSetDefaultFailed, err)
 		}
-		template.Default = *input.Default
 	}
 
 	if err := tx.Save(&template).Error; err != nil {
@@ -136,7 +136,7 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 		return nil, err
 	}
 
-	out.CreatedAtColumnIndex = parseColumnCodeFromIndex(template.CreatedAtColumnIndex + 1)
+	out.CreatedAtColumnIndex = parseColumnCodeFromIndex(template.CreatedAtColumnIndex)
 	var oProductColumns []*model.ProductColumn
 	iProductColumns, ok := template.ProductColumns["columns"].([]interface{})
 	if !ok {
@@ -156,7 +156,7 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 		}
 
 		if idx, ok := column["Index"].(float64); ok {
-			oColumn.Index = parseColumnCodeFromIndex(int(idx) + 1)
+			oColumn.Index = parseColumnCodeFromIndex(int(idx))
 		}
 
 		if cType, ok := column["Type"].(string); ok {
@@ -170,7 +170,7 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 	oPointColumns := make(map[string]interface{})
 	for k, v := range template.PointColumns {
 		if idx, ok := v.(float64); ok {
-			oPointColumns[k] = parseColumnCodeFromIndex(int(idx) + 1)
+			oPointColumns[k] = parseColumnCodeFromIndex(int(idx))
 		}
 	}
 
@@ -200,6 +200,7 @@ func DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, er
 	return model.ResponseStatusOk, nil
 }
 
+// 存储列号时，将用户输入的英文列号转换为数组index，从0开始
 func parseIndexFromColumnCode(columnCode string) int {
 	rs := []rune(columnCode)
 	length := len(rs)
@@ -208,12 +209,14 @@ func parseIndexFromColumnCode(columnCode string) int {
 		ascii := int(r)
 		sum = sum + int(math.Pow(26, float64(length-1-i)))*(ascii-64)
 	}
-	return sum
+	return sum - 1
 }
 
 const charAASCII = 65
 
+// 读取存储列号时，将数组index加1解析为英文列号
 func parseColumnCodeFromIndex(index int) string {
+	index = index + 1
 	offsets := make([]int, 0)
 	for {
 		if index <= 26 {
@@ -234,4 +237,37 @@ func parseColumnCodeFromIndex(index int) string {
 	}
 
 	return strings.Join(codes, "")
+}
+
+func ChangeDefaultTemplate(ctx context.Context, id int, isDefault bool) (model.ResponseStatus, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	tx := orm.Begin()
+	var template orm.DecodeTemplate
+	if err := template.Get(uint(id)); err != nil {
+		tx.Rollback()
+		return "", errormap.SendGQLError(ctx, err.GetCode(), err, "decode_template")
+	}
+
+	if isDefault {
+		err := tx.Model(&orm.DecodeTemplate{}).Where(
+			"material_id = ? AND decode_templates.default = ?",
+			template.MaterialID, true,
+		).Update("default", false).Error
+		if err != nil {
+			tx.Rollback()
+			return "", errormap.SendGQLError(ctx, errormap.ErrorCodeDecodeTemplateSetDefaultFailed, err)
+		}
+	}
+
+	if err := tx.Model(&orm.DecodeTemplate{}).Where("id = ?", id).Update("default", isDefault).Error; err != nil {
+		tx.Rollback()
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "decode_template")
+	}
+	tx.Commit()
+
+	return model.ResponseStatusOk, nil
 }

@@ -42,6 +42,10 @@ func (r *mutationResolver) DeleteDecodeTemplate(ctx context.Context, id int) (mo
 	return logic.DeleteDecodeTemplate(ctx, id)
 }
 
+func (r *mutationResolver) ChangeDefaultTemplate(ctx context.Context, id int, isDefault bool) (model.ResponseStatus, error) {
+	return logic.ChangeDefaultTemplate(ctx, id, isDefault)
+}
+
 func (r *mutationResolver) ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error) {
 	return logic.ParseImportPoints(ctx, file)
 }
