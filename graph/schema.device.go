@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/SasukeBo/ftpviewer/graph/model"
-	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"time"
 )
@@ -37,14 +36,16 @@ func (r *queryResolver) AnalyzeDevice(ctx context.Context, searchInput model.Sea
 		ID:   &device.ID,
 		Name: &device.Name,
 	}
-	fileIDs, err := logic.NeedFetch(material, beginTime, endTime)
-	if err != nil {
-		return nil, err
-	}
-	if len(fileIDs) > 0 {
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(true), Message: stringP("需要从FTP服务器获取该时间段内设备数据")}
-		return &model.DeviceResult{Status: status, Device: &out}, nil
-	}
+
+	// TODO: 关闭自动拉取
+	//fileIDs, err := logic.NeedFetch(material, beginTime, endTime)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if len(fileIDs) > 0 {
+	//	status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(true), Message: stringP("需要从FTP服务器获取该时间段内设备数据")}
+	//	return &model.DeviceResult{Status: status, Device: &out}, nil
+	//}
 
 	var ok int
 	var ng int

@@ -44,16 +44,16 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 		begin = &t
 	}
 
-	fileIDs, err := logic.NeedFetch(material, begin, end)
-	if err != nil {
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(false), Message: stringP(err.Error())}
-		return &model.ProductWrap{Status: status}, nil
-	}
-
-	if len(fileIDs) > 0 {
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(true), Message: stringP("需要从FTP服务器获取该时间段内料号数据")}
-		return &model.ProductWrap{Status: status}, nil
-	}
+	// TODO: 关闭自动拉取
+	//fileIDs, err := logic.NeedFetch(material, begin, end)
+	//if err != nil {
+	//	status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(false), Message: stringP(err.Error())}
+	//	return &model.ProductWrap{Status: status}, nil
+	//}
+	//if len(fileIDs) > 0 {
+	//	status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(true), Message: stringP("需要从FTP服务器获取该时间段内料号数据")}
+	//	return &model.ProductWrap{Status: status}, nil
+	//}
 
 	conditions = append(conditions, "material_id = ?")
 	vars = append(vars, material.ID)
