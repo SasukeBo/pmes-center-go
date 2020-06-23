@@ -78,7 +78,7 @@ type Point struct {
 	Index      int    `gorm:"not null"`
 	UpperLimit float64
 	LowerLimit float64
-	Nominal   float64
+	Nominal    float64
 }
 
 // NotValid 校验数据有效性
