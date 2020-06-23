@@ -12,16 +12,6 @@ import (
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 )
 
-func (r *mutationResolver) CancelExport(ctx context.Context, opID string) (string, error) {
-	return "", nil
-	//err := logic.CancelExport(opID)
-	//if err != nil {
-	//	return "error", NewGQLError("取消导出失败", err.Error())
-	//}
-	//
-	//return "ok", nil
-}
-
 func (r *mutationResolver) AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error) {
 	return logic.AddMaterial(ctx, input)
 }

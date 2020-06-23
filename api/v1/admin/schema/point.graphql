@@ -1,29 +1,3 @@
-type YieldWrap {
-    name: String!
-    value: Float!
-}
-
-type PointResultsWrap {
-    pointResults: [PointResult!]
-    total: Int!
-}
-
-type PointResult {
-    total: Int
-    s: Float
-    ok: Int
-    ng: Int
-    cp: Float
-    cpk: Float
-    avg: Float
-    max: Float
-    min: Float
-    dataset: Map
-    point: Point
-}
-
-############################ new ############################
-
 type Point {
     id: Int!
     name: String!

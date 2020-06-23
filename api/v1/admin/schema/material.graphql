@@ -1,29 +1,3 @@
-type AddMaterialResponse {
-    material: Material
-    status: fetchStatus
-}
-
-type MaterialResult {
-    material: Material
-    ok: Int
-    ng: Int
-    status: fetchStatus
-}
-
-input MaterialUpdateInput {
-    id: Int!
-    customerCode: String
-    projectRemark: String
-}
-
-type fetchStatus {
-    message: String
-    pending: Boolean
-    fileIDs: [Int!]
-}
-
-############################ new ############################
-
 type Material {
     id: Int!
     name: String!
@@ -44,3 +18,10 @@ input MaterialCreateInput {
     projectRemark: String
     points: [PointCreateInput]!
 }
+
+input MaterialUpdateInput {
+    id: Int!
+    customerCode: String
+    projectRemark: String
+}
+

@@ -99,7 +99,7 @@ func distributeFunc(s, a, x float64) float64 {
 	return math.Round(part1*part2*100) / 100
 }
 
-func AnalyzePointValues(point orm.Point, data []float64) (s, cp, cpk, avg float64, ok, total int, valueSet []float64){
+func AnalyzePointValues(point orm.Point, data []float64) (s, cp, cpk, avg float64, ok, total int, valueSet []float64) {
 	total = len(data)
 	ok = 0
 	valueSet = make([]float64, 0)
@@ -119,4 +119,19 @@ func AnalyzePointValues(point orm.Point, data []float64) (s, cp, cpk, avg float6
 	avg = solveAvg(valueSet)
 	cpk = solveCpk(point.UpperLimit, point.LowerLimit, avg, s)
 	return
+}
+
+func solveAvg(values []float64) float64 {
+	total := len(values)
+	if total == 0 {
+		return 0
+	}
+
+	sum := float64(0)
+	for _, v := range values {
+		sum = sum + v
+	}
+
+	avg := sum / float64(total)
+	return avg
 }

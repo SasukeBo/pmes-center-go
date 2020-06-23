@@ -1,10 +1,4 @@
 type Mutation {
-    # TODO: 废弃的接口
-    "取消导出"
-    cancelExport(opID: String!): String!
-
-    ############################ new ############################
-
     # 系统设置
     # "添加系统设置"
     # setting(settingInput: SettingInput!): SystemConfig!
@@ -34,6 +28,7 @@ type Mutation {
     # 设备
     "保存设备"
     saveDevice(input: DeviceInput!): Device!
+
 
     # 导入记录
     "撤销导入"

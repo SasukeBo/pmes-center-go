@@ -1,4 +1,4 @@
-package resolver
+package logic
 
 //func (r *queryResolver) ProductScrollFetch(ctx context.Context, searchInput model.ProductSearch, limit int, offset int) (*model.ProductWrap, error) {
 //	return logic.ProductScrollFetch(ctx, searchInput, limit, offset)

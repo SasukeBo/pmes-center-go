@@ -2,10 +2,5 @@ type User {
     id: Int!
     account: String!
     isAdmin: Boolean!
+    uuid: String!
 }
-
-input LoginInput {
-    account: String!
-    password: String!
-}
-

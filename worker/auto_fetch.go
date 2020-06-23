@@ -1,6 +1,7 @@
-package logic
+package worker
 
 import (
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/SasukeBo/log"
 	"time"
@@ -30,7 +31,7 @@ func autoFetch() {
 		log.Info("[autoFetch] fetch file(%s) data", m.Name)
 
 		go func() {
-			err := FetchMaterialData(&m)
+			err := logic.FetchMaterialData(&m)
 			if err != nil {
 				// TODO: add log
 				log.Errorln(err)

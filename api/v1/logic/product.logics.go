@@ -3,7 +3,6 @@ package logic
 import (
 	"errors"
 	"fmt"
-	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/tealeg/xlsx"
 	"math"
@@ -324,25 +323,25 @@ func appendValueWithFgColor(row *xlsx.Row, style *xlsx.Style, v interface{}) {
 	cell.SetValue(v)
 }
 
-func CheckExport(opID string) (*model.ExportResponse, error) {
-	rsp, ok := handlerCache[opID]
-	if !ok {
-		return nil, errors.New("没有该导出任务的进度记录")
-	}
-
-	var fileName = rsp.fileName
-	out := &model.ExportResponse{
-		Percent:  rsp.percent,
-		Message:  rsp.message,
-		FileName: &fileName,
-		Finished: rsp.finished,
-	}
-	if rsp.finished {
-		delete(handlerCache, opID)
-	}
-
-	return out, rsp.err
-}
+//func CheckExport(opID string) (*model.ExportResponse, error) {
+//	rsp, ok := handlerCache[opID]
+//	if !ok {
+//		return nil, errors.New("没有该导出任务的进度记录")
+//	}
+//
+//	var fileName = rsp.fileName
+//	out := &model.ExportResponse{
+//		Percent:  rsp.percent,
+//		Message:  rsp.message,
+//		FileName: &fileName,
+//		Finished: rsp.finished,
+//	}
+//	if rsp.finished {
+//		delete(handlerCache, opID)
+//	}
+//
+//	return out, rsp.err
+//}
 
 func CancelExport(opID string) error {
 	rsp, ok := handlerCache[opID]
