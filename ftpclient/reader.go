@@ -139,9 +139,6 @@ func (xr *XLSXReader) Read(path string) error {
 			break
 		}
 	}
-	if eIdx == 0 {
-		eIdx = len(dataSheet)
-	}
 	dataSet := dataSheet[bIdx : eIdx-1]
 	xr.DataSet = dataSet
 
