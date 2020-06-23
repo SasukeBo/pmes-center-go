@@ -1,11 +1,11 @@
 package main
 
 import (
+	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
 	"github.com/SasukeBo/ftpviewer/router"
-	"github.com/SasukeBo/ftpviewer/worker"
 )
 
 func main() {
-	worker.Start()
+	go logic.AutoFetch()
 	router.Start()
 }

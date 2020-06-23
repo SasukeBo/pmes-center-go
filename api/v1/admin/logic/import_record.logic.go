@@ -78,5 +78,6 @@ func ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplat
 		return "", errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
-
+	// TODO: finish it
+	return "", nil
 }

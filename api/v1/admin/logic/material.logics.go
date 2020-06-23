@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/SasukeBo/ftpviewer/api"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
-	"github.com/SasukeBo/ftpviewer/data_parser"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/SasukeBo/ftpviewer/orm/types"
@@ -81,7 +80,7 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 	}
 
 	// 解析FTP服务器指定料号路径下的所有未解析文件
-	if err := data_parser.FetchMaterialData(&material); err != nil {
+	if err := FetchMaterialData(&material); err != nil {
 		return &out, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateSuccessButFetchFailed, err)
 	}
 
