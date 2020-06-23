@@ -60,4 +60,28 @@ func TestDevice(t *testing.T) {
 		ret.Path("$.material.id").NotEqual(0)
 	})
 
+	// Test list devices
+	t.Run("TEST_LIST_DEVICES", func(t *testing.T) {
+		device1 := orm.Device{
+			Name:       "device1",
+			Remark:     "device1",
+			IP:         "0.0.0.0",
+			MaterialID: test.Data.Material.ID,
+		}
+		orm.Create(&device1)
+		device2 := device1
+		device2.ID = 0
+		device2.Name = "device2"
+		device2.Remark = "device2"
+		orm.Create(&device2)
+
+		ret := tester.API1Admin(listDevicesGQL, test.Object{
+			"pattern":    "device",
+			"materialID": test.Data.Material.ID,
+			"page":       1,
+			"limit":      1,
+		}).GQLObject().Path("$.data.response").Object()
+		ret.Value("total").Equal(2)
+		ret.Value("devices").Array().Length().Equal(1)
+	})
 }

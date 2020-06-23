@@ -5,11 +5,11 @@ package resolver
 
 import (
 	"context"
-	"github.com/SasukeBo/ftpviewer/errormap"
 
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
+	"github.com/SasukeBo/ftpviewer/errormap"
 )
 
 func (r *importRecordResolver) Material(ctx context.Context, obj *model.ImportRecord) (*model.Material, error) {

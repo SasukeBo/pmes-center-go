@@ -161,3 +161,13 @@ mutation($input: DeviceInput!) {
     address
   }
 }`
+var listDevicesGQL = `
+query($pattern: String, $materialID: Int, $page: Int!, $limit: Int!) {
+	response: listDevices(pattern: $pattern, materialID: $materialID, page: $page, limit: $limit) {
+		total	
+		devices {
+			id
+		}
+	}
+}
+`

@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	"github.com/SasukeBo/ftpviewer/api"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
@@ -60,4 +61,44 @@ func SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, er
 	}
 
 	return &out, nil
+}
+
+func ListDevices(ctx context.Context, pattern *string, materialID *int, page int, limit int) (*model.DeviceWrap, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	var devices []orm.Device
+	var sql = orm.Model(&orm.Device{})
+	if pattern != nil {
+		search := fmt.Sprintf("%%%s%%", *pattern)
+		sql = sql.Where("name LIKE ? OR remark LIKE ?", search, search)
+	}
+	if materialID != nil {
+		sql = sql.Where("material_id = ?", *materialID)
+	}
+
+	var count int
+	if err := sql.Count(&count).Error; err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "device")
+	}
+
+	if err := sql.Offset((page - 1) * limit).Limit(limit).Find(&devices).Error; err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "device")
+	}
+	var outs []*model.Device
+	for _, d := range devices {
+		var out model.Device
+		if err := copier.Copy(&out, &d); err != nil {
+			continue
+		}
+
+		outs = append(outs, &out)
+	}
+
+	return &model.DeviceWrap{
+		Total:   count,
+		Devices: outs,
+	}, nil
 }

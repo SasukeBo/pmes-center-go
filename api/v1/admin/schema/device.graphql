@@ -29,3 +29,8 @@ input DeviceInput {
     isRealtime: Boolean!
     address: String
 }
+
+type DeviceWrap {
+    total: Int!
+    devices: [Device]!
+}

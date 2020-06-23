@@ -41,4 +41,8 @@ type Query {
     # 解析模板
     "解析模板列表"
     listDecodeTemplate(materialID: Int!): [DecodeTemplate]!
+
+    # 设备
+    "设备列表"
+    listDevices(pattern: String, materialID: Int, page: Int!, limit: Int!): DeviceWrap!
 }

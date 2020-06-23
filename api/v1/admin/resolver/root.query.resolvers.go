@@ -31,6 +31,10 @@ func (r *queryResolver) ListDecodeTemplate(ctx context.Context, materialID int) 
 	return logic.ListDecodeTemplate(ctx, materialID)
 }
 
+func (r *queryResolver) ListDevices(ctx context.Context, pattern *string, materialID *int, page int, limit int) (*model.DeviceWrap, error) {
+	return logic.ListDevices(ctx, pattern, materialID, page, limit)
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
