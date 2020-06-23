@@ -39,10 +39,10 @@ func (cd *CSVDecoder) Decode(data []byte) error {
 }
 
 type SL struct {
-	Index    int
-	USL      float64
+	Index   int
+	USL     float64
 	Nominal float64
-	LSL      float64
+	LSL     float64
 }
 
 type XLSXReader struct {
@@ -68,7 +68,7 @@ func (xr *XLSXReader) ReadSize(path string) error {
 
 	var dimSet, USLSet, LSLSet *[]string
 	for i, row := range dataSheet {
-		if len(row) ==0 {
+		if len(row) == 0 {
 			continue
 		}
 		switch row[0] {
@@ -98,10 +98,10 @@ func (xr *XLSXReader) ReadSize(path string) error {
 		usl := parseFloat((*USLSet)[i])
 		lsl := parseFloat((*LSLSet)[i])
 		xr.DimSL[k] = SL{
-			USL:      usl,
+			USL:     usl,
 			Nominal: (usl + lsl) / 2,
-			LSL:      lsl,
-			Index:    i,
+			LSL:     lsl,
+			Index:   i,
 		}
 	}
 
@@ -138,6 +138,9 @@ func (xr *XLSXReader) Read(path string) error {
 		if bIdx > 0 && eIdx > 0 && eIdx > bIdx {
 			break
 		}
+	}
+	if eIdx == 0 {
+		eIdx = len(dataSheet)
 	}
 	dataSet := dataSheet[bIdx : eIdx-1]
 	xr.DataSet = dataSet
