@@ -1,9 +1,9 @@
 package admin
 
 import (
-	"github.com/SasukeBo/ftpviewer/ftpclient"
 	"github.com/SasukeBo/ftpviewer/intergration_test"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/ftpviewer/worker"
 	"testing"
 	"time"
 )
@@ -18,7 +18,7 @@ func TestMaterial(t *testing.T) {
 
 	// Create material and load data
 	t.Run("CREATE_MATERIAL_AND_LOAD_DATA", func(t *testing.T) {
-		go ftpclient.FTPWorker()
+		worker.Start()
 		tester.API1Admin(createMaterialGQL, test.Object{
 			"input": test.Object{
 				"name":          "1828",

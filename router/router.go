@@ -47,6 +47,9 @@ func Start() {
 	// Downloads
 	r.GET("/downloads/xlsx", handler.DownloadXlsxFile()) // 下载xlsx文件
 
+	// Uploads
+	r.POST("/posts", handler.Authenticate(), handler.Post()) // 上传文件
+
 	log.Info("start service on [%s] mode", configer.GetEnv("env"))
 	r.Run(fmt.Sprintf(":%s", configer.GetString("port")))
 }

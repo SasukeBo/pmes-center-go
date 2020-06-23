@@ -1,9 +1,10 @@
-package ftpclient
+package worker
 
 // 访问ftp的task文件
 // 注册ftp获取文件队列，worker
 import (
 	"fmt"
+	"github.com/SasukeBo/ftpviewer/data_parser"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/SasukeBo/ftpviewer/orm/types"
@@ -15,7 +16,7 @@ import (
 )
 
 var fetchQueue chan string
-var cacheQueue chan *XLSXReader
+var cacheQueue chan *data_parser.XLSXReader
 var (
 	singleInsertLimit = 10000
 	insertProductsTpl = `
@@ -35,19 +36,18 @@ var (
 	productValueCount    = 7
 )
 
-// FTPWorker _
-func FTPWorker() {
+func xlsxWorker() {
 	for {
 		select {
 		case xr := <-cacheQueue:
 			fmt.Println("--------------------------\nstart store task")
-			go Store(xr)
+			go store(xr)
 		}
 	}
 }
 
-// Store xlsx data into db
-func Store(xr *XLSXReader) {
+// store xlsx data into db
+func store(xr *data_parser.XLSXReader) {
 	defer func() {
 		err := recover()
 		if err != nil {
@@ -193,11 +193,11 @@ func parseFloat(v string) float64 {
 }
 
 // PushStore _
-func PushStore(xr *XLSXReader) {
+func PushStore(xr *data_parser.XLSXReader) {
 	cacheQueue <- xr
 }
 
 func init() {
 	fetchQueue = make(chan string, 10)
-	cacheQueue = make(chan *XLSXReader, 10)
+	cacheQueue = make(chan *data_parser.XLSXReader, 10)
 }

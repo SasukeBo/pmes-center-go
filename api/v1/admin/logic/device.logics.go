@@ -102,3 +102,40 @@ func ListDevices(ctx context.Context, pattern *string, materialID *int, page int
 		Devices: outs,
 	}, nil
 }
+
+func DeleteDevice(ctx context.Context, id int) (model.ResponseStatus, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	var device orm.Device
+	if err := device.Get(uint(id)); err != nil {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, err.GetCode(), err)
+	}
+
+	if err := orm.Delete(&device).Error; err != nil {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "device")
+	}
+
+	return model.ResponseStatusOk, nil
+}
+
+func Device(ctx context.Context, id int) (*model.Device, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	var device orm.Device
+	if err := device.Get(uint(id)); err != nil {
+		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "device")
+	}
+
+	var out model.Device
+	if err := copier.Copy(&out, &device); err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "device")
+	}
+
+	return &out, nil
+}

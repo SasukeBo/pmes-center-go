@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
@@ -48,8 +47,16 @@ func (r *mutationResolver) SaveDevice(ctx context.Context, input model.DeviceInp
 	return logic.SaveDevice(ctx, input)
 }
 
+func (r *mutationResolver) DeleteDevice(ctx context.Context, id int) (model.ResponseStatus, error) {
+	return logic.DeleteDevice(ctx, id)
+}
+
 func (r *mutationResolver) RevertImport(ctx context.Context, id int) (model.ResponseStatus, error) {
 	return logic.RevertImport(ctx, id)
+}
+
+func (r *mutationResolver) ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []*string) (model.ResponseStatus, error) {
+	return logic.ImportData(ctx, materialID, deviceID, decodeTemplateID, fileTokens)
 }
 
 // Mutation returns generated.MutationResolver implementation.

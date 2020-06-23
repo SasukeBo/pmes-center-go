@@ -6,10 +6,9 @@ import "net/http"
 
 const (
 	// 400
-	ErrorCodeCreateFailedError             = "E0000S0400N0001"
-	ErrorCodeRequestInputMissingFieldError = "E0000S0400N0002"
-	ErrorCodeGetObjectFailed               = "E0000S0400N0003"
-	ErrorCodeBadRequestParams              = "E0000S0400N0004"
+	ErrorCodeRequestInputMissingFieldError = "E0000S0400N0001"
+	ErrorCodeGetObjectFailed               = "E0000S0400N0002"
+	ErrorCodeBadRequestParams              = "E0000S0400N0003"
 	// 404
 	ErrorCodeObjectNotFound = "E0000S0404N0001"
 	// 500
@@ -35,17 +34,11 @@ func init() {
 		ZH_CN: "对不起，请求参数错误，缺少{{.field_1}}。",
 		EN:    "Sorry, the request input variables missing {{.field_1}}.",
 	})
-	register(ErrorCodeCreateFailedError, http.StatusBadRequest, langMap{
-		ZH_CN: "对不起，创建{{.field_1}}时发生错误，请重试。",
-		EN:    "Sorry, create {{.field_1}} failed with some error, please try again.",
-	})
-
 	// 404
 	register(ErrorCodeObjectNotFound, http.StatusNotFound, langMap{
 		ZH_CN: "对不起，没有找到该{{.field_1}}，请确认您的输入。",
 		EN:    "Sorry, cannot find the {{.field_1}}, please check your input.",
 	})
-
 	// 500
 	register(ErrorCodeDeleteObjectError, http.StatusInternalServerError, langMap{
 		ZH_CN: "对不起，删除{{.field_1}}数据失败，发生了一些错误。",

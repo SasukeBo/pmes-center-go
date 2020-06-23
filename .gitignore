@@ -1,6 +1,6 @@
 *.swp
 .idea
-gateway-docker/ftpviewer.conf
+gateway_docker/ftpviewer.conf
 conf/config.go
 ftpviewer
 docker-compose.yml

@@ -1,4 +1,4 @@
-package ftpclient
+package ftp
 
 import (
 	"fmt"

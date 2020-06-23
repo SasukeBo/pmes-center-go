@@ -17,7 +17,6 @@ import (
 func Authenticate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		isGraphiQL := c.GetBool("isGraphiQL")
-		fmt.Println(isGraphiQL)
 		if isGraphiQL {
 			c.Next()
 			return

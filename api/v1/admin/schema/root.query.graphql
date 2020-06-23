@@ -20,4 +20,6 @@ type Query {
     # 设备
     "设备列表"
     listDevices(pattern: String, materialID: Int, page: Int!, limit: Int!): DeviceWrap!
+    "ID获取设备"
+    device(id: Int!): Device!
 }

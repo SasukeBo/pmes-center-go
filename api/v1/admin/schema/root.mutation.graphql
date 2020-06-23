@@ -28,9 +28,12 @@ type Mutation {
     # 设备
     "保存设备"
     saveDevice(input: DeviceInput!): Device!
-
+    "删除设备"
+    deleteDevice(id: Int!): ResponseStatus!
 
     # 导入记录
     "撤销导入"
     revertImport(id: Int!): ResponseStatus!
+    "导入数据"
+    importData(materialID: Int!, deviceID: Int!, decodeTemplateID: Int!, fileTokens: [String]!): ResponseStatus!
 }

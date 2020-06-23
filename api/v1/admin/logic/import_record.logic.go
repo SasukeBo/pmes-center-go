@@ -71,3 +71,12 @@ func RevertImport(ctx context.Context, id int) (model.ResponseStatus, error) {
 	tx.Commit()
 	return model.ResponseStatusOk, nil
 }
+
+func ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []*string) (model.ResponseStatus, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+
+}

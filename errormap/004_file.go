@@ -8,6 +8,7 @@ const (
 	// 400
 	ErrorCodeFileHandleError    = "E0004S0400N0001"
 	ErrorCodeFileExtensionError = "E0004S0400N0002"
+	ErrorCodeFileUploadError    = "E0004S0400N0003"
 	// 500
 	ErrorCodeFileDownloadError = "E0004S0500N0001"
 )
@@ -21,6 +22,10 @@ func init() {
 	register(ErrorCodeFileExtensionError, http.StatusBadRequest, langMap{
 		ZH_CN: "对不起，文件格式不正确，需要{{.field_1}}文件。",
 		EN:    "Sorry, the file extension is wrong, {{.field_1}} file in need.",
+	})
+	register(ErrorCodeFileUploadError, http.StatusBadRequest, langMap{
+		ZH_CN: "对不起，文件上传失败，发生了一些错误。",
+		EN:    "Sorry, uploading the file failed with some errors.",
 	})
 
 	// 500

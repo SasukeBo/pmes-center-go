@@ -35,6 +35,10 @@ func (r *queryResolver) ListDevices(ctx context.Context, pattern *string, materi
 	return logic.ListDevices(ctx, pattern, materialID, page, limit)
 }
 
+func (r *queryResolver) Device(ctx context.Context, id int) (*model.Device, error) {
+	return logic.Device(ctx, id)
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 

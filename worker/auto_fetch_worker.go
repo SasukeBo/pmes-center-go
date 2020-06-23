@@ -1,25 +1,25 @@
 package worker
 
 import (
-	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
+	"github.com/SasukeBo/ftpviewer/data_parser"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/SasukeBo/log"
 	"time"
 )
 
-// AutoFetch 自动拉取
-func AutoFetch() {
+// autoFetch 自动拉取
+func autoFetch() {
 	log.Infoln("[AutoFetch] Begin auto fetch worker")
-	autoFetch()
+	fetch()
 	for {
 		select {
 		case <-time.After(12 * time.Hour):
-			autoFetch()
+			fetch()
 		}
 	}
 }
 
-func autoFetch() {
+func fetch() {
 	var materials []orm.Material
 	err := orm.DB.Model(&orm.Material{}).Find(&materials).Error
 	if err != nil {
@@ -31,7 +31,7 @@ func autoFetch() {
 		log.Info("[autoFetch] fetch file(%s) data", m.Name)
 
 		go func() {
-			err := logic.FetchMaterialData(&m)
+			err := data_parser.FetchMaterialData(&m)
 			if err != nil {
 				// TODO: add log
 				log.Errorln(err)
