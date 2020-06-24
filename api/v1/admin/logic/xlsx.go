@@ -5,6 +5,7 @@ package logic
 import (
 	"errors"
 	"fmt"
+	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/ftp"
 	"github.com/SasukeBo/ftpviewer/orm"
@@ -41,7 +42,7 @@ func newXLSXReader(material *orm.Material, device *orm.Device, template *orm.Dec
 }
 
 func (xr *XLSXReader) ReadFile(file *orm.File) error {
-	content, err := ioutil.ReadFile(file.Path)
+	content, err := ioutil.ReadFile(filepath.Join(configer.GetString("file_cache_path"), file.Path))
 	if err != nil {
 		return fmt.Errorf("读取文件失败：%v", err)
 	}
@@ -197,15 +198,17 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 		var file orm.File
 		if err := file.GetByToken(token); err != nil {
 			log.Error("[FetchFileData] Get file with token=%s failed: %v", token, err)
-			continue
+			return err
 		}
 
 		if err := xr.ReadFile(&file); err != nil {
-			log.Error("[FetchFileData] Read file(%s) failed: %v", file.Name, err)
-			continue
+			message := fmt.Sprintf("[FetchFileData] Read file(%s) failed: %v", file.Name, err)
+			log.Errorln(message)
+			return errormap.NewCodeOrigin(errormap.ErrorCodeFileOpenFailedError, message)
 		}
 
 		importRecord := &orm.ImportRecord{
+			FileID:           file.ID,
 			FileName:         file.Name,
 			Path:             file.Path,
 			MaterialID:       material.ID,

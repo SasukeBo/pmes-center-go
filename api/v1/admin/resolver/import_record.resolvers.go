@@ -12,6 +12,14 @@ import (
 	"github.com/SasukeBo/ftpviewer/errormap"
 )
 
+func (r *importRecordResolver) File(ctx context.Context, obj *model.ImportRecord) (*model.File, error) {
+	if obj.FileID == nil {
+		return nil, nil
+	}
+
+	return logic.LoadFile(ctx, *obj.FileID), nil
+}
+
 func (r *importRecordResolver) Material(ctx context.Context, obj *model.ImportRecord) (*model.Material, error) {
 	return logic.LoadMaterial(ctx, obj.MaterialID), nil
 }

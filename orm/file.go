@@ -40,3 +40,11 @@ func (f *File) GetByToken(token string) *errormap.Error {
 
 	return nil
 }
+
+func (f *File) Get(id uint) *errormap.Error {
+	if err := DB.Model(f).Where("id = ?", id).First(f).Error; err != nil {
+		return handleError(err, "id", id)
+	}
+
+	return nil
+}

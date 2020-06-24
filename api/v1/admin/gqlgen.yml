@@ -60,3 +60,5 @@ models:
     model: github.com/SasukeBo/ftpviewer/api/v1/admin/model.DecodeTemplate
   Device:
     model: github.com/SasukeBo/ftpviewer/api/v1/admin/model.Device
+  File:
+    model: github.com/SasukeBo/ftpviewer/api/v1/admin/model.File

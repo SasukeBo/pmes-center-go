@@ -135,3 +135,20 @@ func MyImportRecords(ctx context.Context, page int, limit int) (*model.ImportRec
 		ImportRecords: outs,
 	}, nil
 }
+
+func ImportStatus(ctx context.Context, id int) (*model.ImportStatusResponse, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	var record orm.ImportRecord
+	if err := record.Get(uint(id)); err != nil {
+		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "import_record")
+	}
+
+	return &model.ImportStatusResponse{
+		Status:           model.ImportStatus(record.Status),
+		FinishedRowCount: record.RowFinishedCount,
+	}, nil
+}

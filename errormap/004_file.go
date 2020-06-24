@@ -6,9 +6,11 @@ import "net/http"
 
 const (
 	// 400
-	ErrorCodeFileHandleError    = "E0004S0400N0001"
-	ErrorCodeFileExtensionError = "E0004S0400N0002"
-	ErrorCodeFileUploadError    = "E0004S0400N0003"
+	ErrorCodeFileHandleError     = "E0004S0400N0001"
+	ErrorCodeFileExtensionError  = "E0004S0400N0002"
+	ErrorCodeFileUploadError     = "E0004S0400N0003"
+	ErrorCodeFileOpenFailedError = "E0004S0400N0004"
+
 	// 500
 	ErrorCodeFileDownloadError = "E0004S0500N0001"
 )
@@ -25,7 +27,11 @@ func init() {
 	})
 	register(ErrorCodeFileUploadError, http.StatusBadRequest, langMap{
 		ZH_CN: "对不起，文件上传失败，发生了一些错误。",
-		EN:    "Sorry, uploading the file failed with some errors.",
+		EN:    "Sorry, failed to upload the file with some errors.",
+	})
+	register(ErrorCodeFileOpenFailedError, http.StatusBadRequest, langMap{
+		ZH_CN: "对不起，打开文件时发生了一些错误。",
+		EN:    "Sorry, failed to open the file with some errors.",
 	})
 
 	// 500

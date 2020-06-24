@@ -4,6 +4,7 @@ import "time"
 
 type ImportRecord struct {
 	ID                 int                    `json:"id"`
+	FileID             *uint                  `json:"fileID"`
 	FileName           string                 `json:"fileName"`
 	MaterialID         uint                   `json:"materialID"`
 	DeviceID           uint                   `json:"deviceID"`
@@ -44,4 +45,14 @@ type Device struct {
 	DeviceSupplier string `json:"deviceSupplier"`
 	IsRealtime     bool   `json:"isRealtime"`
 	Address        string `json:"address"`
+}
+
+type File struct {
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	Token       string `json:"token"`
+	UserID      uint   `json:"userID"`
+	Size        int    `json:"size"`
+	ContentType string `json:"contentType"`
 }

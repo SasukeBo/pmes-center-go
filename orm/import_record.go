@@ -23,10 +23,11 @@ const (
 
 type ImportRecord struct {
 	gorm.Model
-	FileName           string       `gorm:"not null"`       // 文件名称
-	Path               string       `gorm:"not null"`       // 存储路径
-	MaterialID         uint         `gorm:"not null;index"` // 关联料号ID
-	DeviceID           uint         `gorm:"not null;index"` // 关联设备ID
+	FileID             uint          `gorm:"column:file_id"'` // 关联文件的ID
+	FileName           string       `gorm:"not null"`        // 文件名称
+	Path               string       `gorm:"not null"`        // 存储路径
+	MaterialID         uint         `gorm:"not null;index"`  // 关联料号ID
+	DeviceID           uint         `gorm:"not null;index"`  // 关联设备ID
 	RowCount           int          // 数据行数
 	RowFinishedCount   int          // 完成行数
 	Status             ImportStatus `gorm:"not null;default:false"` // 导入状态

@@ -1,10 +1,6 @@
-type ImportRecordsWrap {
-    total: Int!
-    importRecords: [ImportRecord]!
-}
-
 type ImportRecord {
     id: Int!
+    file: File
     fileName: String!
     material: Material
     device: Device
@@ -20,6 +16,16 @@ type ImportRecord {
     createdAt: Time!
 }
 
+type ImportStatusResponse {
+    status: ImportStatus!
+    finishedRowCount: Int!
+}
+
+type ImportRecordsWrap {
+    total: Int!
+    importRecords: [ImportRecord]!
+}
+
 enum ImportRecordImportType {
     SYSTEM
     USER
@@ -31,3 +37,4 @@ enum ImportStatus {
     Failed
     Reverted
 }
+

@@ -40,7 +40,7 @@ func Post() gin.HandlerFunc {
 
 		file := orm.File{
 			Name:        post.Filename,
-			Path:        path,
+			Path:        filepath.Join("posts", post.Filename),
 			UserID:      currentUser.ID,
 			Size:        uint(post.Size),
 			ContentType: post.Header["Content-Type"][0],
