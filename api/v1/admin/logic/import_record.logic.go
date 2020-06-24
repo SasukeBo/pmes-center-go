@@ -6,6 +6,7 @@ import (
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/log"
 	"github.com/jinzhu/copier"
 )
 
@@ -98,4 +99,39 @@ func ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplat
 	}
 
 	return model.ResponseStatusOk, nil
+}
+
+func MyImportRecords(ctx context.Context, page int, limit int) (*model.ImportRecordsWrap, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	sql := orm.Model(&orm.ImportRecord{}).Where("user_id = ?", user.ID).Order("id desc")
+
+	var total int
+	if err := sql.Count(&total).Error; err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "import_record")
+	}
+
+	var records []orm.ImportRecord
+	if err := sql.Offset((page - 1) * limit).Limit(limit).Find(&records).Error; err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "import_record")
+	}
+
+	var outs []*model.ImportRecord
+	for _, r := range records {
+		var out model.ImportRecord
+		if err := copier.Copy(&out, &r); err != nil {
+			log.Error("Copy object failed for record(id=%v): %v", r.ID, err)
+			continue
+		}
+
+		outs = append(outs, &out)
+	}
+
+	return &model.ImportRecordsWrap{
+		Total:         total,
+		ImportRecords: outs,
+	}, nil
 }

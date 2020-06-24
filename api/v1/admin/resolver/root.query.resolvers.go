@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
@@ -25,6 +24,10 @@ func (r *queryResolver) ListMaterialPoints(ctx context.Context, materialID int) 
 
 func (r *queryResolver) ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int) (*model.ImportRecordsWrap, error) {
 	return logic.ImportRecords(ctx, materialID, deviceID, page, limit)
+}
+
+func (r *queryResolver) MyImportRecords(ctx context.Context, page int, limit int) (*model.ImportRecordsWrap, error) {
+	return logic.MyImportRecords(ctx, page, limit)
 }
 
 func (r *queryResolver) ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error) {

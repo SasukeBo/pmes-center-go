@@ -348,6 +348,12 @@ func store(xr *XLSXReader) {
 				continue
 			}
 			idx := int(ii.(float64))
+			if idx >= len(row) {
+				message := fmt.Sprintf("point(%s) index(%d) out of range with data row length(%d)", v.Name, idx, len(row))
+				_ = xr.Record.Failed(errormap.ErrorCodeImportWithIllegalDecodeTemplate, message)
+				log.Errorln(message)
+				return
+			}
 			value := parseFloat(row[idx])
 			if value < v.LowerLimit || value > v.UpperLimit {
 				qualified = false

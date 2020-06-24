@@ -12,6 +12,8 @@ type Query {
     # 导入记录
     "获取导入记录"
     importRecords(materialID: Int!, deviceID: Int, page: Int!, limit: Int!): ImportRecordsWrap!
+    "获取当前用户的导入记录"
+    myImportRecords(page: Int!, limit: Int!): ImportRecordsWrap!
 
     # 解析模板
     "解析模板列表"
