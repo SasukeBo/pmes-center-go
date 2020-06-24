@@ -17,7 +17,7 @@ func init() {
 	// 400
 	register(ErrorCodeImportFailedWithPanic, http.StatusBadRequest, langMap{
 		ZH_CN: "对不起，导入数据时发生了未知错误。",
-		EN:    "Sorry, failed to import data with unknown some .",
+		EN:    "Sorry, failed to import data with some unknown errors.",
 	})
 	register(ErrorCodeImportWithIllegalDecodeTemplate, http.StatusBadRequest, langMap{
 		ZH_CN: "对不起，导入数据时使用的解析模板不合法，导入失败。",

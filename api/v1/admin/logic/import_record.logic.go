@@ -72,12 +72,30 @@ func RevertImport(ctx context.Context, id int) (model.ResponseStatus, error) {
 	return model.ResponseStatusOk, nil
 }
 
-func ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []*string) (model.ResponseStatus, error) {
+func ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) (model.ResponseStatus, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return "", errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
-	// TODO: finish it
-	return "", nil
+	var material orm.Material
+	if err := material.Get(uint(materialID)); err != nil {
+		return "", errormap.SendGQLError(ctx, err.GetCode(), err, "material")
+	}
+
+	var device orm.Device
+	if err := device.Get(uint(deviceID)); err != nil {
+		return "", errormap.SendGQLError(ctx, err.GetCode(), err, "device")
+	}
+
+	var template orm.DecodeTemplate
+	if err := template.Get(uint(decodeTemplateID)); err != nil {
+		return "", errormap.SendGQLError(ctx, err.GetCode(), err, "decode_template")
+	}
+
+	if err := FetchFileData(*user, material, device, template, fileTokens); err != nil {
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeImportFailedWithPanic, err)
+	}
+
+	return model.ResponseStatusOk, nil
 }

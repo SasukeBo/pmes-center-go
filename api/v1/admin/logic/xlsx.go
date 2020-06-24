@@ -12,6 +12,7 @@ import (
 	timer "github.com/SasukeBo/lib/time"
 	"github.com/SasukeBo/log"
 	"github.com/tealeg/xlsx"
+	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"runtime/debug"
@@ -39,15 +40,56 @@ func newXLSXReader(material *orm.Material, device *orm.Device, template *orm.Dec
 	}
 }
 
-func (xr *XLSXReader) Read(path string) error {
-	dataSheet, size, err := read(path)
+func (xr *XLSXReader) ReadFile(file *orm.File) error {
+	content, err := ioutil.ReadFile(file.Path)
+	if err != nil {
+		return fmt.Errorf("读取文件失败：%v", err)
+	}
+
+	log.Info("file %s content length is %v", file.Name, len(content))
+
+	return xr.setData(content)
+}
+
+func (xr *XLSXReader) ReadFTP(path string) error {
+	content, err := ftp.ReadFile(path)
+	if err != nil {
+		if fe, ok := err.(*ftp.FTPError); ok {
+			fe.Logger()
+			return err
+		}
+
+		log.Errorln(err)
+		return &ftp.FTPError{
+			Message:   fmt.Sprintf("从FTP服务器读取文件%s失败", path),
+			OriginErr: err,
+		}
+	}
+
+	return xr.setData(content)
+}
+
+func (xr *XLSXReader) setData(content []byte) error {
+	size := len(content)
+	file, err := xlsx.OpenBinary(content)
+	if err != nil {
+		return fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
+	}
+
+	originData, err := file.ToSlice()
 	if err != nil {
 		return err
 	}
+	if len(originData) == 0 {
+		return errors.New("xlsx文件内容是空的。")
+	}
+
+	dataSheet := originData[0]
+
 	var bIdx = xr.DecodeTemplate.DataRowIndex
 	var eIdx = len(dataSheet) - 1
 	for i, row := range dataSheet {
-		if (len(row) == 0 || row[0] == "") && i > bIdx { // 空行 或 行首位空 为截至行，理想情况下不存在数据行中穿插空行
+		if (len(row) == 0 || row[0] == "") && i > bIdx { // 空行 或 行首位空 为截止行，理想情况下不存在数据行中穿插空行
 			eIdx = i - 1
 			break
 		}
@@ -58,38 +100,6 @@ func (xr *XLSXReader) Read(path string) error {
 
 	log.Info("data begin idx: %v, end idx: %v\n", bIdx, eIdx)
 	return nil
-}
-
-func read(path string) ([][]string, int, error) {
-	content, err := ftp.ReadFile(path)
-	size := len(content)
-	if err != nil {
-		if fe, ok := err.(*ftp.FTPError); ok {
-			fe.Logger()
-			return nil, 0, err
-		}
-
-		log.Errorln(err)
-		return nil, 0, &ftp.FTPError{
-			Message:   fmt.Sprintf("从FTP服务器读取文件%s失败", path),
-			OriginErr: err,
-		}
-	}
-
-	file, err := xlsx.OpenBinary(content)
-	if err != nil {
-		return nil, 0, fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
-	}
-
-	originData, err := file.ToSlice()
-	if err != nil {
-		return nil, 0, err
-	}
-	if len(originData) == 0 {
-		return nil, 0, errors.New("xlsx文件内容是空的。")
-	}
-
-	return originData[0], size, nil
 }
 
 type fetchItem struct {
@@ -151,7 +161,7 @@ func fetchMaterialData(material orm.Material, files []fetchItem, dt *orm.DecodeT
 
 		go func() {
 			log.Warn("start read routine with file: %s\n", path)
-			err := xr.Read(path)
+			err := xr.ReadFTP(path)
 			if err != nil {
 				log.Error("read path(%s) error: %v", path, err)
 				return
@@ -169,6 +179,55 @@ func fetchMaterialData(material orm.Material, files []fetchItem, dt *orm.DecodeT
 	}
 
 	return nil
+}
+
+// 直接根据数据库file记录获取数据
+func FetchFileData(user orm.User, material orm.Material, device orm.Device, template orm.DecodeTemplate, tokens []string) error {
+	var err error
+	defer func() {
+		errMessage := recover()
+		if errMessage != nil {
+			err = errors.New(fmt.Sprint(errMessage))
+			debug.PrintStack()
+		}
+	}()
+
+	for _, token := range tokens {
+		xr := newXLSXReader(&material, &device, &template)
+		var file orm.File
+		if err := file.GetByToken(token); err != nil {
+			log.Error("[FetchFileData] Get file with token=%s failed: %v", token, err)
+			continue
+		}
+
+		if err := xr.ReadFile(&file); err != nil {
+			log.Error("[FetchFileData] Read file(%s) failed: %v", file.Name, err)
+			continue
+		}
+
+		importRecord := &orm.ImportRecord{
+			FileName:         file.Name,
+			Path:             file.Path,
+			MaterialID:       material.ID,
+			DeviceID:         device.ID,
+			Status:           orm.ImportStatusLoading,
+			ImportType:       orm.ImportRecordTypeUser,
+			UserID:           user.ID,
+			DecodeTemplateID: template.ID,
+			RowCount:         len(xr.DataSet),
+			FileSize:         xr.Size,
+		}
+		if err := orm.Create(importRecord).Error; err != nil {
+			// TODO: add log
+			log.Error("[FetchFileData] create import record failed: %v", err)
+			continue
+		}
+
+		xr.Record = importRecord
+		go store(xr)
+	}
+
+	return err
 }
 
 // checkFile 仅检查文件是否已经被读取到指定料号

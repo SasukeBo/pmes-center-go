@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
@@ -55,7 +56,7 @@ func (r *mutationResolver) RevertImport(ctx context.Context, id int) (model.Resp
 	return logic.RevertImport(ctx, id)
 }
 
-func (r *mutationResolver) ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []*string) (model.ResponseStatus, error) {
+func (r *mutationResolver) ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) (model.ResponseStatus, error) {
 	return logic.ImportData(ctx, materialID, deviceID, decodeTemplateID, fileTokens)
 }
 

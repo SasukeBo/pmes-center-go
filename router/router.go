@@ -48,6 +48,7 @@ func Start() {
 	r.GET("/downloads/xlsx", handler.DownloadXlsxFile()) // 下载xlsx文件
 
 	// Uploads
+	r.MaxMultipartMemory = 256 << 20
 	r.POST("/posts", handler.Authenticate(), handler.Post()) // 上传文件
 
 	log.Info("start service on [%s] mode", configer.GetEnv("env"))
