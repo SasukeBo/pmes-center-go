@@ -4,6 +4,10 @@ type Query {
     currentUser: User!
 
     # 料号
-    "获取料号饼图数据"
-    materialChart(searchInput: MaterialChartSearch!): MaterialResult!
+    "获取料号列表数据"
+    materials(search: String, page: Int!, limit: Int!): MaterialsWrap!
+    "ID获取料号"
+    material(id: Int!): Material!
+    "分组分析料号，返回图表渲染所需的数据"
+    analyzeMaterial(analyzeInput: AnalyzeMaterialInput!): MaterialAnalysisResult!
 }

@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SasukeBo/ftpviewer/api/v1/generated"
 	"github.com/SasukeBo/ftpviewer/api/v1/logic"
@@ -13,6 +14,18 @@ import (
 
 func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
 	return logic.CurrentUser(ctx)
+}
+
+func (r *queryResolver) Materials(ctx context.Context, search *string, page int, limit int) (*model.MaterialsWrap, error) {
+	return logic.Materials(ctx, search, page, limit)
+}
+
+func (r *queryResolver) Material(ctx context.Context, id int) (*model.Material, error) {
+	return logic.Material(ctx, id)
+}
+
+func (r *queryResolver) AnalyzeMaterial(ctx context.Context, analyzeInput model.AnalyzeMaterialInput) (*model.MaterialAnalysisResult, error) {
+	logic.AnalyzeMaterial(ctx, analyzeInput)
 }
 
 // Query returns generated.QueryResolver implementation.

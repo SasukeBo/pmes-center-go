@@ -1,7 +1,28 @@
-input MaterialChartSearch {
-    id: Int! # 料号ID
-    deviceID: Int # 设备ID
-    beginTime: Time # 时间范围开始时间
-    endTime: Time # 时间范围结束时间
+type Material {
+    id: Int!
+    name: String!
+    customerCode: String!
+    projectRemark: String!
+    ok: Int!
+    ng: Int!
 }
 
+type MaterialsWrap {
+    total: Int!
+    materials: [Material!]!
+}
+
+type MaterialAnalysisResult {
+    xAxisData: [String!]!
+    seriesData: Map!
+}
+
+"分析料号的输入参数"
+input AnalyzeMaterialInput {
+    xAxis: String! # x轴字段
+    groupBy: String # 分组字段
+    duration: [Time!] # 时间范围
+    limit: Int
+    sort: String
+    orderBy: String
+}
