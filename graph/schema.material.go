@@ -147,14 +147,15 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 		beginTime = &t
 	}
 
-	fileIDs, err := logic.NeedFetch(material, beginTime, endTime)
-	if err != nil {
-		return nil, err
-	}
-	if len(fileIDs) > 0 {
-		status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(true), Message: stringP("需要从FTP服务器获取该时间段内料号数据")}
-		return &model.MaterialResult{Status: status}, nil
-	}
+	// TODO: 关闭自动拉取数据
+	//fileIDs, err := logic.NeedFetch(material, beginTime, endTime)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if len(fileIDs) > 0 {
+	//	status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(true), Message: stringP("需要从FTP服务器获取该时间段内料号数据")}
+	//	return &model.MaterialResult{Status: status}, nil
+	//}
 
 	conditions := []string{"material_id = ?", "created_at < ?", "created_at > ?"}
 	vars := []interface{}{searchInput.MaterialID, endTime, beginTime}

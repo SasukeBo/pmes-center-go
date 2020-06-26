@@ -145,27 +145,29 @@ func validRow(row []string) bool {
 }
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, fileID int, finishChan chan int) {
+	insertLimit := singleInsertLimit / itemLen
 	tx := orm.DB.Begin()
 	//tx.LogMode(true)
 	tx.LogMode(false)
 	datalen := len(dataset)
 	totalLen := datalen / itemLen
 	vSQL := valuetpl
-	for i := 1; i < singleInsertLimit; i++ {
+	for i := 1; i < insertLimit; i++ {
 		vSQL = vSQL + "," + valuetpl
 	}
 
-	for i := 0; i < totalLen/singleInsertLimit; i++ {
-		begin := i * singleInsertLimit * itemLen
-		end := (i + 1) * singleInsertLimit * itemLen
-		err := tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...).Error
+	for i := 0; i < totalLen/insertLimit; i++ {
+		begin := i * insertLimit * itemLen
+		end := (i + 1) * insertLimit * itemLen
+		sql := fmt.Sprintf(sqltpl, vSQL)
+		err := tx.Exec(sql, dataset[begin:end]...).Error
 		if err != nil {
-			fmt.Printf("[execInsert] %v\n", err)
+			fmt.Printf("[execInsert start] %s: %v\n", sql, err)
 		}
-		updateFinishedRows(fileID, singleInsertLimit)
+		updateFinishedRows(fileID, insertLimit)
 	}
 
-	restLen := totalLen % singleInsertLimit
+	restLen := totalLen % insertLimit
 	if restLen > 0 {
 		vSQL := valuetpl
 		for j := 1; j < restLen; j++ {
@@ -173,10 +175,13 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, fil
 		}
 		end := datalen
 		begin := datalen - restLen*itemLen
-		err := tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...).Error
+		sql := fmt.Sprintf(sqltpl, vSQL)
+		err := tx.Exec(sql, dataset[begin:end]...).Error
 		if err != nil {
-			fmt.Printf("[execInsert] %v\n", err)
+			fmt.Printf("[execInsert rest] %v\n", err)
 		}
+		fmt.Println(len(dataset[begin:end]), restLen)
+
 		updateFinishedRows(fileID, restLen)
 	}
 

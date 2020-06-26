@@ -48,8 +48,8 @@ func GinContextToContextMiddleware() gin.HandlerFunc {
 
 func main() {
 	go ftpclient.FTPWorker()
-	go logic.ClearUp()
-	go logic.AutoFetch()
+	//go logic.ClearUp()
+	//go logic.AutoFetch()
 	r := gin.Default()
 	//r.Use(cors.Default())
 	r.Use(cors.New(cors.Config{
