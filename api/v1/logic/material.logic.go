@@ -2,12 +2,15 @@ package logic
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/SasukeBo/ftpviewer/api/v1/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/SasukeBo/log"
 	"github.com/jinzhu/copier"
+	"strings"
 )
 
 func Materials(ctx context.Context, search *string, page int, limit int) (*model.MaterialsWrap, error) {
@@ -101,43 +104,210 @@ func countProductQualifiedForMaterial(id uint) (int, int) {
 	return ok, ng
 }
 
+type analysis struct {
+	Amount  int64
+	Axis    string
+	GroupBy string
+}
+
 func AnalyzeMaterial(ctx context.Context, analyzeInput model.AnalyzeMaterialInput) (*model.MaterialAnalysisResult, error) {
-	sql := orm.Model(&orm.Product{})
+	query := orm.Model(&orm.Product{}).Where("products.material_id = ?", analyzeInput.MaterialID)
+	var selectQueries, groupColumns []string
+	var selectVariables []interface{}
+	var joinDevice = false
+
+	// amount
+	selectQueries = append(selectQueries, "COUNT(products.id) as amount")
+
 	// axis
-	sql = sql.Select("? as axis", analyzeInput.XAxis).Group(analyzeInput.XAxis)
+	selectQueries = append(selectQueries, "%v as axis")
+	groupColumns = append(groupColumns, "axis")
+	switch analyzeInput.XAxis {
+	case model.CategoryDate:
+		selectVariables = append(selectVariables, "DATE(created_at)")
+	case model.CategoryDevice:
+		selectVariables = append(selectVariables, "devices.name")
+		joinDevice = true
+	case model.CategoryAttribute:
+		if analyzeInput.AttributeXAxis == nil {
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeMaterialAnalyzeMissingAttributeXAxis, nil)
+		}
+		selectVariables = append(selectVariables, fmt.Sprintf("JSON_EXTRACT(`attribute`, '$.\"%s\"')", *analyzeInput.AttributeXAxis))
+	}
+
 	// group by
 	if analyzeInput.GroupBy != nil {
-		sql = sql.Select("? as group_by", *analyzeInput.GroupBy).Group(*analyzeInput.GroupBy)
+		selectQueries = append(selectQueries, "%v as group_by")
+		groupColumns = append(groupColumns, "group_by")
+		switch *analyzeInput.GroupBy {
+		case model.CategoryDate:
+			selectVariables = append(selectVariables, "DATE(created_at)")
+		case model.CategoryDevice:
+			selectVariables = append(selectVariables, "devices.name")
+			joinDevice = true
+		case model.CategoryAttribute:
+			if analyzeInput.AttributeGroup == nil {
+				return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeMaterialAnalyzeMissingAttributeGroup, nil)
+			}
+			selectVariables = append(selectVariables, fmt.Sprintf("JSON_EXTRACT(`attribute`, '$.\"%s\"')", *analyzeInput.AttributeGroup))
+		}
 	}
+
+	// join device
+	if joinDevice {
+		query = query.Joins("JOIN devices ON products.device_id = devices.id")
+	}
+
+	// assemble selects
+	query = query.Select(fmt.Sprintf(strings.Join(selectQueries, ", "), selectVariables...))
+
+	// assemble groups
+	query = query.Group(strings.Join(groupColumns, ", "))
+
 	// time duration
 	if len(analyzeInput.Duration) > 0 {
 		t := analyzeInput.Duration[0]
-		sql = sql.Where("created_at > ?", *t)
+		query = query.Where("created_at > ?", *t)
 	}
 	if len(analyzeInput.Duration) > 1 {
 		t := analyzeInput.Duration[1]
-		sql = sql.Where("created_at < ?", *t)
+		query = query.Where("created_at < ?", *t)
 	}
-	// limit
-	if analyzeInput.Limit != nil {
-		sql = sql.Limit(*analyzeInput.Limit)
+	// order by xAxis
+	sort := "asc"
+	if analyzeInput.Sort != nil {
+		v := *analyzeInput.Sort
+		sort = string(v)
 	}
-	// order by
-	if analyzeInput.OrderBy != nil {
-		sort := "asc"
-		if analyzeInput.Sort != nil {
-			sort = *analyzeInput.Sort
-		}
-		sql = sql.Order(fmt.Sprintf("%s %s", *analyzeInput.OrderBy, sort))
-	}
+	query = query.Order(fmt.Sprintf("axis %s", sort))
 
-	rows, err := sql.Rows()
+	rows, err := query.Rows()
 	if err != nil {
-		_ = rows.Close()
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeInternalError, err, "material_analysis")
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeMaterialAnalyzeError, err)
 	}
 
+	results := scanRows(rows, analyzeInput.GroupBy != nil)
+
+	if analyzeInput.Limit != nil && *analyzeInput.Limit < 0 {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeMaterialAnalyzeIllegalInput, errors.New("limit cannot below 0"))
+	}
+
+	if analyzeInput.YAxis == "Yield" {
+		rows, err := query.Where("qualified = ?", true).Rows()
+		if err != nil {
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeMaterialAnalyzeError, err)
+		}
+		qualifiedResults := scanRows(rows, analyzeInput.GroupBy != nil)
+
+		return calYieldAnalysisResult(results, qualifiedResults, analyzeInput.Limit)
+	}
+
+	return calAmountAnalysisResult(results, analyzeInput.Limit)
+}
+
+func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int) (*model.MaterialAnalysisResult, error) {
+	totalAmount, _ := calAmountAnalysisResult(results, limit)
+	yieldAmount, _ := calAmountAnalysisResult(qualifiedResults, limit)
+
+	for i, item := range totalAmount.XAxisData {
+		var index = findIndex(yieldAmount.XAxisData, item)
+		for k, v := range totalAmount.SeriesData {
+			data := v.([]interface{})
+			if index < 0 {
+				data[i] = 0
+			} else {
+				total := data[i].(int64)
+				yieldData := yieldAmount.SeriesData[k].([]interface{})
+				yield := yieldData[index].(int64)
+				data[i] = (yield / total) * 100
+			}
+			totalAmount.SeriesData[k] = data
+		}
+	}
+
+	return totalAmount, nil
+}
+
+func findIndex(list []string, find string) int {
+	for i, v := range list {
+		if v == find {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func calAmountAnalysisResult(scanResults []analysis, limit *int) (*model.MaterialAnalysisResult, error) {
+	var xAxisMapData = make(map[string]int)
+	var xAxisData []string
+	var seriesMapData = make(map[string]interface{})
+	for i, result := range scanResults {
+		xAxis := fmt.Sprint(result.Axis)
+		if _, ok := xAxisMapData[xAxis]; !ok {
+			xAxisMapData[xAxis] = i
+			xAxisData = append(xAxisData, xAxis)
+		}
+		if data, ok := seriesMapData[fmt.Sprint(result.GroupBy)]; ok {
+			seriesMap := data.(map[string]interface{})
+			seriesMap[fmt.Sprint(result.Axis)] = result.Amount
+			seriesMapData[fmt.Sprint(result.GroupBy)] = seriesMap
+		} else {
+			seriesMap := map[string]interface{}{fmt.Sprint(result.Axis): result.Amount}
+			seriesMapData[fmt.Sprint(result.GroupBy)] = seriesMap
+		}
+	}
+
+	if limit != nil {
+		xAxisData = xAxisData[:*limit]
+	}
+
+	var seriesData = make(map[string]interface{})
+	for _, item := range xAxisData {
+		for k, v := range seriesMapData {
+			sdv, ok := seriesData[k]
+			var dataSet []interface{}
+			if ok {
+				dataSet = sdv.([]interface{})
+			} else {
+				dataSet = make([]interface{}, 0)
+			}
+
+			seriesMap := v.(map[string]interface{})
+			var value interface{}
+			if v, ok := seriesMap[item]; ok {
+				value = v
+			} else {
+				value = 0
+			}
+
+			dataSet = append(dataSet, value)
+			seriesData[k] = dataSet
+		}
+	}
+
+	return &model.MaterialAnalysisResult{
+		XAxisData:  xAxisData,
+		SeriesData: seriesData,
+	}, nil
+}
+
+func scanRows(rows *sql.Rows, needGroup bool) []analysis {
+	var results []analysis
+	for rows.Next() {
+		var result = analysis{GroupBy: "data"}
+		var err error
+		if needGroup {
+			err = rows.Scan(&result.Amount, &result.Axis, &result.GroupBy)
+		} else {
+			err = rows.Scan(&result.Amount, &result.Axis)
+		}
+		if err != nil {
+			continue
+		}
+		results = append(results, result)
+	}
 	_ = rows.Close()
 
-	return nil, nil
+	return results
 }

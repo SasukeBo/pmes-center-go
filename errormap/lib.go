@@ -34,6 +34,7 @@ var (
 type Error struct {
 	Message   string
 	ErrorCode string
+	Variables []interface{}
 }
 
 func (e *Error) Error() string {
@@ -42,6 +43,10 @@ func (e *Error) Error() string {
 
 func (e *Error) GetCode() string {
 	return e.ErrorCode
+}
+
+func (e *Error) GetVariables() []interface{} {
+	return e.Variables
 }
 
 type errorTemplate struct {
@@ -162,11 +167,11 @@ func SendGQLError(ctx context.Context, errorCode string, originErr error, variab
 }
 
 // NewCodeOrigin 创建一个携带 error code的origin error，同时打印日志
-func NewCodeOrigin(errorCode string, format string, a ...interface{}) *Error {
-	msg := fmt.Sprintf(format, a...)
+func NewCodeOrigin(errorCode string, message string, a ...interface{}) *Error {
 	err := &Error{
-		Message:   msg,
+		Message:   message,
 		ErrorCode: errorCode,
+		Variables: a,
 	}
 	log.Errorln(err)
 	return err
@@ -174,7 +179,7 @@ func NewCodeOrigin(errorCode string, format string, a ...interface{}) *Error {
 
 // NewOrigin new一个origin error，并同时打印错误日志
 func NewOrigin(format string, a ...interface{}) *Error {
-	return NewCodeOrigin("", format, a...)
+	return NewCodeOrigin("", fmt.Sprintf(format, a...))
 }
 
 // DecodeError 解析ErrorCode为错误信息

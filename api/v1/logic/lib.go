@@ -96,6 +96,7 @@ func distributeFunc(s, a, x float64) float64 {
 	part1 := 1 / (math.Sqrt(2*math.Pi) * s)
 	part2 := math.Exp((-1 * (x - a) * (x - a)) / (2 * s * s))
 
+	// TODO: Round 可能会影响正态分布数据
 	return math.Round(part1*part2*100) / 100
 }
 

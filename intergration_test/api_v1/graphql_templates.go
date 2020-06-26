@@ -28,4 +28,11 @@ query($id: Int!) {
 	}
 }
 `
-
+var analyzeMaterialGQL = `
+query($input: AnalyzeMaterialInput!) {
+	response: analyzeMaterial(analyzeInput: $input) {
+		xAxisData
+		seriesData
+	}
+}
+`
