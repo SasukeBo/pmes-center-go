@@ -16,7 +16,7 @@ func TestMaterial(t *testing.T) {
 		MaterialID: material.ID,
 	}
 	orm.Create(&device)
-	createProducts(material.ID, device.ID)
+	createProducts(material.ID, device.ID, 1)
 
 	// Test get list of materials
 	t.Run("TEST_GET_LIST_OF_MATERIALS", func(t *testing.T) {
@@ -47,40 +47,58 @@ func TestMaterial(t *testing.T) {
 			MaterialID: material.ID,
 		}
 		orm.Create(&device1)
-		createProducts(material.ID, device1.ID)
+		createProducts(material.ID, device1.ID, 3)
 		device2 := orm.Device{
 			Name:       "test device 2",
 			Remark:     "test device 2",
 			MaterialID: material.ID,
 		}
 		orm.Create(&device2)
-		createProducts(material.ID, device2.ID)
+		createProducts(material.ID, device2.ID, 2)
 
 		tester.API1(analyzeMaterialGQL, test.Object{
 			"input": test.Object{
-				"materialID":     material.ID,
-				"xAxis":          "Attribute",
-				"yAxis":          "Yield",
-				"groupBy":        "Device",
-				"attributeXAxis": "NO.",
+				"materialID": material.ID,
+				"xAxis":      "Device",
+				"yAxis":      "Yield",
+				//"groupBy":        "Device",
+				//"attributeXAxis": "NO.",
 				// "duration": []string{"2020-06-22T00:00:00Z", "2020-06-26T00:00:00Z"},
 				//"limit": 2,
-				"sort":  "DESC",
+				"sort": "DESC",
 			},
+		}).GQLObject().Path("$.data.response")
+	})
+
+	// Test material yield top
+	t.Run("TEST_MATERIAL_YIELD_TOP", func(t *testing.T) {
+		m1 := orm.Material{Name: "m1"}
+		orm.Create(&m1)
+		createProducts(m1.ID, 0, 2)
+		m2 := orm.Material{Name: "m2"}
+		orm.Create(&m2)
+		createProducts(m2.ID, 0, 3)
+		m3 := orm.Material{Name: "m3"}
+		orm.Create(&m3)
+		createProducts(m3.ID, 0, 4)
+
+		tester.API1(materialYieldTopGQL, test.Object{
+			"duration": []string{},
+			"limit":    4,
 		}).GQLObject().Path("$.data.response")
 	})
 }
 
-func createProducts(materialID, deviceID uint) {
+func createProducts(materialID, deviceID uint, rate int) {
 	orm.DB.LogMode(false)
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 60; i++ {
 		product := &orm.Product{
 			MaterialID: materialID,
 			DeviceID:   deviceID,
 			Attribute:  types.Map{"NO.": i % 10},
 		}
 
-		if i%2 == 1 {
+		if i%rate == 0 {
 			product.Qualified = true
 		}
 		orm.Create(product)

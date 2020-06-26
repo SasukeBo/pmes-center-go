@@ -36,3 +36,11 @@ query($input: AnalyzeMaterialInput!) {
 	}
 }
 `
+var materialYieldTopGQL = `
+query($duration: [Time]!, $limit: Int!) {
+	response: materialYieldTop(duration: $duration, limit: $limit) {
+		xAxisData
+		seriesData
+	}
+}
+`

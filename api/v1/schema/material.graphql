@@ -12,11 +12,6 @@ type MaterialsWrap {
     materials: [Material!]!
 }
 
-type MaterialAnalysisResult {
-    xAxisData: [String!]!
-    seriesData: Map!
-}
-
 "分析料号的输入参数，实际上是分析料号的产品数据，选定x轴 y轴 以及分组字段"
 input AnalyzeMaterialInput {
     materialID: Int! # 料号的ID
