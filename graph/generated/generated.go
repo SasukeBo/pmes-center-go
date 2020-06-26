@@ -61,6 +61,11 @@ type ComplexityRoot struct {
 		Status func(childComplexity int) int
 	}
 
+	EchartsResult struct {
+		SeriesData func(childComplexity int) int
+		XAxisData  func(childComplexity int) int
+	}
+
 	ExportResponse struct {
 		FileName func(childComplexity int) int
 		Finished func(childComplexity int) int
@@ -155,6 +160,8 @@ type ComplexityRoot struct {
 		Devices                func(childComplexity int, materialID int) int
 		ExportFinishPercent    func(childComplexity int, opID string) int
 		ExportProducts         func(childComplexity int, searchInput model.Search) int
+		GroupAnalyzeMaterial   func(childComplexity int, analyzeInput model.AnalyzeMaterialInput) int
+		MaterialYieldTop       func(childComplexity int, duration []*time.Time, limit int) int
 		Materials              func(childComplexity int, page int, limit int) int
 		MaterialsWithSearch    func(childComplexity int, offset int, limit int, search *string) int
 		Products               func(childComplexity int, searchInput model.Search, page *int, limit int, offset *int) int
@@ -223,6 +230,8 @@ type QueryResolver interface {
 	Devices(ctx context.Context, materialID int) ([]*model.Device, error)
 	DataFetchFinishPercent(ctx context.Context, fileIDs []*int) (float64, error)
 	ExportFinishPercent(ctx context.Context, opID string) (*model.ExportResponse, error)
+	MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error)
+	GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.AnalyzeMaterialInput) (*model.EchartsResult, error)
 }
 
 type executableSchema struct {
@@ -295,6 +304,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DeviceResult.Status(childComplexity), true
+
+	case "EchartsResult.seriesData":
+		if e.complexity.EchartsResult.SeriesData == nil {
+			break
+		}
+
+		return e.complexity.EchartsResult.SeriesData(childComplexity), true
+
+	case "EchartsResult.xAxisData":
+		if e.complexity.EchartsResult.XAxisData == nil {
+			break
+		}
+
+		return e.complexity.EchartsResult.XAxisData(childComplexity), true
 
 	case "ExportResponse.fileName":
 		if e.complexity.ExportResponse.FileName == nil {
@@ -802,6 +825,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ExportProducts(childComplexity, args["searchInput"].(model.Search)), true
 
+	case "Query.groupAnalyzeMaterial":
+		if e.complexity.Query.GroupAnalyzeMaterial == nil {
+			break
+		}
+
+		args, err := ec.field_Query_groupAnalyzeMaterial_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GroupAnalyzeMaterial(childComplexity, args["analyzeInput"].(model.AnalyzeMaterialInput)), true
+
+	case "Query.materialYieldTop":
+		if e.complexity.Query.MaterialYieldTop == nil {
+			break
+		}
+
+		args, err := ec.field_Query_materialYieldTop_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MaterialYieldTop(childComplexity, args["duration"].([]*time.Time), args["limit"].(int)), true
+
 	case "Query.materials":
 		if e.complexity.Query.Materials == nil {
 			break
@@ -1086,6 +1133,10 @@ var sources = []*ast.Source{
   dataFetchFinishPercent(fileIDs: [Int]!): Float!
   "数据导出完成比例"
   exportFinishPercent(opID: String!): ExportResponse!
+  "料号良率排行"
+  materialYieldTop(duration: [Time]!, limit: Int!): EchartsResult!
+  "分组分析料号，返回图表渲染所需的数据"
+  groupAnalyzeMaterial(analyzeInput: AnalyzeMaterialInput!): EchartsResult!
 }
 
 type Mutation {
@@ -1102,6 +1153,41 @@ type Mutation {
   deleteMaterial(id: Int!): String!
   "取消导出"
   cancelExport(opID: String!): String!
+}
+
+"分析料号的输入参数，实际上是分析料号的产品数据，选定x轴 y轴 以及分组字段"
+input AnalyzeMaterialInput {
+  materialID: Int! # 料号的ID
+  xAxis: Category! # x轴字段
+  yAxis: YAxis! # y轴字段
+  groupBy: Category # 分组字段
+  duration: [Time!] # 时间范围
+  limit: Int
+  sort: Sort
+}
+
+enum Category {
+  Date
+  Device
+  jin_id
+  shift_number
+  line_id
+  mould_id
+}
+
+enum Sort {
+  ASC
+  DESC
+}
+
+enum YAxis {
+  Yield
+  Amount
+}
+
+type EchartsResult {
+  xAxisData: [String!]!
+  seriesData: Map!
 }
 
 type ExportResponse {
@@ -1495,6 +1581,42 @@ func (ec *executionContext) field_Query_exportProducts_args(ctx context.Context,
 		}
 	}
 	args["searchInput"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_groupAnalyzeMaterial_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.AnalyzeMaterialInput
+	if tmp, ok := rawArgs["analyzeInput"]; ok {
+		arg0, err = ec.unmarshalNAnalyzeMaterialInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAnalyzeMaterialInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["analyzeInput"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_materialYieldTop_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*time.Time
+	if tmp, ok := rawArgs["duration"]; ok {
+		arg0, err = ec.unmarshalNTime2ᚕᚖtimeᚐTime(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["duration"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["limit"]; ok {
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg1
 	return args, nil
 }
 
@@ -1922,6 +2044,74 @@ func (ec *executionContext) _DeviceResult_status(ctx context.Context, field grap
 	res := resTmp.(*model.FetchStatus)
 	fc.Result = res
 	return ec.marshalOfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EchartsResult_xAxisData(ctx context.Context, field graphql.CollectedField, obj *model.EchartsResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "EchartsResult",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.XAxisData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EchartsResult_seriesData(ctx context.Context, field graphql.CollectedField, obj *model.EchartsResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "EchartsResult",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SeriesData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalNMap2map(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ExportResponse_percent(ctx context.Context, field graphql.CollectedField, obj *model.ExportResponse) (ret graphql.Marshaler) {
@@ -4236,6 +4426,88 @@ func (ec *executionContext) _Query_exportFinishPercent(ctx context.Context, fiel
 	return ec.marshalNExportResponse2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐExportResponse(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_materialYieldTop(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_materialYieldTop_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MaterialYieldTop(rctx, args["duration"].([]*time.Time), args["limit"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.EchartsResult)
+	fc.Result = res
+	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐEchartsResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_groupAnalyzeMaterial(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_groupAnalyzeMaterial_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GroupAnalyzeMaterial(rctx, args["analyzeInput"].(model.AnalyzeMaterialInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.EchartsResult)
+	fc.Result = res
+	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐEchartsResult(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5958,6 +6230,60 @@ func (ec *executionContext) _fetchStatus_fileIDs(ctx context.Context, field grap
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputAnalyzeMaterialInput(ctx context.Context, obj interface{}) (model.AnalyzeMaterialInput, error) {
+	var it model.AnalyzeMaterialInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "materialID":
+			var err error
+			it.MaterialID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "xAxis":
+			var err error
+			it.XAxis, err = ec.unmarshalNCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐCategory(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "yAxis":
+			var err error
+			it.YAxis, err = ec.unmarshalNYAxis2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐYAxis(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "groupBy":
+			var err error
+			it.GroupBy, err = ec.unmarshalOCategory2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐCategory(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "duration":
+			var err error
+			it.Duration, err = ec.unmarshalOTime2ᚕᚖtimeᚐTimeᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "limit":
+			var err error
+			it.Limit, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "sort":
+			var err error
+			it.Sort, err = ec.unmarshalOSort2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSort(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputLoginInput(ctx context.Context, obj interface{}) (model.LoginInput, error) {
 	var it model.LoginInput
 	var asMap = obj.(map[string]interface{})
@@ -6187,6 +6513,38 @@ func (ec *executionContext) _DeviceResult(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._DeviceResult_ng(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._DeviceResult_status(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var echartsResultImplementors = []string{"EchartsResult"}
+
+func (ec *executionContext) _EchartsResult(ctx context.Context, sel ast.SelectionSet, obj *model.EchartsResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, echartsResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EchartsResult")
+		case "xAxisData":
+			out.Values[i] = ec._EchartsResult_xAxisData(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "seriesData":
+			out.Values[i] = ec._EchartsResult_seriesData(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6768,6 +7126,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "materialYieldTop":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_materialYieldTop(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "groupAnalyzeMaterial":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_groupAnalyzeMaterial(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -7221,6 +7607,10 @@ func (ec *executionContext) marshalNAddMaterialResponse2ᚖgithubᚗcomᚋSasuke
 	return ec._AddMaterialResponse(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNAnalyzeMaterialInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAnalyzeMaterialInput(ctx context.Context, v interface{}) (model.AnalyzeMaterialInput, error) {
+	return ec.unmarshalInputAnalyzeMaterialInput(ctx, v)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
 }
@@ -7233,6 +7623,15 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐCategory(ctx context.Context, v interface{}) (model.Category, error) {
+	var res model.Category
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v model.Category) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNDevice2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v []*model.Device) graphql.Marshaler {
@@ -7284,6 +7683,20 @@ func (ec *executionContext) marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋft
 		return graphql.Null
 	}
 	return ec._DeviceResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEchartsResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐEchartsResult(ctx context.Context, sel ast.SelectionSet, v model.EchartsResult) graphql.Marshaler {
+	return ec._EchartsResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐEchartsResult(ctx context.Context, sel ast.SelectionSet, v *model.EchartsResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._EchartsResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNExportResponse2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐExportResponse(ctx context.Context, sel ast.SelectionSet, v model.ExportResponse) graphql.Marshaler {
@@ -7359,6 +7772,29 @@ func (ec *executionContext) marshalNInt2ᚕᚖint(ctx context.Context, sel ast.S
 
 func (ec *executionContext) unmarshalNLoginInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐLoginInput(ctx context.Context, v interface{}) (model.LoginInput, error) {
 	return ec.unmarshalInputLoginInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
+	if v == nil {
+		return nil, nil
+	}
+	return graphql.UnmarshalMap(v)
+}
+
+func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.SelectionSet, v map[string]interface{}) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := graphql.MarshalMap(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNMaterial2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐMaterial(ctx context.Context, sel ast.SelectionSet, v model.Material) graphql.Marshaler {
@@ -7517,6 +7953,35 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNSystemConfig2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSystemConfig(ctx context.Context, sel ast.SelectionSet, v model.SystemConfig) graphql.Marshaler {
 	return ec._SystemConfig(ctx, sel, &v)
 }
@@ -7531,6 +7996,67 @@ func (ec *executionContext) marshalNSystemConfig2ᚖgithubᚗcomᚋSasukeBoᚋft
 	return ec._SystemConfig(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+	return graphql.UnmarshalTime(v)
+}
+
+func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	res := graphql.MarshalTime(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNTime2ᚕᚖtimeᚐTime(ctx context.Context, v interface{}) ([]*time.Time, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*time.Time, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNTime2ᚕᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v []*time.Time) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOTime2ᚖtimeᚐTime(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNTime2timeᚐTime(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalNTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec.marshalNTime2timeᚐTime(ctx, sel, *v)
+}
+
 func (ec *executionContext) marshalNUser2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
 }
@@ -7543,6 +8069,15 @@ func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋSasukeBoᚋftpviewer�
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNYAxis2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐYAxis(ctx context.Context, v interface{}) (model.YAxis, error) {
+	var res model.YAxis
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNYAxis2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐYAxis(ctx context.Context, sel ast.SelectionSet, v model.YAxis) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNYieldWrap2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐYieldWrap(ctx context.Context, sel ast.SelectionSet, v []*model.YieldWrap) graphql.Marshaler {
@@ -7831,6 +8366,30 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
 }
 
+func (ec *executionContext) unmarshalOCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐCategory(ctx context.Context, v interface{}) (model.Category, error) {
+	var res model.Category
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v model.Category) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOCategory2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐCategory(ctx context.Context, v interface{}) (*model.Category, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐCategory(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOCategory2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v *model.Category) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) marshalODevice2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v model.Device) graphql.Marshaler {
 	return ec._Device(ctx, sel, &v)
 }
@@ -8116,6 +8675,30 @@ func (ec *executionContext) marshalOSize2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpview
 	return ret
 }
 
+func (ec *executionContext) unmarshalOSort2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSort(ctx context.Context, v interface{}) (model.Sort, error) {
+	var res model.Sort
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOSort2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSort(ctx context.Context, sel ast.SelectionSet, v model.Sort) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOSort2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSort(ctx context.Context, v interface{}) (*model.Sort, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOSort2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSort(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOSort2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐSort(ctx context.Context, sel ast.SelectionSet, v *model.Sort) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
 	return graphql.UnmarshalString(v)
 }
@@ -8177,6 +8760,38 @@ func (ec *executionContext) unmarshalOTime2timeᚐTime(ctx context.Context, v in
 
 func (ec *executionContext) marshalOTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
 	return graphql.MarshalTime(v)
+}
+
+func (ec *executionContext) unmarshalOTime2ᚕᚖtimeᚐTimeᚄ(ctx context.Context, v interface{}) ([]*time.Time, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*time.Time, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNTime2ᚖtimeᚐTime(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOTime2ᚕᚖtimeᚐTimeᚄ(ctx context.Context, sel ast.SelectionSet, v []*time.Time) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNTime2ᚖtimeᚐTime(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {

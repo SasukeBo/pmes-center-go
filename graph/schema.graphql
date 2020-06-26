@@ -25,6 +25,10 @@ type Query {
   dataFetchFinishPercent(fileIDs: [Int]!): Float!
   "数据导出完成比例"
   exportFinishPercent(opID: String!): ExportResponse!
+  "料号良率排行"
+  materialYieldTop(duration: [Time]!, limit: Int!): EchartsResult!
+  "分组分析料号，返回图表渲染所需的数据"
+  groupAnalyzeMaterial(analyzeInput: AnalyzeMaterialInput!): EchartsResult!
 }
 
 type Mutation {
@@ -41,6 +45,41 @@ type Mutation {
   deleteMaterial(id: Int!): String!
   "取消导出"
   cancelExport(opID: String!): String!
+}
+
+"分析料号的输入参数，实际上是分析料号的产品数据，选定x轴 y轴 以及分组字段"
+input AnalyzeMaterialInput {
+  materialID: Int! # 料号的ID
+  xAxis: Category! # x轴字段
+  yAxis: YAxis! # y轴字段
+  groupBy: Category # 分组字段
+  duration: [Time!] # 时间范围
+  limit: Int
+  sort: Sort
+}
+
+enum Category {
+  Date
+  Device
+  jin_id
+  shift_number
+  line_id
+  mould_id
+}
+
+enum Sort {
+  ASC
+  DESC
+}
+
+enum YAxis {
+  Yield
+  Amount
+}
+
+type EchartsResult {
+  xAxisData: [String!]!
+  seriesData: Map!
 }
 
 type ExportResponse {

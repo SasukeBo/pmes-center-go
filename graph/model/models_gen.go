@@ -3,12 +3,26 @@
 package model
 
 import (
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 )
 
 type AddMaterialResponse struct {
 	Material *Material    `json:"material"`
 	Status   *FetchStatus `json:"status"`
+}
+
+// 分析料号的输入参数，实际上是分析料号的产品数据，选定x轴 y轴 以及分组字段
+type AnalyzeMaterialInput struct {
+	MaterialID int          `json:"materialID"`
+	XAxis      Category     `json:"xAxis"`
+	YAxis      YAxis        `json:"yAxis"`
+	GroupBy    *Category    `json:"groupBy"`
+	Duration   []*time.Time `json:"duration"`
+	Limit      *int         `json:"limit"`
+	Sort       *Sort        `json:"sort"`
 }
 
 type Device struct {
@@ -21,6 +35,11 @@ type DeviceResult struct {
 	Ok     *int         `json:"ok"`
 	Ng     *int         `json:"ng"`
 	Status *FetchStatus `json:"status"`
+}
+
+type EchartsResult struct {
+	XAxisData  []string               `json:"xAxisData"`
+	SeriesData map[string]interface{} `json:"seriesData"`
 }
 
 type ExportResponse struct {
@@ -168,4 +187,135 @@ type FetchStatus struct {
 	Message *string `json:"message"`
 	Pending *bool   `json:"pending"`
 	FileIDs []int   `json:"fileIDs"`
+}
+
+type Category string
+
+const (
+	CategoryDate        Category = "Date"
+	CategoryDevice      Category = "Device"
+	CategoryJinID       Category = "jin_id"
+	CategoryShiftNumber Category = "shift_number"
+	CategoryLineID      Category = "line_id"
+	CategoryMouldID     Category = "mould_id"
+)
+
+var AllCategory = []Category{
+	CategoryDate,
+	CategoryDevice,
+	CategoryJinID,
+	CategoryShiftNumber,
+	CategoryLineID,
+	CategoryMouldID,
+}
+
+func (e Category) IsValid() bool {
+	switch e {
+	case CategoryDate, CategoryDevice, CategoryJinID, CategoryShiftNumber, CategoryLineID, CategoryMouldID:
+		return true
+	}
+	return false
+}
+
+func (e Category) String() string {
+	return string(e)
+}
+
+func (e *Category) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Category(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Category", str)
+	}
+	return nil
+}
+
+func (e Category) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type Sort string
+
+const (
+	SortAsc  Sort = "ASC"
+	SortDesc Sort = "DESC"
+)
+
+var AllSort = []Sort{
+	SortAsc,
+	SortDesc,
+}
+
+func (e Sort) IsValid() bool {
+	switch e {
+	case SortAsc, SortDesc:
+		return true
+	}
+	return false
+}
+
+func (e Sort) String() string {
+	return string(e)
+}
+
+func (e *Sort) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Sort(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Sort", str)
+	}
+	return nil
+}
+
+func (e Sort) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type YAxis string
+
+const (
+	YAxisYield  YAxis = "Yield"
+	YAxisAmount YAxis = "Amount"
+)
+
+var AllYAxis = []YAxis{
+	YAxisYield,
+	YAxisAmount,
+}
+
+func (e YAxis) IsValid() bool {
+	switch e {
+	case YAxisYield, YAxisAmount:
+		return true
+	}
+	return false
+}
+
+func (e YAxis) String() string {
+	return string(e)
+}
+
+func (e *YAxis) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = YAxis(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid YAxis", str)
+	}
+	return nil
+}
+
+func (e YAxis) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

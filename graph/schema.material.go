@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
@@ -303,4 +304,306 @@ func (r *mutationResolver) DeleteMaterial(ctx context.Context, id int) (string, 
 	}()
 
 	return "料号删除成功", nil
+}
+
+func (r *queryResolver) MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error) {
+	query := orm.DB.Model(&orm.Product{}).Select(
+		"materials.name AS name, COUNT(products.id) AS amount",
+	).Joins(
+		"JOIN materials ON products.material_id = materials.id",
+	).Group("products.material_id")
+
+	if len(duration) > 0 {
+		t := duration[0]
+		query = query.Where("products.created_at > ?", *t)
+	}
+
+	if len(duration) > 1 {
+		t := duration[1]
+		query = query.Where("products.created_at < ?", *t)
+	}
+
+	var totalResult = make(map[string]int)
+	totalRows, err := query.Rows()
+	if err != nil {
+		return nil, NewGQLError("统计数据时发生了错误。", err.Error())
+	}
+
+	for totalRows.Next() {
+		var name string
+		var amount int64
+		err := totalRows.Scan(&name, &amount)
+		if err != nil {
+			continue
+		}
+
+		totalResult[name] = int(amount)
+	}
+	fmt.Println(totalResult)
+
+	var ngResult = make(map[string]int)
+	ngRows, err := query.Where("qualified = ?", false).Rows()
+	if err != nil {
+		return nil, NewGQLError("统计数据时发生了错误。", err.Error())
+	}
+
+	for ngRows.Next() {
+		var name string
+		var amount int64
+		err := ngRows.Scan(&name, &amount)
+		if err != nil {
+			continue
+		}
+
+		ngResult[name] = int(amount)
+	}
+	fmt.Println(ngResult)
+
+	var seriesData []float64
+	var xAxisData []string
+
+	for k, total := range totalResult {
+		xAxisData = append(xAxisData, k)
+		var rate float64 = 0
+		if ng, ok := ngResult[k]; ok {
+			rate = float64(ng) / float64(total)
+		}
+		seriesData = append(seriesData, rate)
+	}
+
+	var length = len(seriesData)
+	for i := 0; i < length-1; i++ {
+		for j := 0; j < length-1-i; j++ {
+			if seriesData[j] < seriesData[j+1] {
+				s := seriesData[j]
+				x := xAxisData[j]
+				seriesData[j] = seriesData[j+1]
+				xAxisData[j] = xAxisData[j+1]
+				seriesData[j+1] = s
+				xAxisData[j+1] = x
+			}
+		}
+	}
+
+	if limit > len(xAxisData) {
+		limit = len(xAxisData)
+	}
+
+	return &model.EchartsResult{
+		XAxisData: xAxisData[:limit],
+		SeriesData: map[string]interface{}{
+			"data": seriesData[:limit],
+		},
+	}, nil
+}
+
+type analysis struct {
+	Amount  int64
+	Axis    string
+	GroupBy string
+}
+
+func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.AnalyzeMaterialInput) (*model.EchartsResult, error) {
+	query := orm.DB.Model(&orm.Product{}).Where("products.material_id = ?", analyzeInput.MaterialID)
+	var selectQueries, groupColumns []string
+	var selectVariables []interface{}
+	var joinDevice = false
+
+	// amount
+	selectQueries = append(selectQueries, "COUNT(products.id) as amount")
+
+	// axis
+	selectQueries = append(selectQueries, "%v as axis")
+	groupColumns = append(groupColumns, "axis")
+	switch analyzeInput.XAxis {
+	case model.CategoryDate:
+		selectVariables = append(selectVariables, "DATE(created_at)")
+	case model.CategoryDevice:
+		selectVariables = append(selectVariables, "devices.name")
+		joinDevice = true
+	case model.CategoryAttribute:
+		if analyzeInput.AttributeXAxis == nil {
+			return nil, NewGQLError("缺少X轴字段", "")
+		}
+		selectVariables = append(selectVariables, fmt.Sprintf("JSON_EXTRACT(`attribute`, '$.\"%s\"')", *analyzeInput.AttributeXAxis))
+	}
+
+	// group by
+	if analyzeInput.GroupBy != nil {
+		selectQueries = append(selectQueries, "%v as group_by")
+		groupColumns = append(groupColumns, "group_by")
+		switch *analyzeInput.GroupBy {
+		case model.CategoryDate:
+			selectVariables = append(selectVariables, "DATE(created_at)")
+		case model.CategoryDevice:
+			selectVariables = append(selectVariables, "devices.name")
+			joinDevice = true
+		case model.CategoryAttribute:
+			if analyzeInput.AttributeGroup == nil {
+				return nil, NewGQLError("缺少分组字段", "")
+			}
+			selectVariables = append(selectVariables, fmt.Sprintf("JSON_EXTRACT(`attribute`, '$.\"%s\"')", *analyzeInput.AttributeGroup))
+		}
+	}
+
+	// join device
+	if joinDevice {
+		query = query.Joins("JOIN devices ON products.device_id = devices.id")
+	}
+
+	// assemble selects
+	query = query.Select(fmt.Sprintf(strings.Join(selectQueries, ", "), selectVariables...))
+
+	// assemble groups
+	query = query.Group(strings.Join(groupColumns, ", "))
+
+	// time duration
+	if len(analyzeInput.Duration) > 0 {
+		t := analyzeInput.Duration[0]
+		query = query.Where("created_at > ?", *t)
+	}
+	if len(analyzeInput.Duration) > 1 {
+		t := analyzeInput.Duration[1]
+		query = query.Where("created_at < ?", *t)
+	}
+	// order by xAxis
+	sort := "asc"
+	if analyzeInput.Sort != nil {
+		v := *analyzeInput.Sort
+		sort = string(v)
+	}
+	query = query.Order(fmt.Sprintf("axis %s", sort))
+
+	rows, err := query.Rows()
+	if err != nil {
+		return nil, NewGQLError("分析数据发生错误", err.Error())
+	}
+
+	results := scanRows(rows, analyzeInput.GroupBy != nil)
+
+	if analyzeInput.Limit != nil && *analyzeInput.Limit < 0 {
+		return nil, NewGQLError("输入参数不合法，请检查输入", "")
+	}
+
+	if analyzeInput.YAxis == "Yield" {
+		rows, err := query.Where("qualified = ?", true).Rows()
+		if err != nil {
+			return nil, NewGQLError("分析数据发生错误", err.Error())
+		}
+		qualifiedResults := scanRows(rows, analyzeInput.GroupBy != nil)
+
+		return calYieldAnalysisResult(results, qualifiedResults, analyzeInput.Limit)
+	}
+
+	return calAmountAnalysisResult(results, analyzeInput.Limit)
+}
+
+func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int) (*model.EchartsResult, error) {
+	totalAmount, _ := calAmountAnalysisResult(results, limit)
+	yieldAmount, _ := calAmountAnalysisResult(qualifiedResults, limit)
+
+	for i, item := range totalAmount.XAxisData {
+		var index = findIndex(yieldAmount.XAxisData, item)
+		for k, v := range totalAmount.SeriesData {
+			data := v.([]interface{})
+			if index < 0 {
+				data[i] = 0
+			} else {
+				total := data[i].(int)
+				yieldData := yieldAmount.SeriesData[k].([]interface{})
+				yield := yieldData[index].(int)
+				value := float64(yield) / float64(total)
+				data[i] = value
+			}
+			totalAmount.SeriesData[k] = data
+		}
+	}
+
+	return totalAmount, nil
+}
+
+func findIndex(list []string, find string) int {
+	for i, v := range list {
+		if v == find {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func calAmountAnalysisResult(scanResults []analysis, limit *int) (*model.EchartsResult, error) {
+	var xAxisMapData = make(map[string]int)
+	var xAxisData []string
+	var seriesMapData = make(map[string]interface{})
+	for i, result := range scanResults {
+		xAxis := fmt.Sprint(result.Axis)
+		if _, ok := xAxisMapData[xAxis]; !ok {
+			xAxisMapData[xAxis] = i
+			xAxisData = append(xAxisData, xAxis)
+		}
+		if data, ok := seriesMapData[fmt.Sprint(result.GroupBy)]; ok {
+			seriesMap := data.(map[string]interface{})
+			seriesMap[fmt.Sprint(result.Axis)] = int(result.Amount)
+			seriesMapData[fmt.Sprint(result.GroupBy)] = seriesMap
+		} else {
+			seriesMap := map[string]interface{}{fmt.Sprint(result.Axis): int(result.Amount)}
+			seriesMapData[fmt.Sprint(result.GroupBy)] = seriesMap
+		}
+	}
+
+	if limit != nil {
+		if *limit < len(xAxisData) {
+			xAxisData = xAxisData[:*limit]
+		}
+	}
+
+	var seriesData = make(map[string]interface{})
+	for _, item := range xAxisData {
+		for k, v := range seriesMapData {
+			sdv, ok := seriesData[k]
+			var dataSet []interface{}
+			if ok {
+				dataSet = sdv.([]interface{})
+			} else {
+				dataSet = make([]interface{}, 0)
+			}
+
+			seriesMap := v.(map[string]interface{})
+			var value interface{}
+			if v, ok := seriesMap[item]; ok {
+				value = v
+			} else {
+				value = 0
+			}
+
+			dataSet = append(dataSet, value)
+			seriesData[k] = dataSet
+		}
+	}
+
+	return &model.EchartsResult{
+		XAxisData:  xAxisData,
+		SeriesData: seriesData,
+	}, nil
+}
+
+func scanRows(rows *sql.Rows, needGroup bool) []analysis {
+	var results []analysis
+	for rows.Next() {
+		var result = analysis{GroupBy: "data"}
+		var err error
+		if needGroup {
+			err = rows.Scan(&result.Amount, &result.Axis, &result.GroupBy)
+		} else {
+			err = rows.Scan(&result.Amount, &result.Axis)
+		}
+		if err != nil {
+			continue
+		}
+		results = append(results, result)
+	}
+	_ = rows.Close()
+
+	return results
 }
