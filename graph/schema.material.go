@@ -304,3 +304,99 @@ func (r *mutationResolver) DeleteMaterial(ctx context.Context, id int) (string, 
 
 	return "料号删除成功", nil
 }
+
+func (r *queryResolver) MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error) {
+	query := orm.DB.Model(&orm.Product{}).Select(
+		"materials.name AS name, COUNT(products.id) AS amount",
+	).Joins(
+		"JOIN materials ON products.material_id = materials.id",
+	).Group("products.material_id")
+
+	if len(duration) > 0 {
+		t := duration[0]
+		query = query.Where("products.created_at > ?", *t)
+	}
+
+	if len(duration) > 1 {
+		t := duration[1]
+		query = query.Where("products.created_at < ?", *t)
+	}
+
+	var totalResult = make(map[string]int)
+	totalRows, err := query.Rows()
+	if err != nil {
+		return nil, NewGQLError("统计数据时发生了错误。", err.Error())
+	}
+
+	for totalRows.Next() {
+		var name string
+		var amount int64
+		err := totalRows.Scan(&name, &amount)
+		if err != nil {
+			continue
+		}
+
+		totalResult[name] = int(amount)
+	}
+	fmt.Println(totalResult)
+
+	var ngResult = make(map[string]int)
+	ngRows, err := query.Where("qualified = ?", false).Rows()
+	if err != nil {
+		return nil, NewGQLError("统计数据时发生了错误。", err.Error())
+	}
+
+	for ngRows.Next() {
+		var name string
+		var amount int64
+		err := ngRows.Scan(&name, &amount)
+		if err != nil {
+			continue
+		}
+
+		ngResult[name] = int(amount)
+	}
+	fmt.Println(ngResult)
+
+	var seriesData []float64
+	var xAxisData []string
+
+	for k, total := range totalResult {
+		xAxisData = append(xAxisData, k)
+		var rate float64 = 0
+		if ng, ok := ngResult[k]; ok {
+			rate = float64(ng) / float64(total)
+		}
+		seriesData = append(seriesData, rate)
+	}
+
+	var length = len(seriesData)
+	for i := 0; i < length-1; i++ {
+		for j := 0; j < length-1-i; j++ {
+			if seriesData[j] < seriesData[j+1] {
+				s := seriesData[j]
+				x := xAxisData[j]
+				seriesData[j] = seriesData[j+1]
+				xAxisData[j] = xAxisData[j+1]
+				seriesData[j+1] = s
+				xAxisData[j+1] = x
+			}
+		}
+	}
+
+	if limit > len(xAxisData) {
+		limit = len(xAxisData)
+	}
+
+	return &model.EchartsResult{
+		XAxisData: xAxisData[:limit],
+		SeriesData: map[string]interface{}{
+			"data": seriesData[:limit],
+		},
+	}, nil
+}
+
+func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error) {
+	return groupAnalyze(analyzeInput, "material")
+}
+

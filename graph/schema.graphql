@@ -13,6 +13,8 @@ type Query {
   analyzeMaterial(searchInput: Search!): MaterialResult!
   "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeDevice(searchInput: Search!): DeviceResult!
+  "返回设备数据及分析结果列表"
+  analyzeDevices(materialID: Int!): [DeviceResult]!
   "获取尺寸数据"
   sizes(page: Int!, limit: Int!, materialID: Int!): SizeWrap!
   "获取料号数据"
@@ -25,6 +27,15 @@ type Query {
   dataFetchFinishPercent(fileIDs: [Int]!): Float!
   "数据导出完成比例"
   exportFinishPercent(opID: String!): ExportResponse!
+  "料号良率排行"
+  materialYieldTop(duration: [Time]!, limit: Int!): EchartsResult!
+  "分组分析料号，返回图表渲染所需的数据"
+  groupAnalyzeMaterial(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+  "分组分析设备，返回图表渲染所需的数据"
+  groupAnalyzeDevice(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+  "获取检测尺寸良率"
+  pointListWithYield(materialID: Int!, limit: Int!, page: Int!): PointListWithYieldResponse!
+
 }
 
 type Mutation {
@@ -41,6 +52,53 @@ type Mutation {
   deleteMaterial(id: Int!): String!
   "取消导出"
   cancelExport(opID: String!): String!
+}
+
+type PointListWithYieldResponse {
+    total: Int!
+    list: [PointYield]!
+}
+
+type PointYield {
+  point: NewPoint!
+  ok: Int!
+  total: Int!
+}
+
+"分组数据分析的输入参数，实际上是分析料号或设备相关的产品数据，选定x轴 y轴 以及分组字段"
+input GroupAnalyzeInput {
+  targetID: Int! # 分析目标的ID
+  xAxis: Category! # x轴字段
+  yAxis: YAxis! # y轴字段
+  groupBy: Category # 分组字段
+  duration: [Time!] # 时间范围
+  limit: Int
+  sort: Sort
+}
+
+enum Category {
+  Date
+  Device
+  jin_id
+  shift_number
+  line_id
+  mould_id
+}
+
+enum Sort {
+  ASC
+  DESC
+}
+
+enum YAxis {
+  Yield
+  UnYield
+  Amount
+}
+
+type EchartsResult {
+  xAxisData: [String!]!
+  seriesData: Map!
 }
 
 type ExportResponse {
@@ -75,10 +133,9 @@ type fetchStatus {
 }
 
 type DeviceResult {
-  device: Device
-  ok: Int
-  ng: Int
-  status: fetchStatus
+  device: Device!
+  ok: Int!
+  ng: Int!
 }
 
 type MaterialResult {
@@ -121,14 +178,22 @@ type Point {
   lowerLimit: Float
 }
 
+type NewPoint {
+  id: Int!
+  name: String!
+  upperLimit: Float!
+  nominal: Float!
+  lowerLimit: Float!
+}
+
 type SizeWrap {
   total: Int
   sizes: [Size!]
 }
 
 type Device {
-  id: Int
-  name: String
+  id: Int!
+  name: String!
 }
 
 type MaterialWrap {

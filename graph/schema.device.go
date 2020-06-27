@@ -33,8 +33,8 @@ func (r *queryResolver) AnalyzeDevice(ctx context.Context, searchInput model.Sea
 	}
 
 	out := model.Device{
-		ID:   &device.ID,
-		Name: &device.Name,
+		ID:   device.ID,
+		Name: device.Name,
 	}
 
 	// TODO: 关闭自动拉取
@@ -60,8 +60,8 @@ func (r *queryResolver) AnalyzeDevice(ctx context.Context, searchInput model.Sea
 
 	return &model.DeviceResult{
 		Device: &out,
-		Ok:     &ok,
-		Ng:     &ng,
+		Ok:     ok,
+		Ng:     ng,
 	}, nil
 }
 
@@ -74,9 +74,52 @@ func (r *queryResolver) Devices(ctx context.Context, materialID int) ([]*model.D
 	for _, i := range devices {
 		v := i
 		outs = append(outs, &model.Device{
-			ID:   &v.ID,
-			Name: &v.Name,
+			ID:   v.ID,
+			Name: v.Name,
 		})
 	}
 	return outs, nil
+}
+
+func (r *queryResolver) AnalyzeDevices(ctx context.Context, materialID int) ([]*model.DeviceResult, error) {
+	var devices []orm.Device
+
+	if err := orm.DB.Model(&orm.Device{}).Where("material_id = ?", materialID).Find(&devices).Error; err != nil {
+		return nil, NewGQLError("获取设备数据失败")
+	}
+
+	var outs []*model.DeviceResult
+	for _, d := range devices {
+		var out = model.DeviceResult{
+			Device: &model.Device{
+				ID:   d.ID,
+				Name: d.Name,
+			},
+		}
+		rows, err := orm.DB.Model(&orm.Product{}).Where("device_id = ?", d.ID).Select("COUNT(id), qualified").Group("qualified").Rows()
+		if err != nil {
+			outs = append(outs, &out)
+			continue
+		}
+
+		for rows.Next() {
+			var amount int
+			var qualified bool
+			if err := rows.Scan(&amount, &qualified); err != nil {
+				continue
+			}
+			if qualified {
+				out.Ok = amount
+			} else {
+				out.Ng = amount
+			}
+		}
+		outs = append(outs, &out)
+	}
+
+	return outs, nil
+}
+
+func (r *queryResolver) GroupAnalyzeDevice(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error) {
+	return groupAnalyze(analyzeInput, "device")
 }
