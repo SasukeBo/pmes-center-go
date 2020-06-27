@@ -309,7 +309,7 @@ func (r *queryResolver) PointListWithYield(ctx context.Context, materialID int, 
 		return nil, NewGQLError("获取尺寸失败", err.Error())
 	}
 
-	sql := orm.DB.Model(&orm.Point{}).Where("id in (?)", sizeIDs)
+	sql := orm.DB.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs)
 
 	var total int
 	if err := sql.Count(&total).Error; err != nil {
