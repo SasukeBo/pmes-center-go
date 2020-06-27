@@ -212,7 +212,7 @@ type Category string
 const (
 	CategoryDate        Category = "Date"
 	CategoryDevice      Category = "Device"
-	CategoryJinID       Category = "jin_id"
+	CategoryJigID       Category = "jig_id"
 	CategoryShiftNumber Category = "shift_number"
 	CategoryLineID      Category = "line_id"
 	CategoryMouldID     Category = "mould_id"
@@ -221,7 +221,7 @@ const (
 var AllCategory = []Category{
 	CategoryDate,
 	CategoryDevice,
-	CategoryJinID,
+	CategoryJigID,
 	CategoryShiftNumber,
 	CategoryLineID,
 	CategoryMouldID,
@@ -229,7 +229,7 @@ var AllCategory = []Category{
 
 func (e Category) IsValid() bool {
 	switch e {
-	case CategoryDate, CategoryDevice, CategoryJinID, CategoryShiftNumber, CategoryLineID, CategoryMouldID:
+	case CategoryDate, CategoryDevice, CategoryJigID, CategoryShiftNumber, CategoryLineID, CategoryMouldID:
 		return true
 	}
 	return false

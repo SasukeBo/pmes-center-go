@@ -1310,7 +1310,7 @@ input GroupAnalyzeInput {
 enum Category {
   Date
   Device
-  jin_id
+  jig_id
   shift_number
   line_id
   mould_id
