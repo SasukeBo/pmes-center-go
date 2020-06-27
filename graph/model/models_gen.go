@@ -84,12 +84,25 @@ type MaterialWrap struct {
 	Materials []*Material `json:"materials"`
 }
 
+type NewPoint struct {
+	ID         int     `json:"id"`
+	Name       string  `json:"name"`
+	UpperLimit float64 `json:"upperLimit"`
+	Nominal    float64 `json:"nominal"`
+	LowerLimit float64 `json:"lowerLimit"`
+}
+
 type Point struct {
 	ID         *int     `json:"id"`
 	Name       *string  `json:"name"`
 	UpperLimit *float64 `json:"upperLimit"`
 	Nominal    *float64 `json:"nominal"`
 	LowerLimit *float64 `json:"lowerLimit"`
+}
+
+type PointListWithYieldResponse struct {
+	Total int           `json:"total"`
+	List  []*PointYield `json:"list"`
 }
 
 type PointResult struct {
@@ -109,6 +122,12 @@ type PointResult struct {
 type PointResultsWrap struct {
 	PointResults []*PointResult `json:"pointResults"`
 	Total        int            `json:"total"`
+}
+
+type PointYield struct {
+	Point *NewPoint `json:"point"`
+	Ok    int       `json:"ok"`
+	Total int       `json:"total"`
 }
 
 type Product struct {

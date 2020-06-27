@@ -33,6 +33,9 @@ type Query {
   groupAnalyzeMaterial(analyzeInput: GroupAnalyzeInput!): EchartsResult!
   "分组分析设备，返回图表渲染所需的数据"
   groupAnalyzeDevice(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+  "获取检测尺寸良率"
+  pointListWithYield(materialID: Int!, limit: Int!, page: Int!): PointListWithYieldResponse!
+
 }
 
 type Mutation {
@@ -49,6 +52,17 @@ type Mutation {
   deleteMaterial(id: Int!): String!
   "取消导出"
   cancelExport(opID: String!): String!
+}
+
+type PointListWithYieldResponse {
+    total: Int!
+    list: [PointYield]!
+}
+
+type PointYield {
+  point: NewPoint!
+  ok: Int!
+  total: Int!
 }
 
 "分组数据分析的输入参数，实际上是分析料号或设备相关的产品数据，选定x轴 y轴 以及分组字段"
@@ -162,6 +176,14 @@ type Point {
   upperLimit: Float
   nominal: Float
   lowerLimit: Float
+}
+
+type NewPoint {
+  id: Int!
+  name: String!
+  upperLimit: Float!
+  nominal: Float!
+  lowerLimit: Float!
 }
 
 type SizeWrap {
