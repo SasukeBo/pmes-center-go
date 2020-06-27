@@ -1182,6 +1182,7 @@ enum Sort {
 
 enum YAxis {
   Yield
+  UnYield
   Amount
 }
 

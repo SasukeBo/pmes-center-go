@@ -403,6 +403,11 @@ type analysis struct {
 	GroupBy string
 }
 
+type echartsResult struct {
+	XAxisData  []string
+	SeriesData map[string][]float64
+}
+
 func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.AnalyzeMaterialInput) (*model.EchartsResult, error) {
 	query := orm.DB.Model(&orm.Product{}).Where("products.material_id = ?", analyzeInput.MaterialID)
 	var selectQueries, groupColumns []string
@@ -421,11 +426,8 @@ func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput m
 	case model.CategoryDevice:
 		selectVariables = append(selectVariables, "devices.name")
 		joinDevice = true
-	case model.CategoryAttribute:
-		if analyzeInput.AttributeXAxis == nil {
-			return nil, NewGQLError("缺少X轴字段", "")
-		}
-		selectVariables = append(selectVariables, fmt.Sprintf("JSON_EXTRACT(`attribute`, '$.\"%s\"')", *analyzeInput.AttributeXAxis))
+	default:
+		selectVariables = append(selectVariables, analyzeInput.XAxis)
 	}
 
 	// group by
@@ -438,11 +440,8 @@ func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput m
 		case model.CategoryDevice:
 			selectVariables = append(selectVariables, "devices.name")
 			joinDevice = true
-		case model.CategoryAttribute:
-			if analyzeInput.AttributeGroup == nil {
-				return nil, NewGQLError("缺少分组字段", "")
-			}
-			selectVariables = append(selectVariables, fmt.Sprintf("JSON_EXTRACT(`attribute`, '$.\"%s\"')", *analyzeInput.AttributeGroup))
+		default:
+			selectVariables = append(selectVariables, analyzeInput.GroupBy)
 		}
 	}
 
@@ -467,59 +466,109 @@ func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput m
 		query = query.Where("created_at < ?", *t)
 	}
 	// order by xAxis
-	sort := "asc"
+	sort := "ASC"
 	if analyzeInput.Sort != nil {
 		v := *analyzeInput.Sort
 		sort = string(v)
 	}
-	query = query.Order(fmt.Sprintf("axis %s", sort))
+	//query = query.Order(fmt.Sprintf("axis %s", sort))
 
 	rows, err := query.Rows()
 	if err != nil {
 		return nil, NewGQLError("分析数据发生错误", err.Error())
 	}
 
-	results := scanRows(rows, analyzeInput.GroupBy != nil)
+	results := scanRows(rows, analyzeInput.GroupBy)
 
 	if analyzeInput.Limit != nil && *analyzeInput.Limit < 0 {
 		return nil, NewGQLError("输入参数不合法，请检查输入", "")
 	}
 
-	if analyzeInput.YAxis == "Yield" {
-		rows, err := query.Where("qualified = ?", true).Rows()
+	if analyzeInput.YAxis != "Amount" {
+		qualified := true
+		if analyzeInput.YAxis == "UnYield" {
+			qualified = false
+		}
+
+		rows, err := query.Where("qualified = ?", qualified).Rows()
 		if err != nil {
 			return nil, NewGQLError("分析数据发生错误", err.Error())
 		}
-		qualifiedResults := scanRows(rows, analyzeInput.GroupBy != nil)
+		qualifiedResults := scanRows(rows, analyzeInput.GroupBy)
 
-		return calYieldAnalysisResult(results, qualifiedResults, analyzeInput.Limit)
+		return calYieldAnalysisResult(results, qualifiedResults, analyzeInput.Limit, sort)
 	}
 
-	return calAmountAnalysisResult(results, analyzeInput.Limit)
+	eResult, err := calAmountAnalysisResult(results, analyzeInput.Limit, sort)
+	if err != nil {
+		return nil, err
+	}
+	return convertToEchartsResult(eResult), nil
 }
 
-func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int) (*model.EchartsResult, error) {
-	totalAmount, _ := calAmountAnalysisResult(results, limit)
-	yieldAmount, _ := calAmountAnalysisResult(qualifiedResults, limit)
+func sortResult(result *echartsResult, isAsc bool) {
+	var length = len(result.XAxisData)
+
+	seriesData := result.SeriesData["data"]
+	for i := 0; i < length-1; i++ {
+		for j := 0; j < length-1-i; j++ {
+			if isAsc && seriesData[j] < seriesData[j+1] {
+				continue
+			}
+
+			if !isAsc && seriesData[j] > seriesData[j+1] {
+				continue
+			}
+
+			s := seriesData[j]
+			x := result.XAxisData[j]
+			seriesData[j] = seriesData[j+1]
+			result.XAxisData[j] = result.XAxisData[j+1]
+			seriesData[j+1] = s
+			result.XAxisData[j+1] = x
+		}
+	}
+
+	result.SeriesData["data"] = seriesData
+}
+
+func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, sort string) (*model.EchartsResult, error) {
+	totalAmount, _ := calAmountAnalysisResult(results, limit, "")
+	yieldAmount, _ := calAmountAnalysisResult(qualifiedResults, limit, "")
 
 	for i, item := range totalAmount.XAxisData {
 		var index = findIndex(yieldAmount.XAxisData, item)
-		for k, v := range totalAmount.SeriesData {
-			data := v.([]interface{})
+		for k, data := range totalAmount.SeriesData {
 			if index < 0 {
 				data[i] = 0
 			} else {
-				total := data[i].(int)
-				yieldData := yieldAmount.SeriesData[k].([]interface{})
-				yield := yieldData[index].(int)
-				value := float64(yield) / float64(total)
+				total := data[i]
+				yieldData := yieldAmount.SeriesData[k]
+				yield := yieldData[index]
+				value := yield / total
 				data[i] = value
 			}
 			totalAmount.SeriesData[k] = data
 		}
 	}
 
-	return totalAmount, nil
+	if _, ok := totalAmount.SeriesData["data"]; ok {
+		sortResult(totalAmount, sort == "ASC")
+	}
+
+	return convertToEchartsResult(totalAmount), nil
+}
+
+func convertToEchartsResult(result *echartsResult) *model.EchartsResult {
+	seriesData := make(map[string]interface{})
+	for k, v := range result.SeriesData {
+		seriesData[k] = v
+	}
+
+	return &model.EchartsResult{
+		XAxisData:  result.XAxisData,
+		SeriesData: seriesData,
+	}
 }
 
 func findIndex(list []string, find string) int {
@@ -532,22 +581,21 @@ func findIndex(list []string, find string) int {
 	return -1
 }
 
-func calAmountAnalysisResult(scanResults []analysis, limit *int) (*model.EchartsResult, error) {
+func calAmountAnalysisResult(scanResults []analysis, limit *int, sort string) (*echartsResult, error) {
 	var xAxisMapData = make(map[string]int)
 	var xAxisData []string
-	var seriesMapData = make(map[string]interface{})
+	var seriesMapData = make(map[string]map[string]float64)
 	for i, result := range scanResults {
 		xAxis := fmt.Sprint(result.Axis)
 		if _, ok := xAxisMapData[xAxis]; !ok {
 			xAxisMapData[xAxis] = i
 			xAxisData = append(xAxisData, xAxis)
 		}
-		if data, ok := seriesMapData[fmt.Sprint(result.GroupBy)]; ok {
-			seriesMap := data.(map[string]interface{})
-			seriesMap[fmt.Sprint(result.Axis)] = int(result.Amount)
+		if seriesMap, ok := seriesMapData[fmt.Sprint(result.GroupBy)]; ok {
+			seriesMap[fmt.Sprint(result.Axis)] = float64(result.Amount)
 			seriesMapData[fmt.Sprint(result.GroupBy)] = seriesMap
 		} else {
-			seriesMap := map[string]interface{}{fmt.Sprint(result.Axis): int(result.Amount)}
+			seriesMap := map[string]float64{fmt.Sprint(result.Axis): float64(result.Amount)}
 			seriesMapData[fmt.Sprint(result.GroupBy)] = seriesMap
 		}
 	}
@@ -558,19 +606,18 @@ func calAmountAnalysisResult(scanResults []analysis, limit *int) (*model.Echarts
 		}
 	}
 
-	var seriesData = make(map[string]interface{})
+	var seriesData = make(map[string][]float64)
 	for _, item := range xAxisData {
-		for k, v := range seriesMapData {
+		for k, seriesMap := range seriesMapData {
 			sdv, ok := seriesData[k]
-			var dataSet []interface{}
+			var dataSet []float64
 			if ok {
-				dataSet = sdv.([]interface{})
+				dataSet = sdv
 			} else {
-				dataSet = make([]interface{}, 0)
+				dataSet = make([]float64, 0)
 			}
 
-			seriesMap := v.(map[string]interface{})
-			var value interface{}
+			var value float64
 			if v, ok := seriesMap[item]; ok {
 				value = v
 			} else {
@@ -582,19 +629,28 @@ func calAmountAnalysisResult(scanResults []analysis, limit *int) (*model.Echarts
 		}
 	}
 
-	return &model.EchartsResult{
+	var result = echartsResult{
 		XAxisData:  xAxisData,
 		SeriesData: seriesData,
-	}, nil
+	}
+
+	if _, ok := result.SeriesData["data"]; ok && sort != "" {
+		sortResult(&result, sort == "ASC")
+	}
+
+	return &result, nil
 }
 
-func scanRows(rows *sql.Rows, needGroup bool) []analysis {
+func scanRows(rows *sql.Rows, groupBy *model.Category) []analysis {
 	var results []analysis
 	for rows.Next() {
 		var result = analysis{GroupBy: "data"}
 		var err error
-		if needGroup {
+		if groupBy != nil {
 			err = rows.Scan(&result.Amount, &result.Axis, &result.GroupBy)
+			if *groupBy == model.CategoryDate && len(result.GroupBy) > 9 {
+				result.GroupBy = result.GroupBy[:9]
+			}
 		} else {
 			err = rows.Scan(&result.Amount, &result.Axis)
 		}

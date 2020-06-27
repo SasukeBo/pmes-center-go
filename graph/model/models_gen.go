@@ -282,18 +282,20 @@ func (e Sort) MarshalGQL(w io.Writer) {
 type YAxis string
 
 const (
-	YAxisYield  YAxis = "Yield"
-	YAxisAmount YAxis = "Amount"
+	YAxisYield   YAxis = "Yield"
+	YAxisUnYield YAxis = "UnYield"
+	YAxisAmount  YAxis = "Amount"
 )
 
 var AllYAxis = []YAxis{
 	YAxisYield,
+	YAxisUnYield,
 	YAxisAmount,
 }
 
 func (e YAxis) IsValid() bool {
 	switch e {
-	case YAxisYield, YAxisAmount:
+	case YAxisYield, YAxisUnYield, YAxisAmount:
 		return true
 	}
 	return false
