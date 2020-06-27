@@ -14,27 +14,15 @@ type AddMaterialResponse struct {
 	Status   *FetchStatus `json:"status"`
 }
 
-// 分析料号的输入参数，实际上是分析料号的产品数据，选定x轴 y轴 以及分组字段
-type AnalyzeMaterialInput struct {
-	MaterialID int          `json:"materialID"`
-	XAxis      Category     `json:"xAxis"`
-	YAxis      YAxis        `json:"yAxis"`
-	GroupBy    *Category    `json:"groupBy"`
-	Duration   []*time.Time `json:"duration"`
-	Limit      *int         `json:"limit"`
-	Sort       *Sort        `json:"sort"`
-}
-
 type Device struct {
-	ID   *int    `json:"id"`
-	Name *string `json:"name"`
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 type DeviceResult struct {
-	Device *Device      `json:"device"`
-	Ok     *int         `json:"ok"`
-	Ng     *int         `json:"ng"`
-	Status *FetchStatus `json:"status"`
+	Device *Device `json:"device"`
+	Ok     int     `json:"ok"`
+	Ng     int     `json:"ng"`
 }
 
 type EchartsResult struct {
@@ -47,6 +35,17 @@ type ExportResponse struct {
 	Message  string  `json:"message"`
 	FileName *string `json:"fileName"`
 	Finished bool    `json:"finished"`
+}
+
+// 分组数据分析的输入参数，实际上是分析料号或设备相关的产品数据，选定x轴 y轴 以及分组字段
+type GroupAnalyzeInput struct {
+	TargetID int          `json:"targetID"`
+	XAxis    Category     `json:"xAxis"`
+	YAxis    YAxis        `json:"yAxis"`
+	GroupBy  *Category    `json:"groupBy"`
+	Duration []*time.Time `json:"duration"`
+	Limit    *int         `json:"limit"`
+	Sort     *Sort        `json:"sort"`
 }
 
 type LoginInput struct {

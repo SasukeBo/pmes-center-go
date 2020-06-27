@@ -58,7 +58,6 @@ type ComplexityRoot struct {
 		Device func(childComplexity int) int
 		Ng     func(childComplexity int) int
 		Ok     func(childComplexity int) int
-		Status func(childComplexity int) int
 	}
 
 	EchartsResult struct {
@@ -153,6 +152,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		AnalyzeDevice          func(childComplexity int, searchInput model.Search) int
+		AnalyzeDevices         func(childComplexity int, materialID int) int
 		AnalyzeMaterial        func(childComplexity int, searchInput model.Search) int
 		AnalyzePoint           func(childComplexity int, searchInput model.Search, limit int, offset int, pattern *string) int
 		CurrentUser            func(childComplexity int) int
@@ -160,7 +160,8 @@ type ComplexityRoot struct {
 		Devices                func(childComplexity int, materialID int) int
 		ExportFinishPercent    func(childComplexity int, opID string) int
 		ExportProducts         func(childComplexity int, searchInput model.Search) int
-		GroupAnalyzeMaterial   func(childComplexity int, analyzeInput model.AnalyzeMaterialInput) int
+		GroupAnalyzeDevice     func(childComplexity int, analyzeInput model.GroupAnalyzeInput) int
+		GroupAnalyzeMaterial   func(childComplexity int, analyzeInput model.GroupAnalyzeInput) int
 		MaterialYieldTop       func(childComplexity int, duration []*time.Time, limit int) int
 		Materials              func(childComplexity int, page int, limit int) int
 		MaterialsWithSearch    func(childComplexity int, offset int, limit int, search *string) int
@@ -224,6 +225,7 @@ type QueryResolver interface {
 	TotalPointYield(ctx context.Context, searchInput model.Search, pattern *string) ([]*model.YieldWrap, error)
 	AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error)
 	AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.DeviceResult, error)
+	AnalyzeDevices(ctx context.Context, materialID int) ([]*model.DeviceResult, error)
 	Sizes(ctx context.Context, page int, limit int, materialID int) (*model.SizeWrap, error)
 	Materials(ctx context.Context, page int, limit int) (*model.MaterialWrap, error)
 	MaterialsWithSearch(ctx context.Context, offset int, limit int, search *string) (*model.MaterialWrap, error)
@@ -231,7 +233,8 @@ type QueryResolver interface {
 	DataFetchFinishPercent(ctx context.Context, fileIDs []*int) (float64, error)
 	ExportFinishPercent(ctx context.Context, opID string) (*model.ExportResponse, error)
 	MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error)
-	GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.AnalyzeMaterialInput) (*model.EchartsResult, error)
+	GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error)
+	GroupAnalyzeDevice(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error)
 }
 
 type executableSchema struct {
@@ -297,13 +300,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DeviceResult.Ok(childComplexity), true
-
-	case "DeviceResult.status":
-		if e.complexity.DeviceResult.Status == nil {
-			break
-		}
-
-		return e.complexity.DeviceResult.Status(childComplexity), true
 
 	case "EchartsResult.seriesData":
 		if e.complexity.EchartsResult.SeriesData == nil {
@@ -746,6 +742,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.AnalyzeDevice(childComplexity, args["searchInput"].(model.Search)), true
 
+	case "Query.analyzeDevices":
+		if e.complexity.Query.AnalyzeDevices == nil {
+			break
+		}
+
+		args, err := ec.field_Query_analyzeDevices_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AnalyzeDevices(childComplexity, args["materialID"].(int)), true
+
 	case "Query.analyzeMaterial":
 		if e.complexity.Query.AnalyzeMaterial == nil {
 			break
@@ -825,6 +833,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ExportProducts(childComplexity, args["searchInput"].(model.Search)), true
 
+	case "Query.groupAnalyzeDevice":
+		if e.complexity.Query.GroupAnalyzeDevice == nil {
+			break
+		}
+
+		args, err := ec.field_Query_groupAnalyzeDevice_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GroupAnalyzeDevice(childComplexity, args["analyzeInput"].(model.GroupAnalyzeInput)), true
+
 	case "Query.groupAnalyzeMaterial":
 		if e.complexity.Query.GroupAnalyzeMaterial == nil {
 			break
@@ -835,7 +855,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GroupAnalyzeMaterial(childComplexity, args["analyzeInput"].(model.AnalyzeMaterialInput)), true
+		return e.complexity.Query.GroupAnalyzeMaterial(childComplexity, args["analyzeInput"].(model.GroupAnalyzeInput)), true
 
 	case "Query.materialYieldTop":
 		if e.complexity.Query.MaterialYieldTop == nil {
@@ -1121,6 +1141,8 @@ var sources = []*ast.Source{
   analyzeMaterial(searchInput: Search!): MaterialResult!
   "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeDevice(searchInput: Search!): DeviceResult!
+  "返回设备数据及分析结果列表"
+  analyzeDevices(materialID: Int!): [DeviceResult]!
   "获取尺寸数据"
   sizes(page: Int!, limit: Int!, materialID: Int!): SizeWrap!
   "获取料号数据"
@@ -1136,7 +1158,9 @@ var sources = []*ast.Source{
   "料号良率排行"
   materialYieldTop(duration: [Time]!, limit: Int!): EchartsResult!
   "分组分析料号，返回图表渲染所需的数据"
-  groupAnalyzeMaterial(analyzeInput: AnalyzeMaterialInput!): EchartsResult!
+  groupAnalyzeMaterial(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+  "分组分析设备，返回图表渲染所需的数据"
+  groupAnalyzeDevice(analyzeInput: GroupAnalyzeInput!): EchartsResult!
 }
 
 type Mutation {
@@ -1155,9 +1179,9 @@ type Mutation {
   cancelExport(opID: String!): String!
 }
 
-"分析料号的输入参数，实际上是分析料号的产品数据，选定x轴 y轴 以及分组字段"
-input AnalyzeMaterialInput {
-  materialID: Int! # 料号的ID
+"分组数据分析的输入参数，实际上是分析料号或设备相关的产品数据，选定x轴 y轴 以及分组字段"
+input GroupAnalyzeInput {
+  targetID: Int! # 分析目标的ID
   xAxis: Category! # x轴字段
   yAxis: YAxis! # y轴字段
   groupBy: Category # 分组字段
@@ -1223,10 +1247,9 @@ type fetchStatus {
 }
 
 type DeviceResult {
-  device: Device
-  ok: Int
-  ng: Int
-  status: fetchStatus
+  device: Device!
+  ok: Int!
+  ng: Int!
 }
 
 type MaterialResult {
@@ -1275,8 +1298,8 @@ type SizeWrap {
 }
 
 type Device {
-  id: Int
-  name: String
+  id: Int!
+  name: String!
 }
 
 type MaterialWrap {
@@ -1477,6 +1500,20 @@ func (ec *executionContext) field_Query_analyzeDevice_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_analyzeDevices_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["materialID"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["materialID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_analyzeMaterial_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1585,12 +1622,26 @@ func (ec *executionContext) field_Query_exportProducts_args(ctx context.Context,
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_groupAnalyzeDevice_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.GroupAnalyzeInput
+	if tmp, ok := rawArgs["analyzeInput"]; ok {
+		arg0, err = ec.unmarshalNGroupAnalyzeInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐGroupAnalyzeInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["analyzeInput"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_groupAnalyzeMaterial_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.AnalyzeMaterialInput
+	var arg0 model.GroupAnalyzeInput
 	if tmp, ok := rawArgs["analyzeInput"]; ok {
-		arg0, err = ec.unmarshalNAnalyzeMaterialInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAnalyzeMaterialInput(ctx, tmp)
+		arg0, err = ec.unmarshalNGroupAnalyzeInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐGroupAnalyzeInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1885,11 +1936,14 @@ func (ec *executionContext) _Device_id(ctx context.Context, field graphql.Collec
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Device_name(ctx context.Context, field graphql.CollectedField, obj *model.Device) (ret graphql.Marshaler) {
@@ -1916,11 +1970,14 @@ func (ec *executionContext) _Device_name(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DeviceResult_device(ctx context.Context, field graphql.CollectedField, obj *model.DeviceResult) (ret graphql.Marshaler) {
@@ -1947,11 +2004,14 @@ func (ec *executionContext) _DeviceResult_device(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.Device)
 	fc.Result = res
-	return ec.marshalODevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx, field.Selections, res)
+	return ec.marshalNDevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DeviceResult_ok(ctx context.Context, field graphql.CollectedField, obj *model.DeviceResult) (ret graphql.Marshaler) {
@@ -1978,11 +2038,14 @@ func (ec *executionContext) _DeviceResult_ok(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*int)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DeviceResult_ng(ctx context.Context, field graphql.CollectedField, obj *model.DeviceResult) (ret graphql.Marshaler) {
@@ -2009,42 +2072,14 @@ func (ec *executionContext) _DeviceResult_ng(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	fc.Result = res
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _DeviceResult_status(ctx context.Context, field graphql.CollectedField, obj *model.DeviceResult) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
 		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "DeviceResult",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Status, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
 		return graphql.Null
 	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.FetchStatus)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalOfetchStatus2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐFetchStatus(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _EchartsResult_xAxisData(ctx context.Context, field graphql.CollectedField, obj *model.EchartsResult) (ret graphql.Marshaler) {
@@ -4181,6 +4216,47 @@ func (ec *executionContext) _Query_analyzeDevice(ctx context.Context, field grap
 	return ec.marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDeviceResult(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_analyzeDevices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_analyzeDevices_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AnalyzeDevices(rctx, args["materialID"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.DeviceResult)
+	fc.Result = res
+	return ec.marshalNDeviceResult2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDeviceResult(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_sizes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4492,7 +4568,48 @@ func (ec *executionContext) _Query_groupAnalyzeMaterial(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GroupAnalyzeMaterial(rctx, args["analyzeInput"].(model.AnalyzeMaterialInput))
+		return ec.resolvers.Query().GroupAnalyzeMaterial(rctx, args["analyzeInput"].(model.GroupAnalyzeInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.EchartsResult)
+	fc.Result = res
+	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐEchartsResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_groupAnalyzeDevice(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_groupAnalyzeDevice_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GroupAnalyzeDevice(rctx, args["analyzeInput"].(model.GroupAnalyzeInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6231,15 +6348,15 @@ func (ec *executionContext) _fetchStatus_fileIDs(ctx context.Context, field grap
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputAnalyzeMaterialInput(ctx context.Context, obj interface{}) (model.AnalyzeMaterialInput, error) {
-	var it model.AnalyzeMaterialInput
+func (ec *executionContext) unmarshalInputGroupAnalyzeInput(ctx context.Context, obj interface{}) (model.GroupAnalyzeInput, error) {
+	var it model.GroupAnalyzeInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "materialID":
+		case "targetID":
 			var err error
-			it.MaterialID, err = ec.unmarshalNInt2int(ctx, v)
+			it.TargetID, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6482,8 +6599,14 @@ func (ec *executionContext) _Device(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = graphql.MarshalString("Device")
 		case "id":
 			out.Values[i] = ec._Device_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "name":
 			out.Values[i] = ec._Device_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6508,12 +6631,19 @@ func (ec *executionContext) _DeviceResult(ctx context.Context, sel ast.Selection
 			out.Values[i] = graphql.MarshalString("DeviceResult")
 		case "device":
 			out.Values[i] = ec._DeviceResult_device(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "ok":
 			out.Values[i] = ec._DeviceResult_ok(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "ng":
 			out.Values[i] = ec._DeviceResult_ng(ctx, field, obj)
-		case "status":
-			out.Values[i] = ec._DeviceResult_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7043,6 +7173,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "analyzeDevices":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_analyzeDevices(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "sizes":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7150,6 +7294,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_groupAnalyzeMaterial(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "groupAnalyzeDevice":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_groupAnalyzeDevice(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -7608,10 +7766,6 @@ func (ec *executionContext) marshalNAddMaterialResponse2ᚖgithubᚗcomᚋSasuke
 	return ec._AddMaterialResponse(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAnalyzeMaterialInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐAnalyzeMaterialInput(ctx context.Context, v interface{}) (model.AnalyzeMaterialInput, error) {
-	return ec.unmarshalInputAnalyzeMaterialInput(ctx, v)
-}
-
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
 }
@@ -7633,6 +7787,10 @@ func (ec *executionContext) unmarshalNCategory2githubᚗcomᚋSasukeBoᚋftpview
 
 func (ec *executionContext) marshalNCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v model.Category) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNDevice2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v model.Device) graphql.Marshaler {
+	return ec._Device(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNDevice2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v []*model.Device) graphql.Marshaler {
@@ -7672,8 +7830,55 @@ func (ec *executionContext) marshalNDevice2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpvi
 	return ret
 }
 
+func (ec *executionContext) marshalNDevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v *model.Device) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Device(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNDeviceResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v model.DeviceResult) graphql.Marshaler {
 	return ec._DeviceResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDeviceResult2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v []*model.DeviceResult) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalODeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDeviceResult(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v *model.DeviceResult) graphql.Marshaler {
@@ -7726,6 +7931,10 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNGroupAnalyzeInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐGroupAnalyzeInput(ctx context.Context, v interface{}) (model.GroupAnalyzeInput, error) {
+	return ec.unmarshalInputGroupAnalyzeInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
@@ -8400,6 +8609,17 @@ func (ec *executionContext) marshalODevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewe
 		return graphql.Null
 	}
 	return ec._Device(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalODeviceResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v model.DeviceResult) graphql.Marshaler {
+	return ec._DeviceResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalODeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v *model.DeviceResult) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._DeviceResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOFloat2float64(ctx context.Context, v interface{}) (float64, error) {

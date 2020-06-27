@@ -13,6 +13,8 @@ type Query {
   analyzeMaterial(searchInput: Search!): MaterialResult!
   "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeDevice(searchInput: Search!): DeviceResult!
+  "返回设备数据及分析结果列表"
+  analyzeDevices(materialID: Int!): [DeviceResult]!
   "获取尺寸数据"
   sizes(page: Int!, limit: Int!, materialID: Int!): SizeWrap!
   "获取料号数据"
@@ -28,7 +30,9 @@ type Query {
   "料号良率排行"
   materialYieldTop(duration: [Time]!, limit: Int!): EchartsResult!
   "分组分析料号，返回图表渲染所需的数据"
-  groupAnalyzeMaterial(analyzeInput: AnalyzeMaterialInput!): EchartsResult!
+  groupAnalyzeMaterial(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+  "分组分析设备，返回图表渲染所需的数据"
+  groupAnalyzeDevice(analyzeInput: GroupAnalyzeInput!): EchartsResult!
 }
 
 type Mutation {
@@ -47,9 +51,9 @@ type Mutation {
   cancelExport(opID: String!): String!
 }
 
-"分析料号的输入参数，实际上是分析料号的产品数据，选定x轴 y轴 以及分组字段"
-input AnalyzeMaterialInput {
-  materialID: Int! # 料号的ID
+"分组数据分析的输入参数，实际上是分析料号或设备相关的产品数据，选定x轴 y轴 以及分组字段"
+input GroupAnalyzeInput {
+  targetID: Int! # 分析目标的ID
   xAxis: Category! # x轴字段
   yAxis: YAxis! # y轴字段
   groupBy: Category # 分组字段
@@ -115,10 +119,9 @@ type fetchStatus {
 }
 
 type DeviceResult {
-  device: Device
-  ok: Int
-  ng: Int
-  status: fetchStatus
+  device: Device!
+  ok: Int!
+  ng: Int!
 }
 
 type MaterialResult {
@@ -167,8 +170,8 @@ type SizeWrap {
 }
 
 type Device {
-  id: Int
-  name: String
+  id: Int!
+  name: String!
 }
 
 type MaterialWrap {
