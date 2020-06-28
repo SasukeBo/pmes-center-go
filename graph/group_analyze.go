@@ -157,12 +157,12 @@ func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, so
 		var index = findIndex(yieldAmount.XAxisData, item)
 		for k, data := range totalAmount.SeriesData {
 			yieldData := yieldAmount.SeriesData[k]
+			yield := yieldData[index]
+			total := data[i]
 
-			if index < 0 || index >= len(yieldData) {
+			if index < 0 || index >= len(yieldData) || total == 0 {
 				data[i] = 0
 			} else {
-				total := data[i]
-				yield := yieldData[index]
 				value := yield / total
 				data[i] = value
 			}
