@@ -266,9 +266,6 @@ func scanRows(rows *sql.Rows, groupBy *model.Category) []analysis {
 		var err error
 		if groupBy != nil {
 			err = rows.Scan(&result.Amount, &result.Axis, &result.GroupBy)
-			if *groupBy == model.CategoryDate && len(result.GroupBy) > 9 {
-				result.GroupBy = result.GroupBy[:9]
-			}
 		} else {
 			err = rows.Scan(&result.Amount, &result.Axis)
 		}

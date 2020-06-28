@@ -186,6 +186,7 @@ type ComplexityRoot struct {
 		MaterialsWithSearch    func(childComplexity int, offset int, limit int, search *string) int
 		PointListWithYield     func(childComplexity int, materialID int, limit int, page int) int
 		Products               func(childComplexity int, searchInput model.Search, page *int, limit int, offset *int) int
+		SizeUnYieldTop         func(childComplexity int, groupInput model.GroupAnalyzeInput) int
 		Sizes                  func(childComplexity int, page int, limit int, materialID int) int
 		TotalPointYield        func(childComplexity int, searchInput model.Search, pattern *string) int
 	}
@@ -256,6 +257,7 @@ type QueryResolver interface {
 	GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error)
 	GroupAnalyzeDevice(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error)
 	PointListWithYield(ctx context.Context, materialID int, limit int, page int) (*model.PointListWithYieldResponse, error)
+	SizeUnYieldTop(ctx context.Context, groupInput model.GroupAnalyzeInput) (*model.EchartsResult, error)
 }
 
 type executableSchema struct {
@@ -1008,6 +1010,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Products(childComplexity, args["searchInput"].(model.Search), args["page"].(*int), args["limit"].(int), args["offset"].(*int)), true
 
+	case "Query.sizeUnYieldTop":
+		if e.complexity.Query.SizeUnYieldTop == nil {
+			break
+		}
+
+		args, err := ec.field_Query_sizeUnYieldTop_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.SizeUnYieldTop(childComplexity, args["groupInput"].(model.GroupAnalyzeInput)), true
+
 	case "Query.sizes":
 		if e.complexity.Query.Sizes == nil {
 			break
@@ -1266,7 +1280,8 @@ var sources = []*ast.Source{
   groupAnalyzeDevice(analyzeInput: GroupAnalyzeInput!): EchartsResult!
   "获取检测尺寸良率"
   pointListWithYield(materialID: Int!, limit: Int!, page: Int!): PointListWithYieldResponse!
-
+  "尺寸不良率排行"
+  sizeUnYieldTop(groupInput: GroupAnalyzeInput!): EchartsResult!
 }
 
 type Mutation {
@@ -1914,6 +1929,20 @@ func (ec *executionContext) field_Query_products_args(ctx context.Context, rawAr
 		}
 	}
 	args["offset"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_sizeUnYieldTop_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.GroupAnalyzeInput
+	if tmp, ok := rawArgs["groupInput"]; ok {
+		arg0, err = ec.unmarshalNGroupAnalyzeInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐGroupAnalyzeInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["groupInput"] = arg0
 	return args, nil
 }
 
@@ -5162,6 +5191,47 @@ func (ec *executionContext) _Query_pointListWithYield(ctx context.Context, field
 	return ec.marshalNPointListWithYieldResponse2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐPointListWithYieldResponse(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_sizeUnYieldTop(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_sizeUnYieldTop_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().SizeUnYieldTop(rctx, args["groupInput"].(model.GroupAnalyzeInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.EchartsResult)
+	fc.Result = res
+	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋgraphᚋmodelᚐEchartsResult(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7974,6 +8044,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_pointListWithYield(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "sizeUnYieldTop":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_sizeUnYieldTop(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

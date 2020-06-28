@@ -35,7 +35,8 @@ type Query {
   groupAnalyzeDevice(analyzeInput: GroupAnalyzeInput!): EchartsResult!
   "获取检测尺寸良率"
   pointListWithYield(materialID: Int!, limit: Int!, page: Int!): PointListWithYieldResponse!
-
+  "尺寸不良率排行"
+  sizeUnYieldTop(groupInput: GroupAnalyzeInput!): EchartsResult!
 }
 
 type Mutation {
