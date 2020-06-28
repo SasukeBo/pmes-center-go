@@ -5,8 +5,8 @@ type Query {
   products(searchInput: Search!, page: Int, limit: Int!, offset: Int): ProductWrap!
   "导出产品数据，返回opID，表示处理的uuid"
   exportProducts(searchInput: Search!): String!
-  "分析点位数据"
-  analyzePoint(searchInput: Search!, limit: Int!, offset: Int!, pattern: String): PointResultsWrap!
+#  "分析点位数据"
+#  analyzePoint(searchInput: Search!, limit: Int!, offset: Int!, pattern: String): PointResultsWrap!
   "查询所有点位良率"
   totalPointYield(searchInput: Search!, pattern: String): [YieldWrap]!
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
@@ -37,6 +37,10 @@ type Query {
   pointListWithYield(materialID: Int!, limit: Int!, page: Int!): PointListWithYieldResponse!
   "尺寸不良率排行"
   sizeUnYieldTop(groupInput: GroupAnalyzeInput!): EchartsResult!
+  "尺寸正态分布"
+  sizeNormalDistribution(id: Int!, duration: [Time]!, filters: Map!): PointResult!
+  "分组分析尺寸，返回图表渲染所需的数据"
+  groupAnalyzeSize(analyzeInput: GroupAnalyzeInput!): EchartsResult!
 }
 
 type Mutation {
@@ -152,17 +156,17 @@ type PointResultsWrap {
 }
 
 type PointResult {
-  total: Int
-  s: Float
-  ok: Int
-  ng: Int
-  cp: Float
-  cpk: Float
-  avg: Float
-  max: Float
-  min: Float
-  dataset: Map
-  point: Point
+  total: Int!
+  s: Float!
+  ok: Int!
+  ng: Int!
+  cp: Float!
+  cpk: Float!
+  avg: Float!
+  max: Float!
+  min: Float!
+  dataset: Map!
+  point: Point!
 }
 
 type Size {
