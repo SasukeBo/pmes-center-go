@@ -94,8 +94,8 @@ func Store(xr *XLSXReader) {
 		qp := true
 		// 生产 product uuid
 		puuid := uuid.New().String()
-		productAt, err := stime.ParseTime(row[1], 8)
-		if err != nil {
+		productAt := stime.ParseTime(row[1], 8)
+		if productAt == nil {
 			t := time.Now()
 			productAt = &t
 		}

@@ -4,9 +4,8 @@ go 1.13
 
 require (
 	github.com/99designs/gqlgen v0.11.3
-	github.com/SasukeBo/lib v0.0.0-20200527114554-7d04dff0ae99
+	github.com/SasukeBo/lib v0.0.1
 	github.com/SasukeBo/log v1.0.0
-	github.com/chfenger/goNum v0.0.0-20191211064013-a00d841c1e7b // indirect
 	github.com/dgryski/trifles v0.0.0-20191129005055-5a6159895336 // indirect
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.2
@@ -19,7 +18,6 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
-	github.com/rs/cors v1.7.0 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/tealeg/xlsx v1.0.5
 	github.com/vektah/gqlparser/v2 v2.0.1

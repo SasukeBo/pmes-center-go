@@ -5,6 +5,8 @@ github.com/SasukeBo/lib v0.0.0-20200505011736-5d2e52c29cdc h1:2yeQLfEmZYLPNztuRy
 github.com/SasukeBo/lib v0.0.0-20200505011736-5d2e52c29cdc/go.mod h1:nuJxlxGF6AfZKCDc6CnUjBr9W2abJ4526+cCkSwBj3Y=
 github.com/SasukeBo/lib v0.0.0-20200527114554-7d04dff0ae99 h1:kC0A4STxgCIH9u5Z/aVzFKOGDJ6mZAJrV6IU++S+U24=
 github.com/SasukeBo/lib v0.0.0-20200527114554-7d04dff0ae99/go.mod h1:nuJxlxGF6AfZKCDc6CnUjBr9W2abJ4526+cCkSwBj3Y=
+github.com/SasukeBo/lib v0.0.1 h1:wWZ15GQMApeUhtOElxDAxtSqAOiPg3Mq70iKICSnf6Q=
+github.com/SasukeBo/lib v0.0.1/go.mod h1:nuJxlxGF6AfZKCDc6CnUjBr9W2abJ4526+cCkSwBj3Y=
 github.com/SasukeBo/log v1.0.0 h1:wklEBgyTD4pH1ihTTu7Uw6KvushDfAlbTkkjQ4dFN4Y=
 github.com/SasukeBo/log v1.0.0/go.mod h1:3+Xt6o8Vv47/eRT/xqyNyVeYf3sLzyeRp7MFLLsex6o=
 github.com/SasukeBo/xlsx v1.0.5-fork h1:Lrsf0vFTE2LpcEQiFT/P1jQZxIvfCUZzKRcqV9c/3lU=
