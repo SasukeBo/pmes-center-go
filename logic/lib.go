@@ -47,7 +47,7 @@ func autoFetch() {
 	for _, m := range materials {
 		log.Info("[autoFetch] fetch %s duration %v - %v...", m.Name, begin, now)
 		go func() {
-			fileIDs, err := NeedFetch(&m, &begin, &now)
+			fileIDs, err := FetchData(&m, &begin, &now)
 			if err != nil {
 				log.Errorln(err)
 			}
@@ -168,7 +168,7 @@ func handleSizePoint(dimSet map[string]ftpclient.SL, materialID int) {
 				Index:      v.Index,
 				UpperLimit: v.USL,
 				LowerLimit: v.LSL,
-				Nominal:   v.Nominal,
+				Nominal:    v.Nominal,
 			}
 			tx.Create(point)
 		} else {
@@ -194,9 +194,9 @@ type FetchFile struct {
 	Date time.Time
 }
 
-// NeedFetch 判断是否需要从FTP拉取数据
+// FetchData 判断是否需要从FTP拉取数据
 // 给定料号，时间范围，对比数据库中已拉取文件路径，得出是否有需要拉取的文件路径
-func NeedFetch(m *orm.Material, begin, end *time.Time) ([]int, error) {
+func FetchData(m *orm.Material, begin, end *time.Time) ([]int, error) {
 	var files []FetchFile
 	var fileIDs []int
 	if begin != nil && end != nil {
@@ -235,6 +235,16 @@ func NeedFetch(m *orm.Material, begin, end *time.Time) ([]int, error) {
 	}
 
 	return fileIDs, nil
+}
+
+func FetchFileWithPath(material orm.Material, path string) error {
+	var files = []FetchFile{{
+		File: path,
+		Date: time.Now(),
+	}}
+
+	_, err := fetchMaterialDatas(material, files)
+	return err
 }
 
 func checkFile(fileName string, begin, end *time.Time) (bool, string, *time.Time) {

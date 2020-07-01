@@ -6,6 +6,7 @@ import (
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
 	"math"
 	"strings"
@@ -38,17 +39,15 @@ func (r *mutationResolver) UpdateMaterial(ctx context.Context, input model.Mater
 		return nil, NewGQLError("保存料号失败", err.Error())
 	}
 
-	out := &model.Material{
-		ID:            material.ID,
-		Name:          material.Name,
-		CustomerCode:  &material.CustomerCode,
-		ProjectRemark: &material.ProjectRemark,
+	var out model.Material
+	if err := copier.Copy(&out, &material); err != nil {
+		return nil, NewGQLError("数据转换发生错误", err.Error())
 	}
 
-	return out, nil
+	return &out, nil
 }
 
-func (r *mutationResolver) AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.AddMaterialResponse, error) {
+func (r *mutationResolver) AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error) {
 	if err := logic.Authenticate(ctx); err != nil {
 		return nil, err
 	}
@@ -80,29 +79,14 @@ func (r *mutationResolver) AddMaterial(ctx context.Context, input model.Material
 	end := time.Now()
 	// 默认取近一年的数据
 	begin := end.AddDate(-1, 0, 0)
-	fileIDs, _ := logic.NeedFetch(&m, &begin, &end)
-	message := "创建料号成功"
-	var status = model.FetchStatus{
-		Message: &message,
-		Pending: boolP(true),
-		FileIDs: fileIDs,
-	}
-	if len(fileIDs) == 0 {
-		status.Pending = boolP(false)
-		status.Message = stringP("已为您创建料号，但FTP服务器暂无该料号最近一个月的数据")
+	logic.FetchData(&m, &begin, &end)
+
+	var out model.Material
+	if err := copier.Copy(&out, &m); err != nil {
+		return nil, NewGQLError("转换数据发生错误", err.Error())
 	}
 
-	materialOut := model.Material{
-		ID:            m.ID,
-		Name:          m.Name,
-		CustomerCode:  stringP(m.CustomerCode),
-		ProjectRemark: stringP(m.ProjectRemark),
-	}
-
-	return &model.AddMaterialResponse{
-		Material: &materialOut,
-		Status:   &status,
-	}, nil
+	return &out, nil
 }
 
 func (r *queryResolver) DataFetchFinishPercent(ctx context.Context, fileIDs []*int) (float64, error) {
@@ -148,7 +132,7 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 	}
 
 	// TODO: 关闭自动拉取数据
-	//fileIDs, err := logic.NeedFetch(material, beginTime, endTime)
+	//fileIDs, err := logic.FetchData(material, beginTime, endTime)
 	//if err != nil {
 	//	return nil, err
 	//}
@@ -188,18 +172,15 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 	orm.DB.Model(&orm.Product{}).Where(cond, varsQualified...).Count(&ok)
 	varsUnqualified := append(vars, 0)
 	orm.DB.Model(&orm.Product{}).Where(cond, varsUnqualified...).Count(&ng)
-	out := model.Material{
-		ID:            material.ID,
-		Name:          material.Name,
-		CustomerCode:  stringP(material.CustomerCode),
-		ProjectRemark: stringP(material.ProjectRemark),
-	}
 
+	var out model.Material
+	if err := copier.Copy(&out, &material); err != nil {
+		return nil, NewGQLError("数据转换发生错误", err.Error())
+	}
 	return &model.MaterialResult{
 		Material: &out,
-		Ok:       &ok,
-		Ng:       &ng,
-		Status:   &model.FetchStatus{Pending: boolP(false)},
+		Ok:       ok,
+		Ng:       ng,
 	}, nil
 }
 
@@ -218,8 +199,8 @@ func (r *queryResolver) Materials(ctx context.Context, page int, limit int) (*mo
 		outs = append(outs, &model.Material{
 			ID:            v.ID,
 			Name:          v.Name,
-			CustomerCode:  stringP(v.CustomerCode),
-			ProjectRemark: stringP(v.ProjectRemark),
+			CustomerCode:  v.CustomerCode,
+			ProjectRemark: v.ProjectRemark,
 		})
 	}
 	var count int
@@ -227,7 +208,7 @@ func (r *queryResolver) Materials(ctx context.Context, page int, limit int) (*mo
 		return nil, NewGQLError("统计料号数量失败", err.Error())
 	}
 	return &model.MaterialWrap{
-		Total:     &count,
+		Total:     count,
 		Materials: outs,
 	}, nil
 }
@@ -244,21 +225,19 @@ func (r *queryResolver) MaterialsWithSearch(ctx context.Context, offset int, lim
 		return nil, NewGQLError("获取料号信息失败", err.Error())
 	}
 	var outs []*model.Material
-	for _, i := range materials {
-		v := i
-		outs = append(outs, &model.Material{
-			ID:            v.ID,
-			Name:          v.Name,
-			CustomerCode:  stringP(v.CustomerCode),
-			ProjectRemark: stringP(v.ProjectRemark),
-		})
+	for _, m := range materials {
+		var out model.Material
+		if err := copier.Copy(&out, &m); err != nil {
+			continue
+		}
+		outs = append(outs, &out)
 	}
 	var count int
 	if err := orm.DB.Model(&orm.Material{}).Count(&count).Error; err != nil {
 		return nil, NewGQLError("统计料号数量失败", err.Error())
 	}
 	return &model.MaterialWrap{
-		Total:     &count,
+		Total:     count,
 		Materials: outs,
 	}, nil
 }
@@ -399,4 +378,3 @@ func (r *queryResolver) MaterialYieldTop(ctx context.Context, duration []*time.T
 func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error) {
 	return groupAnalyze(analyzeInput, "material")
 }
-

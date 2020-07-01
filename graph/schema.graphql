@@ -1,62 +1,86 @@
 type Query {
+  # 用户
   "获取当前用户"
   currentUser: User!
-  "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
-  products(searchInput: Search!, page: Int, limit: Int!, offset: Int): ProductWrap!
-  "导出产品数据，返回opID，表示处理的uuid"
-  exportProducts(searchInput: Search!): String!
-#  "分析点位数据"
-#  analyzePoint(searchInput: Search!, limit: Int!, offset: Int!, pattern: String): PointResultsWrap!
-  "查询所有点位良率"
-  totalPointYield(searchInput: Search!, pattern: String): [YieldWrap]!
+
+  # 料号
   "分析料号数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
   analyzeMaterial(searchInput: Search!): MaterialResult!
-  "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
-  analyzeDevice(searchInput: Search!): DeviceResult!
-  "返回设备数据及分析结果列表"
-  analyzeDevices(materialID: Int!): [DeviceResult]!
-  "获取尺寸数据"
-  sizes(page: Int!, limit: Int!, materialID: Int!): SizeWrap!
   "获取料号数据"
   materials(page: Int!, limit: Int!): MaterialWrap!
   "获取料号数据，包括名称模糊搜索"
   materialsWithSearch(offset: Int!, limit: Int!, search: String): MaterialWrap!
-  "获取设备生产数据"
-  devices(materialID: Int!): [Device]!
-  "数据获取完成百分比"
-  dataFetchFinishPercent(fileIDs: [Int]!): Float!
-  "数据导出完成比例"
-  exportFinishPercent(opID: String!): ExportResponse!
   "料号良率排行"
   materialYieldTop(duration: [Time]!, limit: Int!): EchartsResult!
   "分组分析料号，返回图表渲染所需的数据"
   groupAnalyzeMaterial(analyzeInput: GroupAnalyzeInput!): EchartsResult!
-  "分组分析设备，返回图表渲染所需的数据"
-  groupAnalyzeDevice(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+
+  # 导入记录
+  "获取导入记录列表"
+  importRecords(materialID: Int!, page: Int!, limit: Int!): ImportRecordsWrap!
+  "查询完成进度"
+  checkImport(id: Int!): ImportResponse!
+
+  # 产品
+  "获取产品数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
+  products(searchInput: Search!, page: Int, limit: Int!, offset: Int): ProductWrap!
+  "导出产品数据，返回opID，表示处理的uuid"
+  exportProducts(searchInput: Search!): String!
+  "数据获取完成百分比"
+  dataFetchFinishPercent(fileIDs: [Int]!): Float!
+  "数据导出完成比例"
+  exportFinishPercent(opID: String!): ExportResponse!
+
+  # 尺寸
+  "查询所有点位良率"
+  totalPointYield(searchInput: Search!, pattern: String): [YieldWrap]!
   "获取检测尺寸良率"
   pointListWithYield(materialID: Int!, limit: Int!, page: Int!): PointListWithYieldResponse!
-  "尺寸不良率排行"
-  sizeUnYieldTop(groupInput: GroupAnalyzeInput!): EchartsResult!
   "尺寸正态分布"
   sizeNormalDistribution(id: Int!, duration: [Time]!, filters: Map!): PointResult!
   "分组分析尺寸，返回图表渲染所需的数据"
   groupAnalyzeSize(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+  "获取尺寸数据"
+  sizes(page: Int!, limit: Int!, materialID: Int!): SizeWrap!
+  "尺寸不良率排行"
+  sizeUnYieldTop(groupInput: GroupAnalyzeInput!): EchartsResult!
+
+  # 设备
+  "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
+  analyzeDevice(searchInput: Search!): DeviceResult!
+  "返回设备数据及分析结果列表"
+  analyzeDevices(materialID: Int!): [DeviceResult]!
+  "获取设备生产数据"
+  devices(materialID: Int!): [Device]!
+  "分组分析设备，返回图表渲染所需的数据"
+  groupAnalyzeDevice(analyzeInput: GroupAnalyzeInput!): EchartsResult!
 }
 
 type Mutation {
+  # 用户
   "登入"
   login(loginInput: LoginInput!): User!
   "登出"
   logout: String!
+
+  # 系统配置
   setting(settingInput: SettingInput!): SystemConfig!
+
+  # 料号
   "增加料号，需要返回pending: true和fileListIDs"
-  addMaterial(input: MaterialCreateInput!): AddMaterialResponse!
+  addMaterial(input: MaterialCreateInput!): Material!
   "编辑料号"
   updateMaterial(input: MaterialUpdateInput!): Material!
   "删除料号"
   deleteMaterial(id: Int!): String!
+
+  # 产品数据
   "取消导出"
   cancelExport(opID: String!): String!
+  "撤销导入"
+  revertRecord(id: Int!): String!
+  "导入数据"
+  importData(materialID: Int!, path: String!): String!
 }
 
 type PointListWithYieldResponse {
@@ -109,7 +133,7 @@ type EchartsResult {
 type ExportResponse {
   percent: Float!
   message: String!
-  fileName: String
+  fileName: String!
   finished: Boolean!
 }
 
@@ -131,12 +155,6 @@ input MaterialCreateInput {
   projectRemark: String
 }
 
-type fetchStatus {
-  message: String
-  pending: Boolean
-  fileIDs: [Int!]
-}
-
 type DeviceResult {
   device: Device!
   ok: Int!
@@ -144,14 +162,13 @@ type DeviceResult {
 }
 
 type MaterialResult {
-  material: Material
-  ok: Int
-  ng: Int
-  status: fetchStatus
+  material: Material!
+  ok: Int!
+  ng: Int!
 }
 
 type PointResultsWrap {
-  pointResults: [PointResult!]
+  pointResults: [PointResult]!
   total: Int!
 }
 
@@ -170,17 +187,17 @@ type PointResult {
 }
 
 type Size {
-  id: Int
-  name: String
-  MaterialID: Int
+  id: Int!
+  name: String!
+  MaterialID: Int!
 }
 
 type Point {
-  id: Int
-  name: String
-  upperLimit: Float
-  nominal: Float
-  lowerLimit: Float
+  id: Int!
+  name: String!
+  upperLimit: Float!
+  nominal: Float!
+  lowerLimit: Float!
 }
 
 type NewPoint {
@@ -192,8 +209,8 @@ type NewPoint {
 }
 
 type SizeWrap {
-  total: Int
-  sizes: [Size!]
+  total: Int!
+  sizes: [Size]!
 }
 
 type Device {
@@ -202,56 +219,50 @@ type Device {
 }
 
 type MaterialWrap {
-  total: Int
-  materials: [Material!]
+  total: Int!
+  materials: [Material!]!
 }
 
 type Material {
   id: Int!
   name: String!
-  customerCode: String
-  projectRemark: String
-}
-
-type AddMaterialResponse {
-  material: Material
-  status: fetchStatus
+  customerCode: String!
+  projectRemark: String!
 }
 
 type SystemConfig {
-  id: Int
-  key: String
-  value: String
-  createdAt: Time
-  updatedAt: Time
+  id: Int!
+  key: String!
+  value: String!
+  createdAt: Time!
+  updatedAt: Time!
 }
 
 type User {
-  id: Int
-  account: String
-  admin: Boolean
+  id: Int!
+  username: String!
+  admin: Boolean!
 }
 
 type Product {
-  id: Int
-  uuid: String
-  materialID: Int
-  deviceID: Int
-  qualified: Boolean
-  pointValue: Map
-  createdAt: Time
-  d2code: String
-  lineID: String
-  jigID: String
-  mouldID: String
-  shiftNumber: String
+  id: Int!
+  uuid: String!
+  materialID: Int!
+  deviceID: Int!
+  qualified: Boolean!
+  pointValue: Map!
+  createdAt: Time!
+  d2code: String!
+  lineID: String!
+  jigID: String!
+  mouldID: String!
+  shiftNumber: String!
 }
 
 type ProductWrap {
-  tableHeader: [String!]
-  products: [Product!]
-  status: fetchStatus
-  total: Int
+  tableHeader: [String!]!
+  products: [Product!]!
+  total: Int!
 }
 
 input LoginInput {
@@ -279,3 +290,21 @@ input Search {
 
 scalar Time
 scalar Map
+
+type ImportRecordsWrap {
+  total: Int!
+  records: [ImportRecord!]!
+}
+
+type ImportRecord  {
+  id: Int!
+  path: String!
+  finished: Boolean!
+  totalRows: Int!
+  finishedRows: Int!
+}
+
+type ImportResponse {
+  finished: Boolean!
+  finishedRows: Int!
+}

@@ -51,6 +51,7 @@ type Device struct {
 // Product 产品表
 type Product struct {
 	ID          int       `gorm:"column:id;primary_key"`
+	FileID      int       `gorm:"column:file_id"`
 	UUID        string    `gorm:"column:uuid;unique_index;not null"`
 	MaterialID  int       `gorm:"column:material_id;not null;index"`
 	DeviceID    int       `gorm:"column:device_id;not null;index"`

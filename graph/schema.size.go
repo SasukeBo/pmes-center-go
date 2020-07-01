@@ -206,13 +206,13 @@ func (r *queryResolver) Sizes(ctx context.Context, page int, limit int, material
 		return nil, NewGQLError("获取尺寸信息失败", err.Error())
 	}
 	var outs []*model.Size
-	for _, v := range sizes {
-		s := v
-		outs = append(outs, &model.Size{
-			ID:         &s.ID,
-			Name:       &s.Name,
-			MaterialID: &s.MaterialID,
-		})
+	for _, size := range sizes {
+		var out model.Size
+		if err := copier.Copy(&out, &size); err != nil {
+			continue
+		}
+
+		outs = append(outs, &out)
 	}
 	var count int
 	if err := orm.DB.Model(&orm.Size{}).Where("material_id = ?", materialID).Count(&count).Error; err != nil {
@@ -220,7 +220,7 @@ func (r *queryResolver) Sizes(ctx context.Context, page int, limit int, material
 	}
 
 	return &model.SizeWrap{
-		Total: &count,
+		Total: count,
 		Sizes: outs,
 	}, nil
 }

@@ -102,6 +102,23 @@ func GetList(path string) ([]string, error) {
 	return entries, nil
 }
 
+// CheckFile return true if file can be accessed
+func CheckFile(path string) bool {
+	ftpConn, err := connect()
+	if err != nil {
+		fmt.Printf("[CheckFile error] %v\n", err)
+		return false
+	}
+	defer ftpConn.Quit()
+	_, err = ftpConn.FileSize(path)
+	if err != nil {
+		fmt.Printf("[CheckFile error] %v\n", err)
+		return false
+	}
+
+	return true
+}
+
 // FTPError _
 type FTPError struct {
 	Message   string

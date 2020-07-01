@@ -3,10 +3,12 @@ package graph
 import (
 	"context"
 	"fmt"
+	"github.com/SasukeBo/ftpviewer/ftpclient"
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/google/uuid"
+	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
 	"strings"
 	"time"
@@ -45,7 +47,7 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	}
 
 	// TODO: 关闭自动拉取
-	//fileIDs, err := logic.NeedFetch(material, begin, end)
+	//fileIDs, err := logic.FetchData(material, begin, end)
 	//if err != nil {
 	//	status := &model.FetchStatus{FileIDs: fileIDs, Pending: boolP(false), Message: stringP(err.Error())}
 	//	return &model.ProductWrap{Status: status}, nil
@@ -92,14 +94,10 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	fmt.Println(conditions)
 	cond := strings.Join(conditions, " AND ")
 	var products []orm.Product
+	var out model.ProductWrap
 	if err := orm.DB.Model(&orm.Product{}).Where(cond, vars...).Order("id asc").Offset(oset).Limit(limit).Find(&products).Error; err != nil {
 		if err == gorm.ErrRecordNotFound { // 无数据
-			return &model.ProductWrap{
-				TableHeader: nil,
-				Products:    nil,
-				Status:      nil,
-				Total:       intP(0),
-			}, nil
+			return &out, nil
 		}
 
 		return nil, NewGQLError("获取数据失败，请重试", err.Error())
@@ -139,26 +137,17 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 		productPointValueMap[uuid] = map[string]interface{}{name: value}
 	}
 
-	var outProducts []*model.Product
-	for _, i := range products {
-		p := i
-		op := &model.Product{
-			ID:          &p.ID,
-			UUID:        &p.UUID,
-			MaterialID:  &p.MaterialID,
-			DeviceID:    &p.DeviceID,
-			Qualified:   &p.Qualified,
-			CreatedAt:   &p.CreatedAt,
-			D2code:      &p.D2Code,
-			LineID:      &p.LineID,
-			JigID:       &p.JigID,
-			MouldID:     &p.MouldID,
-			ShiftNumber: &p.ShiftNumber,
+	var outs []*model.Product
+	for _, product := range products {
+		var out model.Product
+		if err := copier.Copy(&out, &product); err != nil {
+			continue
 		}
-		if mp, ok := productPointValueMap[p.UUID]; ok {
-			op.PointValue = mp
+
+		if mp, ok := productPointValueMap[product.UUID]; ok {
+			out.PointValue = mp
 		}
-		outProducts = append(outProducts, op)
+		outs = append(outs, &out)
 	}
 
 	var sizeIDs []int
@@ -167,12 +156,10 @@ func (r *queryResolver) Products(ctx context.Context, searchInput model.Search, 
 	var pointNames []string
 	orm.DB.Model(&orm.Point{}).Where("size_id in (?)", sizeIDs).Order("points.index asc").Pluck("name", &pointNames)
 
-	status := model.FetchStatus{Pending: boolP(false)}
 	return &model.ProductWrap{
 		TableHeader: pointNames,
-		Products:    outProducts,
-		Status:      &status,
-		Total:       &total,
+		Products:    outs,
+		Total:       total,
 	}, nil
 }
 
@@ -256,4 +243,76 @@ func (r *mutationResolver) CancelExport(ctx context.Context, opID string) (strin
 	}
 
 	return "ok", nil
+}
+
+func (r *queryResolver) ImportRecords(ctx context.Context, materialID, page, limit int) (*model.ImportRecordsWrap, error) {
+	query := orm.DB.Model(&orm.File{}).Where("material_id = ?", materialID)
+	var records []orm.File
+	if err := query.Offset((page - 1) * limit).Limit(limit).Find(&records).Error; err != nil {
+		return nil, NewGQLError("获取数据失败", err.Error())
+	}
+	var count int
+	if err := query.Count(&count).Error; err != nil {
+		return nil, NewGQLError("获取数据失败", err.Error())
+	}
+
+	var outs []*model.ImportRecord
+	for _, record := range records {
+		var out model.ImportRecord
+
+		if err := copier.Copy(&out, &record); err != nil {
+			continue
+		}
+
+		outs = append(outs, &out)
+	}
+
+	return &model.ImportRecordsWrap{
+		Total:   count,
+		Records: outs,
+	}, nil
+}
+
+func (r *mutationResolver) RevertRecord(ctx context.Context, id int) (string, error) {
+	record := orm.File{ID: id}
+	orm.DB.Delete(&record)
+
+	var uuids []string
+	if err := orm.DB.Model(&orm.Product{}).Where("file_id = ?", id).Pluck("uuid", &uuids).Error; err != nil {
+		return "error", err
+	}
+
+	orm.DB.Exec("DELETE FROM products WHERE uuid IN (?)", uuids)
+	orm.DB.Exec("DELETE FROM point_values WHERE product_uuid IN (?)", uuids)
+
+	return "ok", nil
+}
+
+func (r *mutationResolver) ImportData(ctx context.Context, materialID int, path string) (string, error) {
+	var material orm.Material
+	if err := orm.DB.Model(orm.Material{}).Where("id = ?", materialID).Find(&material).Error; err != nil {
+		return "", NewGQLError("获取料号信息失败", err.Error())
+	}
+
+	if !ftpclient.CheckFile(path) {
+		return "", NewGQLError("无法访问该文件，请确认路径是否正确", "")
+	}
+
+	if err := logic.FetchFileWithPath(material, path); err != nil {
+		return "", NewGQLError("获取数据失败", err.Error())
+	}
+
+	return "ok", nil
+}
+
+func (r *queryResolver) CheckImport(ctx context.Context, id int) (*model.ImportResponse, error) {
+	var file orm.File
+	if err := orm.DB.Model(&orm.File{}).Where("id = ?", id).Find(&file).Error; err != nil {
+		return nil, NewGQLError("获取导入记录失败", err.Error())
+	}
+
+	return &model.ImportResponse{
+		Finished:     file.Finished,
+		FinishedRows: file.FinishedRows,
+	}, nil
 }

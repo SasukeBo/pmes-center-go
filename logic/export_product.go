@@ -367,7 +367,7 @@ func CheckExport(opID string) (*model.ExportResponse, error) {
 	out := &model.ExportResponse{
 		Percent:  rsp.percent,
 		Message:  rsp.message,
-		FileName: &fileName,
+		FileName: fileName,
 		Finished: rsp.finished,
 	}
 	if rsp.finished {

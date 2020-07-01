@@ -5,6 +5,7 @@ import (
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
 )
 
@@ -34,12 +35,12 @@ func (r *mutationResolver) Login(ctx context.Context, loginInput model.LoginInpu
 		gc.SetCookie("access_token", token, maxAge, "/", "", false, true)
 	}
 
-	userID := int(user.ID)
-	return &model.User{
-		ID:      &userID,
-		Account: &user.Username,
-		Admin:   &user.Admin,
-	}, nil
+	var out model.User
+	if err := copier.Copy(&out, &user); err != nil {
+		return nil, NewGQLError("数据转换发生错误", err.Error())
+	}
+
+	return &out, nil
 }
 
 func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
@@ -52,11 +53,12 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
 		return nil, NewGQLError("用户未登录", "current user is nil")
 	}
 
-	return &model.User{
-		ID:      intP(int(user.ID)),
-		Account: &user.Username,
-		Admin:   &user.Admin,
-	}, nil
+	var out model.User
+	if err := copier.Copy(&out, &user); err != nil {
+		return nil, NewGQLError("数据转换发生错误", err.Error())
+	}
+
+	return &out, nil
 }
 
 func (r *mutationResolver) Logout(ctx context.Context) (string, error) {

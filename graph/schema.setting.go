@@ -6,6 +6,7 @@ import (
 	"github.com/SasukeBo/ftpviewer/graph/model"
 	"github.com/SasukeBo/ftpviewer/logic"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/jinzhu/copier"
 )
 
 func (r *mutationResolver) Setting(ctx context.Context, settingInput model.SettingInput) (*model.SystemConfig, error) {
@@ -32,12 +33,10 @@ func (r *mutationResolver) Setting(ctx context.Context, settingInput model.Setti
 		return nil, NewGQLError("添加系统配置失败", err.Error())
 	}
 
-	confID := int(conf.ID)
-	return &model.SystemConfig{
-		ID:        &confID,
-		Key:       &conf.Key,
-		Value:     &conf.Value,
-		CreatedAt: &conf.CreatedAt,
-		UpdatedAt: &conf.UpdatedAt,
-	}, nil
+	var out model.SystemConfig
+	if err := copier.Copy(&out, &conf); err != nil {
+		return nil, NewGQLError("数据转换发生错误", err.Error())
+	}
+
+	return &out, nil
 }

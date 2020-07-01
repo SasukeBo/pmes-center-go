@@ -23,12 +23,12 @@ var (
 	singleInsertLimit = 10000
 	filenamePattern   = `(.*)-(.*)-(.*)-([w|b])\.xlsx`
 	insertProductsTpl = `
-		INSERT INTO products (uuid, material_id, device_id, qualified, created_at, d2_code, line_id, jig_id, mould_id, shift_number)
+		INSERT INTO products (uuid, material_id, device_id, qualified, created_at, d2_code, line_id, jig_id, mould_id, shift_number, file_id)
 		VALUES
 		%s
 	`
-	productValueFieldTpl = `(?,?,?,?,?,?,?,?,?,?)`
-	productValueCount    = 10
+	productValueFieldTpl = `(?,?,?,?,?,?,?,?,?,?,?)`
+	productValueCount    = 11
 	insertPointValuesTpl = `
 		INSERT INTO point_values (point_id, product_uuid, v)
 		VALUES
@@ -108,7 +108,7 @@ func Store(xr *XLSXReader) {
 			pointValues = append(pointValues, pv...)
 		}
 
-		pv := []interface{}{puuid, material.ID, device.ID, qp, productAt, row[2], row[3], row[4], row[5], row[6]}
+		pv := []interface{}{puuid, material.ID, device.ID, qp, productAt, row[2], row[3], row[4], row[5], row[6], xr.PathID}
 		products = append(products, pv...)
 	}
 

@@ -9,11 +9,6 @@ import (
 	"time"
 )
 
-type AddMaterialResponse struct {
-	Material *Material    `json:"material"`
-	Status   *FetchStatus `json:"status"`
-}
-
 type Device struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
@@ -33,7 +28,7 @@ type EchartsResult struct {
 type ExportResponse struct {
 	Percent  float64 `json:"percent"`
 	Message  string  `json:"message"`
-	FileName *string `json:"fileName"`
+	FileName string  `json:"fileName"`
 	Finished bool    `json:"finished"`
 }
 
@@ -48,16 +43,34 @@ type GroupAnalyzeInput struct {
 	Sort     *Sort        `json:"sort"`
 }
 
+type ImportRecord struct {
+	ID           int    `json:"id"`
+	Path         string `json:"path"`
+	Finished     bool   `json:"finished"`
+	TotalRows    int    `json:"totalRows"`
+	FinishedRows int    `json:"finishedRows"`
+}
+
+type ImportRecordsWrap struct {
+	Total   int             `json:"total"`
+	Records []*ImportRecord `json:"records"`
+}
+
+type ImportResponse struct {
+	Finished     bool `json:"finished"`
+	FinishedRows int  `json:"finishedRows"`
+}
+
 type LoginInput struct {
 	Account  string `json:"account"`
 	Password string `json:"password"`
 }
 
 type Material struct {
-	ID            int     `json:"id"`
-	Name          string  `json:"name"`
-	CustomerCode  *string `json:"customerCode"`
-	ProjectRemark *string `json:"projectRemark"`
+	ID            int    `json:"id"`
+	Name          string `json:"name"`
+	CustomerCode  string `json:"customerCode"`
+	ProjectRemark string `json:"projectRemark"`
 }
 
 type MaterialCreateInput struct {
@@ -67,10 +80,9 @@ type MaterialCreateInput struct {
 }
 
 type MaterialResult struct {
-	Material *Material    `json:"material"`
-	Ok       *int         `json:"ok"`
-	Ng       *int         `json:"ng"`
-	Status   *FetchStatus `json:"status"`
+	Material *Material `json:"material"`
+	Ok       int       `json:"ok"`
+	Ng       int       `json:"ng"`
 }
 
 type MaterialUpdateInput struct {
@@ -80,7 +92,7 @@ type MaterialUpdateInput struct {
 }
 
 type MaterialWrap struct {
-	Total     *int        `json:"total"`
+	Total     int         `json:"total"`
 	Materials []*Material `json:"materials"`
 }
 
@@ -93,11 +105,11 @@ type NewPoint struct {
 }
 
 type Point struct {
-	ID         *int     `json:"id"`
-	Name       *string  `json:"name"`
-	UpperLimit *float64 `json:"upperLimit"`
-	Nominal    *float64 `json:"nominal"`
-	LowerLimit *float64 `json:"lowerLimit"`
+	ID         int     `json:"id"`
+	Name       string  `json:"name"`
+	UpperLimit float64 `json:"upperLimit"`
+	Nominal    float64 `json:"nominal"`
+	LowerLimit float64 `json:"lowerLimit"`
 }
 
 type PointListWithYieldResponse struct {
@@ -131,25 +143,24 @@ type PointYield struct {
 }
 
 type Product struct {
-	ID          *int                   `json:"id"`
-	UUID        *string                `json:"uuid"`
-	MaterialID  *int                   `json:"materialID"`
-	DeviceID    *int                   `json:"deviceID"`
-	Qualified   *bool                  `json:"qualified"`
+	ID          int                    `json:"id"`
+	UUID        string                 `json:"uuid"`
+	MaterialID  int                    `json:"materialID"`
+	DeviceID    int                    `json:"deviceID"`
+	Qualified   bool                   `json:"qualified"`
 	PointValue  map[string]interface{} `json:"pointValue"`
-	CreatedAt   *time.Time             `json:"createdAt"`
-	D2code      *string                `json:"d2code"`
-	LineID      *string                `json:"lineID"`
-	JigID       *string                `json:"jigID"`
-	MouldID     *string                `json:"mouldID"`
-	ShiftNumber *string                `json:"shiftNumber"`
+	CreatedAt   time.Time              `json:"createdAt"`
+	D2code      string                 `json:"d2code"`
+	LineID      string                 `json:"lineID"`
+	JigID       string                 `json:"jigID"`
+	MouldID     string                 `json:"mouldID"`
+	ShiftNumber string                 `json:"shiftNumber"`
 }
 
 type ProductWrap struct {
-	TableHeader []string     `json:"tableHeader"`
-	Products    []*Product   `json:"products"`
-	Status      *FetchStatus `json:"status"`
-	Total       *int         `json:"total"`
+	TableHeader []string   `json:"tableHeader"`
+	Products    []*Product `json:"products"`
+	Total       int        `json:"total"`
 }
 
 type Search struct {
@@ -171,40 +182,34 @@ type SettingInput struct {
 }
 
 type Size struct {
-	ID         *int    `json:"id"`
-	Name       *string `json:"name"`
-	MaterialID *int    `json:"MaterialID"`
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	MaterialID int    `json:"MaterialID"`
 }
 
 type SizeWrap struct {
-	Total *int    `json:"total"`
+	Total int     `json:"total"`
 	Sizes []*Size `json:"sizes"`
 }
 
 type SystemConfig struct {
-	ID        *int       `json:"id"`
-	Key       *string    `json:"key"`
-	Value     *string    `json:"value"`
-	CreatedAt *time.Time `json:"createdAt"`
-	UpdatedAt *time.Time `json:"updatedAt"`
+	ID        int       `json:"id"`
+	Key       string    `json:"key"`
+	Value     string    `json:"value"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type User struct {
-	ID      *int    `json:"id"`
-	Account *string `json:"account"`
-	Admin   *bool   `json:"admin"`
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+	Admin    bool   `json:"admin"`
 }
 
 type YieldWrap struct {
 	Name  string  `json:"name"`
 	Ng    int     `json:"ng"`
 	Value float64 `json:"value"`
-}
-
-type FetchStatus struct {
-	Message *string `json:"message"`
-	Pending *bool   `json:"pending"`
-	FileIDs []int   `json:"fileIDs"`
 }
 
 type Category string
