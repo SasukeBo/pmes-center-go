@@ -1,8 +1,11 @@
 package orm
 
 import (
+	"fmt"
+	"github.com/SasukeBo/ftpviewer/cache"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm/types"
+	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
 	"strings"
 )
@@ -23,6 +26,29 @@ type DecodeTemplate struct {
 	Default              bool      `gorm:"default:false"` // 标识是否为默认模板
 }
 
+const decodeTemplateCacheKey = "cache_decode_template_%v_%v"
+
+/*	callbacks
+--------------------------------------------------------------------------------------------------------------------- */
+
+// 清除缓存
+func (d *DecodeTemplate) AfterUpdate() error {
+	_ = cache.FlushCacheWithKey(fmt.Sprintf(decodeTemplateCacheKey, "id", d.ID))
+	return nil
+}
+func (d *DecodeTemplate) AfterDelete() error {
+	_ = cache.FlushCacheWithKey(fmt.Sprintf(decodeTemplateCacheKey, "id", d.ID))
+	return nil
+}
+func (d *DecodeTemplate) AfterSave() error {
+	_ = cache.FlushCacheWithKey(fmt.Sprintf(decodeTemplateCacheKey, "id", d.ID))
+	return nil
+}
+
+// 清除缓存
+
+/*	functions
+--------------------------------------------------------------------------------------------------------------------- */
 func (d *DecodeTemplate) GenDefaultProductColumns() (int, error) {
 	productColumns := make(types.Map)
 	var config SystemConfig
@@ -52,6 +78,25 @@ func (d *DecodeTemplate) Get(id uint) *errormap.Error {
 		return handleError(err, "id", id)
 	}
 
+	return nil
+}
+
+func (d *DecodeTemplate) GetCache(id uint) *errormap.Error {
+	var cacheKey = fmt.Sprintf(decodeTemplateCacheKey, "id", d.ID)
+	cacheValue := cache.Get(cacheKey)
+	if cacheValue != nil {
+		template, ok := cacheValue.(DecodeTemplate)
+		if ok {
+			if err := copier.Copy(d, &template); err == nil {
+				return nil
+			}
+		}
+	}
+
+	if err := DB.Model(d).Where("id = ?", id).First(d).Error; err != nil {
+		return handleError(err, "id", id)
+	}
+	_ = cache.Set(cacheKey, *d)
 	return nil
 }
 

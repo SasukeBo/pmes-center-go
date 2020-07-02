@@ -6,10 +6,15 @@ package orm
 // 2.通过后台手动创建
 
 import (
+	"fmt"
+	"github.com/SasukeBo/ftpviewer/cache"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/google/uuid"
+	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
 )
+
+const deviceCacheKey = "cache_device_%v_%v"
 
 type Device struct {
 	gorm.Model
@@ -23,6 +28,8 @@ type Device struct {
 	Address        string
 }
 
+/*	callbacks
+--------------------------------------------------------------------------------------------------------------------- */
 func (d *Device) BeforeCreate() error {
 	uid, err := uuid.NewRandom()
 	if err != nil {
@@ -30,6 +37,42 @@ func (d *Device) BeforeCreate() error {
 	}
 
 	d.UUID = uid.String()
+	return nil
+}
+
+// 清除缓存
+func (d *Device) AfterUpdate() error {
+	_ = cache.FlushCacheWithKey(fmt.Sprintf(deviceCacheKey, "token", d.UUID))
+	return nil
+}
+func (d *Device) AfterDelete() error {
+	_ = cache.FlushCacheWithKey(fmt.Sprintf(deviceCacheKey, "token", d.UUID))
+	return nil
+}
+func (d *Device) AfterSave() error {
+	_ = cache.FlushCacheWithKey(fmt.Sprintf(deviceCacheKey, "token", d.UUID))
+	return nil
+}
+// 清除缓存
+
+/*	functions
+--------------------------------------------------------------------------------------------------------------------- */
+func (d *Device) GetWithToken(token string) *errormap.Error {
+	cacheKey := fmt.Sprintf(deviceCacheKey, "token", token)
+	cacheValue := cache.Get(cacheKey)
+	if cacheValue != nil {
+		device, ok := cacheValue.(Device)
+		if ok {
+			if err := copier.Copy(d, &device); err == nil {
+				return nil
+			}
+		}
+	}
+
+	if err := DB.Model(d).Where("uuid = ?", token).First(d).Error; err != nil {
+		return handleError(err, "token", token)
+	}
+	_ = cache.Set(cacheKey, *d)
 	return nil
 }
 

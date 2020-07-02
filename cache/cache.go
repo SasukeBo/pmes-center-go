@@ -1,43 +1,59 @@
 package cache
 
 import (
+	"errors"
 	"fmt"
-	"github.com/SasukeBo/log"
-	"github.com/allegro/bigcache"
+	"github.com/SasukeBo/configer"
+	"github.com/astaxie/beego/cache"
 	"time"
 )
 
 var (
-	globalcache *bigcache.BigCache
+	globalCache cache.Cache
+	expiredTime = configer.GetInt("cache_expired_time")
 )
 
 func init() {
 	var err error
-	globalcache, err = bigcache.NewBigCache(bigcache.DefaultConfig(30 * time.Minute))
+	globalCache, err = cache.NewCache("memory", `{"interval":60}`)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to initialize cache: %v\n", err))
+		panic(fmt.Sprintf("initial global cache failed: %v", err))
 	}
 }
 
 // Set cache
-func Set(key , value string) {
-	globalcache.Set(key, []byte(value))
+func Set(key string, value interface{}) error {
+	return globalCache.Put(key, value, time.Duration(expiredTime)*time.Second)
 }
 
-// Get cache
-func Get(key string) (string, error) {
-	v, err := globalcache.Get(key)
-	if err != nil {
-		return "", err
-	}
-
-	return string(v), nil
+// Get interface value
+func Get(key string) interface{} {
+	return globalCache.Get(key)
 }
 
-// Delete a key value from global cache
-func Delete(key string) {
-	err := globalcache.Delete(key)
-	if err != nil {
-		log.Warnln(fmt.Sprintf("delete cache key=%s failed: %v\n", key, err))
+// GetString string value
+func GetString(key string) (string, error) {
+	value := globalCache.Get(key)
+	str, ok := value.(string)
+	if !ok {
+		return "", errors.New("value is not a string")
 	}
+
+	return str, nil
+}
+
+// GetBool string value
+func GetBool(key string) (bool, error) {
+	value := globalCache.Get(key)
+	bo, ok := value.(bool)
+	if !ok {
+		return false, errors.New("value is not a bool")
+	}
+
+	return bo, nil
+}
+
+// FlushCacheWithKey a key value from global cache
+func FlushCacheWithKey(key string) error {
+	return globalCache.Delete(key)
 }

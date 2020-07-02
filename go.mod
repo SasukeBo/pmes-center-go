@@ -9,6 +9,7 @@ require (
 	github.com/SasukeBo/log v1.0.0
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/allegro/bigcache v1.2.1
+	github.com/astaxie/beego v1.12.2
 	github.com/dgryski/trifles v0.0.0-20191129005055-5a6159895336 // indirect
 	github.com/fasthttp-contrib/websocket v0.0.0-20160511215533-1f3b11f56072 // indirect
 	github.com/fatih/structs v1.1.0 // indirect

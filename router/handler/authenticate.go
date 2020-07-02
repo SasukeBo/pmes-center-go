@@ -32,7 +32,7 @@ func Authenticate() gin.HandlerFunc {
 		}
 
 		var user orm.User
-		userUUID, err := cache.Get(sessionID)
+		userUUID, err := cache.GetString(sessionID)
 		if err != nil { // 内存中未命中，前往db获取
 			log.Info("User not found in cache")
 
@@ -167,7 +167,7 @@ func Logout() gin.HandlerFunc {
 		}
 
 		// 清除cache中记录的登录状态
-		cache.Delete(accessToken)
+		cache.FlushCacheWithKey(accessToken)
 
 		c.JSON(http.StatusOK, object{"status": "ok"})
 	}

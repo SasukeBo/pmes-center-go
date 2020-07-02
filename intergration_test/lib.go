@@ -118,15 +118,13 @@ func tearDown() {
 		"products",
 		"system_configs",
 		"users",
+		"user_logins",
 	}
 
-	orm.DB.LogMode(false)
 	for _, name := range tables {
 		cleanTable(name)
 	}
 	orm.GenerateDefaultConfig()
-	orm.DB.LogMode(true)
-
 }
 
 func cleanTable(tbName string) {
@@ -139,6 +137,7 @@ var Data struct {
 	User     *orm.User
 	Admin    *orm.User
 	Material *orm.Material
+	Device   *orm.Device
 }
 
 const (
@@ -167,4 +166,10 @@ func setup() {
 		ProjectRemark: "mock_material_project_remark",
 	}
 	orm.Create(Data.Material)
+	Data.Device = &orm.Device{
+		Name:       "mock_device",
+		Remark:     "mock_device",
+		MaterialID: Data.Material.ID,
+	}
+	orm.Create(Data.Device)
 }
