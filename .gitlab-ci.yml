@@ -9,7 +9,7 @@ before_script:
   - mkdir -p $WORK_DIR
   - cp -r ./* $WORK_DIR
   - cd $WORK_DIR
-  - GO111MODULE=on go get -u github.com/99designs/gqlgen
+  - go get -v -d
   - cd api/v1
   - gqlgen
   - cd admin
