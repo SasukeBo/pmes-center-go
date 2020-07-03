@@ -9,6 +9,7 @@ before_script:
   - cd $WORK_DIR
   - ls -al
   - which go
+  - whoami
 
 job1:
   script:
