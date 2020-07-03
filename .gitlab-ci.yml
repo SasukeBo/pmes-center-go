@@ -1,9 +1,10 @@
-before_script:
-  - cd $GOPATH/src/github.com/SasukeBo/ftpviewer
-  - echo "hello world"
-  - go run main.go
+# 定义 stages
+stages:
+  - test
 
-job1:
+# 测试
+test:
+  stage: test
   script:
-    - cd intergration_test
-    - go test
+    # Deploy test
+    - ansible cml_test*.*.172.123 -a "cd /home/www/test;git pull"
