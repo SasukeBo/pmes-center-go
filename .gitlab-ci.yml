@@ -1,6 +1,6 @@
 before_script:
-  - cd $GOPATH/src/github.com/SasukeBo/ftpviewer
   - echo "hello world"
+  - cd $GOPATH/src/github.com/SasukeBo/ftpviewer
   - go run main.go
 
 job1:
