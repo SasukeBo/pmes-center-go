@@ -6,5 +6,4 @@ stages:
 test:
   stage: test
   script:
-    # Deploy test
-    - ansible cml_test*.*.172.123 -a "cd /home/www/test;git pull"
+    - echo "hello world"
