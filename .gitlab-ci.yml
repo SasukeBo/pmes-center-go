@@ -5,6 +5,6 @@ before_script:
   - echo "hello world"
   - go run main.go
 
-test:
+job1:
   - cd intergration_test
   - go test
