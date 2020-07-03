@@ -1,9 +1,9 @@
-# 定义 stages
-stages:
-  - test
+before_script:
+  - cd $GOPATH/src/github.com/SasukeBo/ftpviewer
+  - echo "hello world"
+  - go run main.go
 
-# 测试
-test:
-  stage: test
+job1:
   script:
-    - echo "hello world"
+    - cd intergration_test
+    - go test
