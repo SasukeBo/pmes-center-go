@@ -9,7 +9,6 @@ before_script:
   - cd $WORK_DIR
   - ls -al
   - which go
-  - go build
 
 job1:
   script:
