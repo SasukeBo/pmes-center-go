@@ -7,10 +7,10 @@ before_script:
   - mkdir -p $WORK_DIR
   - cp -r ./* $WORK_DIR
   - cd $WORK_DIR
+  - ls -al
   - go build
 
 job1:
   script:
-    - ls -al
     - cd intergration_test
     - go test
