@@ -6,6 +6,7 @@ before_script:
   - export http_proxy=http://192.168.9.34:8001
   - export https_proxy=http://192.168.9.34:8001
   - export PATH=$PATH:$GOPATH/bin
+  - export GO111MODULE=on
   - mkdir -p $WORK_DIR
   - cp -r ./* $WORK_DIR
   - cd $WORK_DIR
