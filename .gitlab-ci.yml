@@ -8,6 +8,7 @@ before_script:
   - cp -r ./* $WORK_DIR
   - cd $WORK_DIR
   - whoami
+  - source .bashrc
   - which go
 
 job1:
