@@ -7,9 +7,8 @@ before_script:
   - mkdir -p $WORK_DIR
   - cp -r ./* $WORK_DIR
   - cd $WORK_DIR
-  - ls -al
-  - which go
   - whoami
+  - which go
 
 job1:
   script:
