@@ -15,3 +15,4 @@ job1:
   script:
     - cd intergration_test/api_v1
     - go test
+    - echo "finish test"
