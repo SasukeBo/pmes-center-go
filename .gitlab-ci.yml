@@ -1,10 +1,7 @@
 image: golang
 
 before_script:
-  - echo "hello world"
-  - pwd
-#  - cd $GOPATH/src/github.com/SasukeBo/ftpviewer
-  - go run main.go
+  - echo $GOPATH
 
 job1:
   script:
