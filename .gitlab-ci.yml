@@ -1,5 +1,3 @@
-image: "golang:latest"
-
 before_script:
   - cd $GOPATH/src/github.com/SasukeBo/ftpviewer
   - echo "hello world"
