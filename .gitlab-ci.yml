@@ -7,11 +7,9 @@ before_script:
   - mkdir -p $WORK_DIR
   - cp -r ./* $WORK_DIR
   - cd $WORK_DIR
-  - whoami
-  - source /home/gitlab-runner/.bashrc
-  - which go
+  - pwd
+  - go build
 
 job1:
   script:
-    - cd intergration_test
-    - go test
+    - go run main.go
