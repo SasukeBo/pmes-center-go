@@ -4,12 +4,14 @@ before_script:
   - mkdir -p /home/gitlab-runner/go
   - export GOPATH=/home/gitlab-runner/go
   - export WORK_DIR=$GOPATH/src/github.com/SasukeBo/ftpviewer
+  - export http_proxy=http://192.168.9.34:8001
+  - export https_proxy=http://192.168.9.34:8001
   - mkdir -p $WORK_DIR
   - cp -r ./* $WORK_DIR
   - cd $WORK_DIR
   - pwd
-  - go build
 
 job1:
   script:
-    - go run main.go
+    - cd intergration_test
+    - go test
