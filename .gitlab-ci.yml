@@ -8,7 +8,7 @@ before_script:
   - cp -r ./* $WORK_DIR
   - cd $WORK_DIR
   - whoami
-  - source .bashrc
+  - source /home/gitlab-runner/.bashrc
   - which go
 
 job1:
