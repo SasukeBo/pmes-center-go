@@ -1,8 +1,8 @@
 image: golang
 
 before_script:
-  - mkdir -p /home/github-runner/go
-  - export GOPATH=/home/github-runner/go
+  - mkdir -p /home/gitlab-runner/go
+  - export GOPATH=/home/gitlab-runner/go
   - export WORK_DIR=$GOPATH/src/github.com/SasukeBo/ftpviewer
   - mkdir -p $WORK_DIR
   - cp ./* $WORK_DIR
