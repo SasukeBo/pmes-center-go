@@ -13,5 +13,5 @@ before_script:
 
 job1:
   script:
-    - cd intergration_test
+    - cd intergration_test/api_v1
     - go test
