@@ -1,12 +1,16 @@
-image: golang:latest
+image: "ruby:2.5"
 
 before_script:
-  - echo "hello world"
-  - pwd
-#  - cd $GOPATH/src/github.com/SasukeBo/ftpviewer
-  - go run main.go
+  - apt-get update -qq && apt-get install -y -qq sqlite3 libsqlite3-dev nodejs
+  - ruby -v
+  - which ruby
+  - gem install bundler --no-document
+  - bundle install --jobs $(nproc)  "${FLAGS[@]}"
 
-job1:
+rspec:
   script:
-    - cd intergration_test
-    - go test
+    - bundle exec rspec
+
+rubocop:
+  script:
+    - bundle exec rubocop
