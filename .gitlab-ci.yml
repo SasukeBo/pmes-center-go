@@ -1,9 +1,15 @@
 image: golang
 
 before_script:
-  - echo $GOPATH
+  - mkdir -p /home/github-runner/go
+  - export GOPATH=/home/github-runner/go
+  - export WORK_DIR=$GOPATH/src/github.com/SasukeBo/ftpviewer
+  - mkdir -p $WORK_DIR
+  - cp ./* $WORK_DIR
+  - cd $WORK_DIR
 
 job1:
   script:
+    - ls -al
     - cd intergration_test
     - go test
