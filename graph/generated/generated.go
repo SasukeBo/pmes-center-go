@@ -56,8 +56,9 @@ type ComplexityRoot struct {
 	}
 
 	EchartsResult struct {
-		SeriesData func(childComplexity int) int
-		XAxisData  func(childComplexity int) int
+		SeriesAmountData func(childComplexity int) int
+		SeriesData       func(childComplexity int) int
+		XAxisData        func(childComplexity int) int
 	}
 
 	ExportResponse struct {
@@ -324,6 +325,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DeviceResult.Ok(childComplexity), true
+
+	case "EchartsResult.seriesAmountData":
+		if e.complexity.EchartsResult.SeriesAmountData == nil {
+			break
+		}
+
+		return e.complexity.EchartsResult.SeriesAmountData(childComplexity), true
 
 	case "EchartsResult.seriesData":
 		if e.complexity.EchartsResult.SeriesData == nil {
@@ -1437,6 +1445,7 @@ input GroupAnalyzeInput {
   duration: [Time!] # 时间范围
   limit: Int
   sort: Sort
+  filters: Map # 过滤条件
 }
 
 enum Category {
@@ -1462,6 +1471,7 @@ enum YAxis {
 type EchartsResult {
   xAxisData: [String!]!
   seriesData: Map!
+  seriesAmountData: Map!
 }
 
 type ExportResponse {
@@ -2464,6 +2474,40 @@ func (ec *executionContext) _EchartsResult_seriesData(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.SeriesData, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(map[string]interface{})
+	fc.Result = res
+	return ec.marshalNMap2map(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EchartsResult_seriesAmountData(ctx context.Context, field graphql.CollectedField, obj *model.EchartsResult) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "EchartsResult",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SeriesAmountData, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7663,6 +7707,12 @@ func (ec *executionContext) unmarshalInputGroupAnalyzeInput(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "filters":
+			var err error
+			it.Filters, err = ec.unmarshalOMap2map(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -7914,6 +7964,11 @@ func (ec *executionContext) _EchartsResult(ctx context.Context, sel ast.Selectio
 			}
 		case "seriesData":
 			out.Values[i] = ec._EchartsResult_seriesData(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "seriesAmountData":
+			out.Values[i] = ec._EchartsResult_seriesAmountData(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

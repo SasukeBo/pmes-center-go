@@ -21,8 +21,9 @@ type DeviceResult struct {
 }
 
 type EchartsResult struct {
-	XAxisData  []string               `json:"xAxisData"`
-	SeriesData map[string]interface{} `json:"seriesData"`
+	XAxisData        []string               `json:"xAxisData"`
+	SeriesData       map[string]interface{} `json:"seriesData"`
+	SeriesAmountData map[string]interface{} `json:"seriesAmountData"`
 }
 
 type ExportResponse struct {
@@ -34,13 +35,14 @@ type ExportResponse struct {
 
 // 分组数据分析的输入参数，实际上是分析料号或设备相关的产品数据，选定x轴 y轴 以及分组字段
 type GroupAnalyzeInput struct {
-	TargetID int          `json:"targetID"`
-	XAxis    Category     `json:"xAxis"`
-	YAxis    YAxis        `json:"yAxis"`
-	GroupBy  *Category    `json:"groupBy"`
-	Duration []*time.Time `json:"duration"`
-	Limit    *int         `json:"limit"`
-	Sort     *Sort        `json:"sort"`
+	TargetID int                    `json:"targetID"`
+	XAxis    Category               `json:"xAxis"`
+	YAxis    YAxis                  `json:"yAxis"`
+	GroupBy  *Category              `json:"groupBy"`
+	Duration []*time.Time           `json:"duration"`
+	Limit    *int                   `json:"limit"`
+	Sort     *Sort                  `json:"sort"`
+	Filters  map[string]interface{} `json:"filters"`
 }
 
 type ImportRecord struct {

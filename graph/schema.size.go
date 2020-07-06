@@ -406,6 +406,13 @@ func (r *queryResolver) SizeUnYieldTop(ctx context.Context, groupInput model.Gro
 	// select fields
 	query = query.Select("p.name AS point_name, (pv.v >= p.lower_limit && pv.v <= p.upper_limit) AS qualified")
 
+	// filters
+	if groupInput.Filters != nil {
+		for k, v := range groupInput.Filters {
+			query = query.Where(fmt.Sprintf("products.%s = ?", k), v)
+		}
+	}
+
 	// duration
 	if len(groupInput.Duration) > 0 {
 		query = query.Where("products.created_at > ?", groupInput.Duration[0])

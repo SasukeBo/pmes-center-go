@@ -103,6 +103,7 @@ input GroupAnalyzeInput {
   duration: [Time!] # 时间范围
   limit: Int
   sort: Sort
+  filters: Map # 过滤条件
 }
 
 enum Category {
@@ -128,6 +129,7 @@ enum YAxis {
 type EchartsResult {
   xAxisData: [String!]!
   seriesData: Map!
+  seriesAmountData: Map!
 }
 
 type ExportResponse {

@@ -15,8 +15,9 @@ type analysis struct {
 }
 
 type echartsResult struct {
-	XAxisData  []string
-	SeriesData map[string][]float64
+	XAxisData        []string
+	SeriesData       map[string][]float64
+	SeriesAmountData map[string][]float64
 }
 
 func groupAnalyze(params model.GroupAnalyzeInput, target string) (*model.EchartsResult, error) {
@@ -88,7 +89,6 @@ func groupAnalyze(params model.GroupAnalyzeInput, target string) (*model.Echarts
 		v := *params.Sort
 		sort = string(v)
 	}
-	//query = query.Order(fmt.Sprintf("axis %s", sort))
 
 	rows, err := query.Rows()
 	if err != nil {
@@ -127,6 +127,7 @@ func sortResult(result *echartsResult, isAsc bool) {
 	var length = len(result.XAxisData)
 
 	seriesData := result.SeriesData["data"]
+	seriesAmountData := result.SeriesAmountData["data"]
 	for i := 0; i < length-1; i++ {
 		for j := 0; j < length-1-i; j++ {
 			if isAsc && seriesData[j] < seriesData[j+1] {
@@ -138,15 +139,22 @@ func sortResult(result *echartsResult, isAsc bool) {
 			}
 
 			s := seriesData[j]
+			a := seriesAmountData[j]
 			x := result.XAxisData[j]
+
 			seriesData[j] = seriesData[j+1]
-			result.XAxisData[j] = result.XAxisData[j+1]
 			seriesData[j+1] = s
+
+			seriesAmountData[j] = seriesAmountData[j+1]
+			seriesAmountData[j+1] = a
+
+			result.XAxisData[j] = result.XAxisData[j+1]
 			result.XAxisData[j+1] = x
 		}
 	}
 
 	result.SeriesData["data"] = seriesData
+	result.SeriesAmountData["data"] = seriesAmountData
 }
 
 func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, sort string) (*model.EchartsResult, error) {
@@ -179,13 +187,16 @@ func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, so
 
 func convertToEchartsResult(result *echartsResult) *model.EchartsResult {
 	seriesData := make(map[string]interface{})
+	seriesAmountData := make(map[string]interface{})
 	for k, v := range result.SeriesData {
 		seriesData[k] = v
+		seriesAmountData[k] = result.SeriesAmountData[k]
 	}
 
 	return &model.EchartsResult{
-		XAxisData:  result.XAxisData,
-		SeriesData: seriesData,
+		XAxisData:        result.XAxisData,
+		SeriesData:       seriesData,
+		SeriesAmountData: seriesAmountData,
 	}
 }
 
@@ -247,9 +258,16 @@ func calAmountAnalysisResult(scanResults []analysis, limit *int, sort string) (*
 		}
 	}
 
+	var seriesAmountData = make(map[string][]float64)
+	for k, v := range seriesData {
+		var data = append([]float64{}, v...)
+		seriesAmountData[k] = data
+	}
+
 	var result = echartsResult{
-		XAxisData:  xAxisData,
-		SeriesData: seriesData,
+		XAxisData:        xAxisData,
+		SeriesData:       seriesData,
+		SeriesAmountData: seriesAmountData,
 	}
 
 	if _, ok := result.SeriesData["data"]; ok && sort != "" {
