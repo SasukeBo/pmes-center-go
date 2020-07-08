@@ -8,8 +8,8 @@ type Query {
     materials(search: String, page: Int!, limit: Int!): MaterialsWrap!
     "ID获取料号"
     material(id: Int!): Material!
-    "分组分析料号，返回图表渲染所需的数据"
-    analyzeMaterial(analyzeInput: AnalyzeMaterialInput!): EchartsResult!
     "料号良率排行"
     materialYieldTop(duration: [Time]!, limit: Int!): EchartsResult!
+    "分组分析料号，返回图表渲染所需的数据"
+    analyzeMaterial(analyzeInput: AnalyzeMaterialInput!): EchartsResult!
 }
