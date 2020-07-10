@@ -32,7 +32,7 @@ func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.S
 	return logic.AnalyzeMaterial(ctx, searchInput)
 }
 
-func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error) {
+func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GraphInput) (*model.EchartsResult, error) {
 	return logic.GroupAnalyzeMaterial(ctx, analyzeInput)
 }
 
@@ -44,7 +44,7 @@ func (r *queryResolver) Devices(ctx context.Context, materialID int) ([]*model.D
 	return logic.Devices(ctx, materialID)
 }
 
-func (r *queryResolver) SizeUnYieldTop(ctx context.Context, groupInput model.GroupAnalyzeInput) (*model.EchartsResult, error) {
+func (r *queryResolver) SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput) (*model.EchartsResult, error) {
 	return logic.SizeUnYieldTop(ctx, groupInput)
 }
 

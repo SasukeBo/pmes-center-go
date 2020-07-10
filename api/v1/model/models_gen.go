@@ -9,19 +9,6 @@ import (
 	"time"
 )
 
-// 分析料号的输入参数，实际上是分析料号的产品数据，选定x轴 y轴 以及分组字段
-type AnalyzeMaterialInput struct {
-	MaterialID     int          `json:"materialID"`
-	XAxis          Category     `json:"xAxis"`
-	YAxis          YAxis        `json:"yAxis"`
-	GroupBy        *Category    `json:"groupBy"`
-	Duration       []*time.Time `json:"duration"`
-	Limit          *int         `json:"limit"`
-	Sort           *Sort        `json:"sort"`
-	AttributeXAxis *string      `json:"attributeXAxis"`
-	AttributeGroup *string      `json:"attributeGroup"`
-}
-
 type Device struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
@@ -33,15 +20,18 @@ type EchartsResult struct {
 	SeriesAmountData map[string]interface{} `json:"seriesAmountData"`
 }
 
-type GroupAnalyzeInput struct {
-	TargetID int                    `json:"targetID"`
-	XAxis    Category               `json:"xAxis"`
-	YAxis    YAxis                  `json:"yAxis"`
-	GroupBy  *Category              `json:"groupBy"`
-	Duration []*time.Time           `json:"duration"`
-	Limit    *int                   `json:"limit"`
-	Sort     *Sort                  `json:"sort"`
-	Filters  map[string]interface{} `json:"filters"`
+// 获取Echart绘图数据所需的参数
+type GraphInput struct {
+	TargetID       int                    `json:"targetID"`
+	XAxis          Category               `json:"xAxis"`
+	YAxis          YAxis                  `json:"yAxis"`
+	GroupBy        *Category              `json:"groupBy"`
+	Duration       []*time.Time           `json:"duration"`
+	Limit          *int                   `json:"limit"`
+	Sort           *Sort                  `json:"sort"`
+	AttributeXAxis *string                `json:"attributeXAxis"`
+	AttributeGroup *string                `json:"attributeGroup"`
+	Filters        map[string]interface{} `json:"filters"`
 }
 
 type Material struct {
@@ -94,18 +84,20 @@ type Category string
 const (
 	CategoryDate      Category = "Date"
 	CategoryDevice    Category = "Device"
+	CategoryShift     Category = "Shift"
 	CategoryAttribute Category = "Attribute"
 )
 
 var AllCategory = []Category{
 	CategoryDate,
 	CategoryDevice,
+	CategoryShift,
 	CategoryAttribute,
 }
 
 func (e Category) IsValid() bool {
 	switch e {
-	case CategoryDate, CategoryDevice, CategoryAttribute:
+	case CategoryDate, CategoryDevice, CategoryShift, CategoryAttribute:
 		return true
 	}
 	return false

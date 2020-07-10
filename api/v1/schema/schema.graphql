@@ -19,14 +19,3 @@ input Search {
     "其他查询条件以map形式传递"
     extra: Map
 }
-
-input GroupAnalyzeInput {
-    targetID: Int! # 分析目标的ID
-    xAxis: Category! # x轴字段
-    yAxis: YAxis! # y轴字段
-    groupBy: Category # 分组字段
-    duration: [Time!] # 时间范围
-    limit: Int
-    sort: Sort
-    filters: Map # 过滤条件
-}

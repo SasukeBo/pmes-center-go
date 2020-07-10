@@ -13,7 +13,7 @@ type Query {
     "分析料号数据"
     analyzeMaterial(searchInput: Search!): MaterialResult!
     "分组分析料号，返回图表渲染所需的数据"
-    groupAnalyzeMaterial(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+    groupAnalyzeMaterial(analyzeInput: GraphInput!): EchartsResult!
     "获取产品属性列表"
     productAttributes(materialID: Int!): [ProductAttribute]!
 
@@ -23,5 +23,5 @@ type Query {
 
     # 尺寸
     "尺寸不良率排行"
-    sizeUnYieldTop(groupInput: GroupAnalyzeInput!): EchartsResult!
+    sizeUnYieldTop(groupInput: GraphInput!): EchartsResult!
 }

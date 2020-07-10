@@ -18,9 +18,9 @@ type MaterialsWrap {
     materials: [Material!]!
 }
 
-"分析料号的输入参数，实际上是分析料号的产品数据，选定x轴 y轴 以及分组字段"
-input AnalyzeMaterialInput {
-    materialID: Int! # 料号的ID
+"获取Echart绘图数据所需的参数"
+input GraphInput {
+    targetID: Int! # 目标的ID
     xAxis: Category! # x轴字段
     yAxis: YAxis! # y轴字段
     groupBy: Category # 分组字段
@@ -29,12 +29,14 @@ input AnalyzeMaterialInput {
     sort: Sort
     attributeXAxis: String # x轴字段为Attribute时，需要传递该参数，即x轴字段从product的attribute中选取
     attributeGroup: String # x轴字段为Attribute时，需要传递该参数，即分组字段从product的attribute中选取
+    filters: Map
 }
 
 enum Category {
-    Date
-    Device
-    Attribute
+    Date # 日期
+    Device # 设备
+    Shift # 班别
+    Attribute # 产品属性
 }
 
 enum Sort {

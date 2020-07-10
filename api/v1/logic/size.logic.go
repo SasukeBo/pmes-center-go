@@ -11,7 +11,7 @@ import (
 )
 
 // 尺寸不良率排行
-func SizeUnYieldTop(ctx context.Context, groupInput model.GroupAnalyzeInput) (*model.EchartsResult, error) {
+func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput) (*model.EchartsResult, error) {
 	query := orm.DB.Model(&orm.Product{}).Where("products.material_id = ?", groupInput.TargetID)
 
 	// filters

@@ -23,7 +23,7 @@ type echartsResult struct {
 	SeriesAmountData map[string][]float64
 }
 
-func groupAnalyze(ctx context.Context, params model.GroupAnalyzeInput, target string) (*model.EchartsResult, error) {
+func groupAnalyze(ctx context.Context, params model.GraphInput, target string) (*model.EchartsResult, error) {
 	query := orm.DB.Model(&orm.Product{})
 	switch target {
 	case "material":
@@ -47,8 +47,13 @@ func groupAnalyze(ctx context.Context, params model.GroupAnalyzeInput, target st
 	case model.CategoryDevice:
 		selectVariables = append(selectVariables, "devices.name")
 		joinDevice = true
-	default:
-		selectVariables = append(selectVariables, params.XAxis)
+	case model.CategoryShift:
+		selectVariables = append(selectVariables, "TIME(created_at) >= '08:00:00' && TIME(created_at) <= '17:30:00'")
+	case model.CategoryAttribute:
+		if params.AttributeXAxis == nil {
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("need AttributeXAxis when xAxis type is attribute"))
+		}
+		selectVariables = append(selectVariables, fmt.Sprintf("JSON_UNQUOTE(JSON_EXTRACT(`attribute`, '$.\"%v\"'))", *params.AttributeXAxis))
 	}
 
 	// group by
@@ -61,8 +66,13 @@ func groupAnalyze(ctx context.Context, params model.GroupAnalyzeInput, target st
 		case model.CategoryDevice:
 			selectVariables = append(selectVariables, "devices.name")
 			joinDevice = true
-		default:
-			selectVariables = append(selectVariables, params.GroupBy)
+		case model.CategoryShift:
+			selectVariables = append(selectVariables, "TIME(created_at) >= '08:00:00' && TIME(created_at) <= '17:30:00'")
+		case model.CategoryAttribute:
+			if params.AttributeGroup == nil {
+				return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("need AttributeGroup when groupBy type is attribute"))
+			}
+			selectVariables = append(selectVariables, fmt.Sprintf("JSON_UNQUOTE(JSON_EXTRACT(`attribute`, '$.\"%v\"'))", *params.AttributeGroup))
 		}
 	}
 

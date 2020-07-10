@@ -256,7 +256,7 @@ func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*m
 	}, nil
 }
 
-func GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error) {
+func GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GraphInput) (*model.EchartsResult, error) {
 	return groupAnalyze(ctx, analyzeInput, "material")
 }
 

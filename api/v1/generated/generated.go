@@ -83,12 +83,12 @@ type ComplexityRoot struct {
 		AnalyzeMaterial      func(childComplexity int, searchInput model.Search) int
 		CurrentUser          func(childComplexity int) int
 		Devices              func(childComplexity int, materialID int) int
-		GroupAnalyzeMaterial func(childComplexity int, analyzeInput model.GroupAnalyzeInput) int
+		GroupAnalyzeMaterial func(childComplexity int, analyzeInput model.GraphInput) int
 		Material             func(childComplexity int, id int) int
 		MaterialYieldTop     func(childComplexity int, duration []*time.Time, limit int) int
 		Materials            func(childComplexity int, search *string, page int, limit int) int
 		ProductAttributes    func(childComplexity int, materialID int) int
-		SizeUnYieldTop       func(childComplexity int, groupInput model.GroupAnalyzeInput) int
+		SizeUnYieldTop       func(childComplexity int, groupInput model.GraphInput) int
 	}
 
 	User struct {
@@ -105,10 +105,10 @@ type QueryResolver interface {
 	Material(ctx context.Context, id int) (*model.Material, error)
 	MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error)
 	AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error)
-	GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error)
+	GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GraphInput) (*model.EchartsResult, error)
 	ProductAttributes(ctx context.Context, materialID int) ([]*model.ProductAttribute, error)
 	Devices(ctx context.Context, materialID int) ([]*model.Device, error)
-	SizeUnYieldTop(ctx context.Context, groupInput model.GroupAnalyzeInput) (*model.EchartsResult, error)
+	SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput) (*model.EchartsResult, error)
 }
 
 type executableSchema struct {
@@ -293,7 +293,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GroupAnalyzeMaterial(childComplexity, args["analyzeInput"].(model.GroupAnalyzeInput)), true
+		return e.complexity.Query.GroupAnalyzeMaterial(childComplexity, args["analyzeInput"].(model.GraphInput)), true
 
 	case "Query.material":
 		if e.complexity.Query.Material == nil {
@@ -353,7 +353,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.SizeUnYieldTop(childComplexity, args["groupInput"].(model.GroupAnalyzeInput)), true
+		return e.complexity.Query.SizeUnYieldTop(childComplexity, args["groupInput"].(model.GraphInput)), true
 
 	case "User.account":
 		if e.complexity.User.Account == nil {
@@ -457,9 +457,9 @@ type MaterialsWrap {
     materials: [Material!]!
 }
 
-"分析料号的输入参数，实际上是分析料号的产品数据，选定x轴 y轴 以及分组字段"
-input AnalyzeMaterialInput {
-    materialID: Int! # 料号的ID
+"获取Echart绘图数据所需的参数"
+input GraphInput {
+    targetID: Int! # 目标的ID
     xAxis: Category! # x轴字段
     yAxis: YAxis! # y轴字段
     groupBy: Category # 分组字段
@@ -468,12 +468,14 @@ input AnalyzeMaterialInput {
     sort: Sort
     attributeXAxis: String # x轴字段为Attribute时，需要传递该参数，即x轴字段从product的attribute中选取
     attributeGroup: String # x轴字段为Attribute时，需要传递该参数，即分组字段从product的attribute中选取
+    filters: Map
 }
 
 enum Category {
-    Date
-    Device
-    Attribute
+    Date # 日期
+    Device # 设备
+    Shift # 班别
+    Attribute # 产品属性
 }
 
 enum Sort {
@@ -507,7 +509,7 @@ type ProductAttribute {
     "分析料号数据"
     analyzeMaterial(searchInput: Search!): MaterialResult!
     "分组分析料号，返回图表渲染所需的数据"
-    groupAnalyzeMaterial(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+    groupAnalyzeMaterial(analyzeInput: GraphInput!): EchartsResult!
     "获取产品属性列表"
     productAttributes(materialID: Int!): [ProductAttribute]!
 
@@ -517,7 +519,7 @@ type ProductAttribute {
 
     # 尺寸
     "尺寸不良率排行"
-    sizeUnYieldTop(groupInput: GroupAnalyzeInput!): EchartsResult!
+    sizeUnYieldTop(groupInput: GraphInput!): EchartsResult!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "schema/schema.graphql", Input: `scalar Time
@@ -540,17 +542,6 @@ input Search {
     endTime: Time
     "其他查询条件以map形式传递"
     extra: Map
-}
-
-input GroupAnalyzeInput {
-    targetID: Int! # 分析目标的ID
-    xAxis: Category! # x轴字段
-    yAxis: YAxis! # y轴字段
-    groupBy: Category # 分组字段
-    duration: [Time!] # 时间范围
-    limit: Int
-    sort: Sort
-    filters: Map # 过滤条件
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "schema/user.graphql", Input: `type User {
@@ -612,9 +603,9 @@ func (ec *executionContext) field_Query_devices_args(ctx context.Context, rawArg
 func (ec *executionContext) field_Query_groupAnalyzeMaterial_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.GroupAnalyzeInput
+	var arg0 model.GraphInput
 	if tmp, ok := rawArgs["analyzeInput"]; ok {
-		arg0, err = ec.unmarshalNGroupAnalyzeInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐGroupAnalyzeInput(ctx, tmp)
+		arg0, err = ec.unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐGraphInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -706,9 +697,9 @@ func (ec *executionContext) field_Query_productAttributes_args(ctx context.Conte
 func (ec *executionContext) field_Query_sizeUnYieldTop_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.GroupAnalyzeInput
+	var arg0 model.GraphInput
 	if tmp, ok := rawArgs["groupInput"]; ok {
-		arg0, err = ec.unmarshalNGroupAnalyzeInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐGroupAnalyzeInput(ctx, tmp)
+		arg0, err = ec.unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐGraphInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1587,7 +1578,7 @@ func (ec *executionContext) _Query_groupAnalyzeMaterial(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GroupAnalyzeMaterial(rctx, args["analyzeInput"].(model.GroupAnalyzeInput))
+		return ec.resolvers.Query().GroupAnalyzeMaterial(rctx, args["analyzeInput"].(model.GraphInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1710,7 +1701,7 @@ func (ec *executionContext) _Query_sizeUnYieldTop(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().SizeUnYieldTop(rctx, args["groupInput"].(model.GroupAnalyzeInput))
+		return ec.resolvers.Query().SizeUnYieldTop(rctx, args["groupInput"].(model.GraphInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2987,15 +2978,15 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputAnalyzeMaterialInput(ctx context.Context, obj interface{}) (model.AnalyzeMaterialInput, error) {
-	var it model.AnalyzeMaterialInput
+func (ec *executionContext) unmarshalInputGraphInput(ctx context.Context, obj interface{}) (model.GraphInput, error) {
+	var it model.GraphInput
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "materialID":
+		case "targetID":
 			var err error
-			it.MaterialID, err = ec.unmarshalNInt2int(ctx, v)
+			it.TargetID, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3044,60 +3035,6 @@ func (ec *executionContext) unmarshalInputAnalyzeMaterialInput(ctx context.Conte
 		case "attributeGroup":
 			var err error
 			it.AttributeGroup, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputGroupAnalyzeInput(ctx context.Context, obj interface{}) (model.GroupAnalyzeInput, error) {
-	var it model.GroupAnalyzeInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "targetID":
-			var err error
-			it.TargetID, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "xAxis":
-			var err error
-			it.XAxis, err = ec.unmarshalNCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐCategory(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "yAxis":
-			var err error
-			it.YAxis, err = ec.unmarshalNYAxis2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐYAxis(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "groupBy":
-			var err error
-			it.GroupBy, err = ec.unmarshalOCategory2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐCategory(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "duration":
-			var err error
-			it.Duration, err = ec.unmarshalOTime2ᚕᚖtimeᚐTimeᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "limit":
-			var err error
-			it.Limit, err = ec.unmarshalOInt2ᚖint(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "sort":
-			var err error
-			it.Sort, err = ec.unmarshalOSort2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSort(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3902,8 +3839,8 @@ func (ec *executionContext) marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋf
 	return ec._EchartsResult(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNGroupAnalyzeInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐGroupAnalyzeInput(ctx context.Context, v interface{}) (model.GroupAnalyzeInput, error) {
-	return ec.unmarshalInputGroupAnalyzeInput(ctx, v)
+func (ec *executionContext) unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐGraphInput(ctx context.Context, v interface{}) (model.GraphInput, error) {
+	return ec.unmarshalInputGraphInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
