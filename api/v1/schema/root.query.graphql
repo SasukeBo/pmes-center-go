@@ -18,10 +18,21 @@ type Query {
     productAttributes(materialID: Int!): [ProductAttribute]!
 
     # 设备
+    "ID查询设备"
+    device(id: Int!): Device!
     "获取设备生产数据"
     devices(materialID: Int!): [Device]!
+    "返回设备数据及分析结果列表"
+    analyzeDevices(materialID: Int!): [DeviceResult]!
+    "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
+    analyzeDevice(searchInput: Search!): DeviceResult!
+    "分组分析设备，返回图表渲染所需的数据"
+    groupAnalyzeDevice(analyzeInput: GraphInput!): EchartsResult!
+
 
     # 尺寸
     "尺寸不良率排行"
     sizeUnYieldTop(groupInput: GraphInput!): EchartsResult!
+    "获取检测尺寸良率"
+    pointListWithYield(materialID: Int!, limit: Int!, page: Int!): PointListWithYieldResponse!
 }

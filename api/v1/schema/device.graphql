@@ -1,4 +1,11 @@
 type Device {
     id: Int!
     name: String!
+    material: Material!
+}
+
+type DeviceResult {
+    device: Device!
+    ok: Int!
+    ng: Int!
 }

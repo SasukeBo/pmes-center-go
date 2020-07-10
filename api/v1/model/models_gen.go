@@ -9,9 +9,10 @@ import (
 	"time"
 )
 
-type Device struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+type DeviceResult struct {
+	Device *Device `json:"device"`
+	Ok     int     `json:"ok"`
+	Ng     int     `json:"ng"`
 }
 
 type EchartsResult struct {
@@ -52,6 +53,25 @@ type MaterialResult struct {
 type MaterialsWrap struct {
 	Total     int         `json:"total"`
 	Materials []*Material `json:"materials"`
+}
+
+type Point struct {
+	ID         int     `json:"id"`
+	Name       string  `json:"name"`
+	UpperLimit float64 `json:"upperLimit"`
+	Nominal    float64 `json:"nominal"`
+	LowerLimit float64 `json:"lowerLimit"`
+}
+
+type PointListWithYieldResponse struct {
+	Total int           `json:"total"`
+	List  []*PointYield `json:"list"`
+}
+
+type PointYield struct {
+	Point *Point `json:"point"`
+	Ok    int    `json:"ok"`
+	Total int    `json:"total"`
 }
 
 type ProductAttribute struct {

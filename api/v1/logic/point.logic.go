@@ -7,6 +7,7 @@ import (
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"github.com/SasukeBo/ftpviewer/orm/types"
+	"github.com/jinzhu/copier"
 	"strconv"
 )
 
@@ -113,5 +114,40 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput) (*model.Ec
 		XAxisData:        xAxisData,
 		SeriesData:       types.Map{"data": data},
 		SeriesAmountData: types.Map{"data": amount},
+	}, nil
+}
+
+func PointListWithYield(ctx context.Context, materialID int, limit int, page int) (*model.PointListWithYieldResponse, error) {
+	sql := orm.DB.Model(&orm.Point{}).Where("material_id = ?", materialID)
+
+	var total int
+	if err := sql.Count(&total).Error; err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "point")
+	}
+
+	var points []orm.Point
+	if err := sql.Limit(limit).Offset((page - 1) * limit).Find(&points).Error; err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "point")
+	}
+
+	var list []*model.PointYield
+	for _, p := range points {
+		var total, ok int
+		query := orm.DB.Model(&orm.PointValue{}).Where("point_id = ?", p.ID)
+		query.Count(&total)
+		query.Where("v > ? AND v < ?", p.LowerLimit, p.UpperLimit).Count(&ok)
+		var point model.NewPoint
+		copier.Copy(&point, &p)
+
+		list = append(list, &model.PointYield{
+			Point: &point,
+			Ok:    ok,
+			Total: total,
+		})
+	}
+
+	return &model.PointListWithYieldResponse{
+		Total: total,
+		List:  list,
 	}, nil
 }

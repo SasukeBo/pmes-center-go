@@ -54,3 +54,6 @@ models:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
+  Device:
+    model:
+      - github.com/SasukeBo/ftpviewer/api/v1/model.Device

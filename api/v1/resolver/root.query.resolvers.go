@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/SasukeBo/ftpviewer/api/v1/generated"
@@ -40,12 +41,32 @@ func (r *queryResolver) ProductAttributes(ctx context.Context, materialID int) (
 	return logic.ProductAttributes(ctx, materialID)
 }
 
+func (r *queryResolver) Device(ctx context.Context, id int) (*model.Device, error) {
+	return logic.Device(ctx, id)
+}
+
 func (r *queryResolver) Devices(ctx context.Context, materialID int) ([]*model.Device, error) {
 	return logic.Devices(ctx, materialID)
 }
 
+func (r *queryResolver) AnalyzeDevices(ctx context.Context, materialID int) ([]*model.DeviceResult, error) {
+	return logic.AnalyzeDevices(ctx, materialID)
+}
+
+func (r *queryResolver) AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.DeviceResult, error) {
+	return logic.AnalyzeDevice(ctx, searchInput)
+}
+
+func (r *queryResolver) GroupAnalyzeDevice(ctx context.Context, analyzeInput model.GraphInput) (*model.EchartsResult, error) {
+	return logic.GroupAnalyzeDevice(ctx, analyzeInput)
+}
+
 func (r *queryResolver) SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput) (*model.EchartsResult, error) {
 	return logic.SizeUnYieldTop(ctx, groupInput)
+}
+
+func (r *queryResolver) PointListWithYield(ctx context.Context, materialID int, limit int, page int) (*model.PointListWithYieldResponse, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // Query returns generated.QueryResolver implementation.

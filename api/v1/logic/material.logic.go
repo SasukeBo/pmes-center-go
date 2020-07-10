@@ -280,3 +280,16 @@ func ProductAttributes(ctx context.Context, materialID int) ([]*model.ProductAtt
 
 	return outs, nil
 }
+
+func LoadMaterial(ctx context.Context, materialID uint) *model.Material {
+	var material orm.Material
+	if err := material.Get(materialID); err != nil {
+		return nil
+	}
+	var out model.Material
+	if err := copier.Copy(&out, &material); err != nil {
+		return nil
+	}
+
+	return &out
+}
