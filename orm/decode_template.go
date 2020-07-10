@@ -58,19 +58,18 @@ func (d *DecodeTemplate) GenDefaultProductColumns() (int, error) {
 	}
 
 	headers := strings.Split(config.Value, ";")
-	var columns []Column
 	for i, header := range headers {
 		vs := strings.Split(header, ":")
-		columns = append(columns, Column{
-			Name:  vs[0],
+		var column = Column{
+			Label: vs[0],
 			Type:  vs[1],
 			Index: i,
-		})
+		}
+		productColumns[fmt.Sprintf("attr_%v", i)] = column
 	}
 
-	productColumns["columns"] = columns
 	d.ProductColumns = productColumns
-	return len(columns), nil
+	return len(productColumns), nil
 }
 
 func (d *DecodeTemplate) Get(id uint) *errormap.Error {
@@ -108,12 +107,7 @@ const (
 )
 
 type Column struct {
-	Name  string
+	Label string
 	Index int
 	Type  string
-}
-
-type ColumnValue struct {
-	Label string
-	Value interface{}
 }

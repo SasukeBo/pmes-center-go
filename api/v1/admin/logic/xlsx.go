@@ -296,25 +296,17 @@ func store(xr *XLSXReader) {
 		return
 	}
 
-	iColumns := xr.DecodeTemplate.ProductColumns["columns"]
-	columns, ok := iColumns.([]interface{})
-	if !ok {
-		_ = xr.Record.Failed(errormap.ErrorCodeImportWithIllegalDecodeTemplate, "product columns stored in db is not a list")
-		log.Error("decode template product columns error, got %+v\n", iColumns)
-		return
-	}
-
+	productColumns := xr.DecodeTemplate.ProductColumns
 	productValueExpands := make([]interface{}, 0)
 
 	for _, row := range xr.DataSet {
 		qualified := true
 		createdAt := timer.ParseTime(row[xr.DecodeTemplate.CreatedAtColumnIndex], 8)
 		attribute := make(types.Map)
-		for _, iColumn := range columns {
+		for name, iColumn := range productColumns {
 			column := iColumn.(map[string]interface{})
 			index := int(column["Index"].(float64))
 			cType := column["Type"].(string)
-			name := column["Name"].(string)
 			value := row[index]
 
 			switch cType {

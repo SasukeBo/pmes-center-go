@@ -1,7 +1,7 @@
 package api_v1
 
 import (
-	test "github.com/SasukeBo/ftpviewer/intergration_test"
+	test "github.com/SasukeBo/ftpviewer/integration_test"
 	"net/http"
 	"strings"
 	"testing"

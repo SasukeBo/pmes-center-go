@@ -2,7 +2,7 @@ package admin
 
 import (
 	"fmt"
-	"github.com/SasukeBo/ftpviewer/intergration_test"
+	"github.com/SasukeBo/ftpviewer/integration_test"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"net/http"
 	"os"

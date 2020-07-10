@@ -1,9 +1,8 @@
 package admin
 
 import (
-	"github.com/SasukeBo/ftpviewer/intergration_test"
+	"github.com/SasukeBo/ftpviewer/integration_test"
 	"github.com/SasukeBo/ftpviewer/orm"
-	"github.com/SasukeBo/ftpviewer/worker"
 	"testing"
 	"time"
 )
@@ -12,13 +11,13 @@ import (
 // - docker-compose up ftp
 // - then create a directory named 1828
 // - put a data file into this directory
+// - this data file can be 1828-EDAC_E568_1-20200424-b.xlsx under this directory
 func TestMaterial(t *testing.T) {
 	tester := test.NewTester(t)
 	test.Login(test.AdminAccount, test.AdminPasswd, true)
 
 	// Create material and load data
 	t.Run("CREATE_MATERIAL_AND_LOAD_DATA", func(t *testing.T) {
-		worker.Start()
 		tester.API1Admin(createMaterialGQL, test.Object{
 			"input": test.Object{
 				"name":          "1828",
@@ -26,34 +25,34 @@ func TestMaterial(t *testing.T) {
 				"projectRemark": "D53 PRL TOP",
 				"points": []test.Object{
 					{
-						"name":    "FAI3_G7",
-						"usl":     5.36,
-						"nominal": 5.31,
-						"lsl":     5.26,
+						"name":       "FAI3_G7",
+						"upperLimit": 5.36,
+						"nominal":    5.31,
+						"lowerLimit": 5.26,
 					},
 					{
-						"name":    "FAI3_G8",
-						"usl":     5.36,
-						"nominal": 5.31,
-						"lsl":     5.26,
+						"name":       "FAI3_G8",
+						"upperLimit": 5.36,
+						"nominal":    5.31,
+						"lowerLimit": 5.26,
 					},
 					{
-						"name":    "FAI4_G1",
-						"usl":     4.28,
-						"nominal": 4.23,
-						"lsl":     4.18,
+						"name":       "FAI4_G1",
+						"upperLimit": 4.28,
+						"nominal":    4.23,
+						"lowerLimit": 4.18,
 					},
 					{
-						"name":    "FAI4_G2",
-						"usl":     4.28,
-						"nominal": 4.23,
-						"lsl":     4.18,
+						"name":       "FAI4_G2",
+						"upperLimit": 4.28,
+						"nominal":    4.23,
+						"lowerLimit": 4.18,
 					},
 					{
-						"name":    "FAI4_G3",
-						"usl":     4.28,
-						"nominal": 4.23,
-						"lsl":     4.18,
+						"name":       "FAI4_G3",
+						"upperLimit": 4.28,
+						"nominal":    4.23,
+						"lowerLimit": 4.18,
 					},
 				},
 			},

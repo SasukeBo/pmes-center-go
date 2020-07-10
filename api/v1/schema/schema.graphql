@@ -4,5 +4,29 @@ scalar Map
 type EchartsResult {
     xAxisData: [String!]!
     seriesData: Map!
+    seriesAmountData: Map!
 }
 
+input Search {
+    "料号，指定料号"
+    materialID: Int
+    "设备名称，如果不为空则指定该设备生产"
+    deviceID: Int
+    "查询时间范围起始时间"
+    beginTime: Time
+    "查询时间范围结束时间"
+    endTime: Time
+    "其他查询条件以map形式传递"
+    extra: Map
+}
+
+input GroupAnalyzeInput {
+    targetID: Int! # 分析目标的ID
+    xAxis: Category! # x轴字段
+    yAxis: YAxis! # y轴字段
+    groupBy: Category # 分组字段
+    duration: [Time!] # 时间范围
+    limit: Int
+    sort: Sort
+    filters: Map # 过滤条件
+}

@@ -24,12 +24,24 @@ func (r *queryResolver) Material(ctx context.Context, id int) (*model.Material, 
 	return logic.Material(ctx, id)
 }
 
-func (r *queryResolver) AnalyzeMaterial(ctx context.Context, analyzeInput model.AnalyzeMaterialInput) (*model.EchartsResult, error) {
-	return logic.AnalyzeMaterial(ctx, analyzeInput)
-}
-
 func (r *queryResolver) MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error) {
 	return logic.MaterialYieldTop(ctx, duration, limit)
+}
+
+func (r *queryResolver) AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error) {
+	return logic.AnalyzeMaterial(ctx, searchInput)
+}
+
+func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error) {
+	return logic.GroupAnalyzeMaterial(ctx, analyzeInput)
+}
+
+func (r *queryResolver) Devices(ctx context.Context, materialID int) ([]*model.Device, error) {
+	return logic.Devices(ctx, materialID)
+}
+
+func (r *queryResolver) SizeUnYieldTop(ctx context.Context, groupInput model.GroupAnalyzeInput) (*model.EchartsResult, error) {
+	return logic.SizeUnYieldTop(ctx, groupInput)
 }
 
 // Query returns generated.QueryResolver implementation.

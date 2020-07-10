@@ -22,9 +22,26 @@ type AnalyzeMaterialInput struct {
 	AttributeGroup *string      `json:"attributeGroup"`
 }
 
+type Device struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
 type EchartsResult struct {
-	XAxisData  []string               `json:"xAxisData"`
-	SeriesData map[string]interface{} `json:"seriesData"`
+	XAxisData        []string               `json:"xAxisData"`
+	SeriesData       map[string]interface{} `json:"seriesData"`
+	SeriesAmountData map[string]interface{} `json:"seriesAmountData"`
+}
+
+type GroupAnalyzeInput struct {
+	TargetID int                    `json:"targetID"`
+	XAxis    Category               `json:"xAxis"`
+	YAxis    YAxis                  `json:"yAxis"`
+	GroupBy  *Category              `json:"groupBy"`
+	Duration []*time.Time           `json:"duration"`
+	Limit    *int                   `json:"limit"`
+	Sort     *Sort                  `json:"sort"`
+	Filters  map[string]interface{} `json:"filters"`
 }
 
 type Material struct {
@@ -36,9 +53,28 @@ type Material struct {
 	Ng            int    `json:"ng"`
 }
 
+type MaterialResult struct {
+	Material *Material `json:"material"`
+	Ok       int       `json:"ok"`
+	Ng       int       `json:"ng"`
+}
+
 type MaterialsWrap struct {
 	Total     int         `json:"total"`
 	Materials []*Material `json:"materials"`
+}
+
+type Search struct {
+	// 料号，指定料号
+	MaterialID *int `json:"materialID"`
+	// 设备名称，如果不为空则指定该设备生产
+	DeviceID *int `json:"deviceID"`
+	// 查询时间范围起始时间
+	BeginTime *time.Time `json:"beginTime"`
+	// 查询时间范围结束时间
+	EndTime *time.Time `json:"endTime"`
+	// 其他查询条件以map形式传递
+	Extra map[string]interface{} `json:"extra"`
 }
 
 type User struct {
@@ -135,18 +171,20 @@ func (e Sort) MarshalGQL(w io.Writer) {
 type YAxis string
 
 const (
-	YAxisYield  YAxis = "Yield"
-	YAxisAmount YAxis = "Amount"
+	YAxisYield   YAxis = "Yield"
+	YAxisUnYield YAxis = "UnYield"
+	YAxisAmount  YAxis = "Amount"
 )
 
 var AllYAxis = []YAxis{
 	YAxisYield,
+	YAxisUnYield,
 	YAxisAmount,
 }
 
 func (e YAxis) IsValid() bool {
 	switch e {
-	case YAxisYield, YAxisAmount:
+	case YAxisYield, YAxisUnYield, YAxisAmount:
 		return true
 	}
 	return false

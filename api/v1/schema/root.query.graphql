@@ -10,6 +10,16 @@ type Query {
     material(id: Int!): Material!
     "料号良率排行"
     materialYieldTop(duration: [Time]!, limit: Int!): EchartsResult!
+    "分析料号数据"
+    analyzeMaterial(searchInput: Search!): MaterialResult!
     "分组分析料号，返回图表渲染所需的数据"
-    analyzeMaterial(analyzeInput: AnalyzeMaterialInput!): EchartsResult!
+    groupAnalyzeMaterial(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+
+    # 设备
+    "获取设备生产数据"
+    devices(materialID: Int!): [Device]!
+
+    # 尺寸
+    "尺寸不良率排行"
+    sizeUnYieldTop(groupInput: GroupAnalyzeInput!): EchartsResult!
 }

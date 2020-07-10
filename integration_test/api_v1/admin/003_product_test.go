@@ -1,7 +1,7 @@
 package admin
 
 import (
-	"github.com/SasukeBo/ftpviewer/intergration_test"
+	"github.com/SasukeBo/ftpviewer/integration_test"
 	"github.com/SasukeBo/ftpviewer/orm"
 	"testing"
 	"time"

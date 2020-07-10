@@ -7,6 +7,12 @@ type Material {
     ng: Int!
 }
 
+type MaterialResult {
+    material: Material!
+    ok: Int!
+    ng: Int!
+}
+
 type MaterialsWrap {
     total: Int!
     materials: [Material!]!
@@ -38,5 +44,6 @@ enum Sort {
 
 enum YAxis {
     Yield
+    UnYield
     Amount
 }

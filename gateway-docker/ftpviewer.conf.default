@@ -15,7 +15,7 @@ server {
     charset koi8-r;
     access_log  /var/log/nginx/ftpviewer.access.log  main;
 
-    location ~ /(api|auth|playground|downloads) {
+    location ~ /(api|auth|playground|downloads|produce) {
         proxy_pass http://ftpviewer_backend;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
