@@ -64,6 +64,11 @@ type MaterialsWrap struct {
 	Materials []*Material `json:"materials"`
 }
 
+type ProductAttribute struct {
+	Label string `json:"label"`
+	Name  string `json:"name"`
+}
+
 type Search struct {
 	// 料号，指定料号
 	MaterialID *int `json:"materialID"`

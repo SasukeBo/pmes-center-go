@@ -47,3 +47,8 @@ enum YAxis {
     UnYield
     Amount
 }
+
+type ProductAttribute {
+    label: String!
+    name: String!
+}

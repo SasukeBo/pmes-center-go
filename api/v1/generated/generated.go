@@ -74,6 +74,11 @@ type ComplexityRoot struct {
 		Total     func(childComplexity int) int
 	}
 
+	ProductAttribute struct {
+		Label func(childComplexity int) int
+		Name  func(childComplexity int) int
+	}
+
 	Query struct {
 		AnalyzeMaterial      func(childComplexity int, searchInput model.Search) int
 		CurrentUser          func(childComplexity int) int
@@ -82,6 +87,7 @@ type ComplexityRoot struct {
 		Material             func(childComplexity int, id int) int
 		MaterialYieldTop     func(childComplexity int, duration []*time.Time, limit int) int
 		Materials            func(childComplexity int, search *string, page int, limit int) int
+		ProductAttributes    func(childComplexity int, materialID int) int
 		SizeUnYieldTop       func(childComplexity int, groupInput model.GroupAnalyzeInput) int
 	}
 
@@ -100,6 +106,7 @@ type QueryResolver interface {
 	MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error)
 	AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error)
 	GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error)
+	ProductAttributes(ctx context.Context, materialID int) ([]*model.ProductAttribute, error)
 	Devices(ctx context.Context, materialID int) ([]*model.Device, error)
 	SizeUnYieldTop(ctx context.Context, groupInput model.GroupAnalyzeInput) (*model.EchartsResult, error)
 }
@@ -231,6 +238,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MaterialsWrap.Total(childComplexity), true
 
+	case "ProductAttribute.label":
+		if e.complexity.ProductAttribute.Label == nil {
+			break
+		}
+
+		return e.complexity.ProductAttribute.Label(childComplexity), true
+
+	case "ProductAttribute.name":
+		if e.complexity.ProductAttribute.Name == nil {
+			break
+		}
+
+		return e.complexity.ProductAttribute.Name(childComplexity), true
+
 	case "Query.analyzeMaterial":
 		if e.complexity.Query.AnalyzeMaterial == nil {
 			break
@@ -309,6 +330,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Materials(childComplexity, args["search"].(*string), args["page"].(int), args["limit"].(int)), true
+
+	case "Query.productAttributes":
+		if e.complexity.Query.ProductAttributes == nil {
+			break
+		}
+
+		args, err := ec.field_Query_productAttributes_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ProductAttributes(childComplexity, args["materialID"].(int)), true
 
 	case "Query.sizeUnYieldTop":
 		if e.complexity.Query.SizeUnYieldTop == nil {
@@ -453,6 +486,11 @@ enum YAxis {
     UnYield
     Amount
 }
+
+type ProductAttribute {
+    label: String!
+    name: String!
+}
 `, BuiltIn: false},
 	&ast.Source{Name: "schema/root.query.graphql", Input: `type Query {
     # 用户
@@ -470,6 +508,8 @@ enum YAxis {
     analyzeMaterial(searchInput: Search!): MaterialResult!
     "分组分析料号，返回图表渲染所需的数据"
     groupAnalyzeMaterial(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+    "获取产品属性列表"
+    productAttributes(materialID: Int!): [ProductAttribute]!
 
     # 设备
     "获取设备生产数据"
@@ -646,6 +686,20 @@ func (ec *executionContext) field_Query_materials_args(ctx context.Context, rawA
 		}
 	}
 	args["limit"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_productAttributes_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["materialID"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["materialID"] = arg0
 	return args, nil
 }
 
@@ -1243,6 +1297,74 @@ func (ec *executionContext) _MaterialsWrap_materials(ctx context.Context, field 
 	return ec.marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterialᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ProductAttribute_label(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttribute) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProductAttribute",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Label, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProductAttribute_name(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttribute) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProductAttribute",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1480,6 +1602,47 @@ func (ec *executionContext) _Query_groupAnalyzeMaterial(ctx context.Context, fie
 	res := resTmp.(*model.EchartsResult)
 	fc.Result = res
 	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_productAttributes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_productAttributes_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ProductAttributes(rctx, args["materialID"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ProductAttribute)
+	fc.Result = res
+	return ec.marshalNProductAttribute2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_devices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3190,6 +3353,38 @@ func (ec *executionContext) _MaterialsWrap(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var productAttributeImplementors = []string{"ProductAttribute"}
+
+func (ec *executionContext) _ProductAttribute(ctx context.Context, sel ast.SelectionSet, obj *model.ProductAttribute) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, productAttributeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ProductAttribute")
+		case "label":
+			out.Values[i] = ec._ProductAttribute_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._ProductAttribute_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3284,6 +3479,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_groupAnalyzeMaterial(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "productAttributes":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_productAttributes(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -3813,6 +4022,43 @@ func (ec *executionContext) marshalNMaterialsWrap2ᚖgithubᚗcomᚋSasukeBoᚋf
 	return ec._MaterialsWrap(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNProductAttribute2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx context.Context, sel ast.SelectionSet, v []*model.ProductAttribute) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOProductAttribute2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) unmarshalNSearch2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSearch(ctx context.Context, v interface{}) (model.Search, error) {
 	return ec.unmarshalInputSearch(ctx, v)
 }
@@ -4263,6 +4509,17 @@ func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 	return graphql.MarshalMap(v)
+}
+
+func (ec *executionContext) marshalOProductAttribute2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx context.Context, sel ast.SelectionSet, v model.ProductAttribute) graphql.Marshaler {
+	return ec._ProductAttribute(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOProductAttribute2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx context.Context, sel ast.SelectionSet, v *model.ProductAttribute) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ProductAttribute(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOSort2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSort(ctx context.Context, v interface{}) (model.Sort, error) {

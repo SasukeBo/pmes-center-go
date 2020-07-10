@@ -17,7 +17,7 @@ const (
 	SystemConfigFtpPortKey              = "ftp_port"
 	SystemConfigFtpUsernameKey          = "ftp_username"
 	SystemConfigFtpPasswordKey          = "ftp_password"
-	SystemConfigProductColumnHeadersKey = "product_column_headers"
+	SystemConfigProductColumnHeadersKey = "default_product_attribute_index"
 )
 
 // DB connection to database

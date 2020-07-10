@@ -3,6 +3,7 @@ package logic
 import (
 	"context"
 	"fmt"
+	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/ftpviewer/api"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
@@ -44,13 +45,14 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 		CreatedAtColumnIndex: 1,
 		Default:              true,
 	}
-	columnLength, err := decodeTemplate.GenDefaultProductColumns()
+	err := genDefaultProductColumns(&decodeTemplate)
 	if err != nil {
 		tx.Rollback()
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material_default_decode_template")
 	}
 
 	pointColumns := make(types.Map)
+	pointStartIndex := parseIndexFromColumnCode(configer.GetString("default_point_begin_index"))
 	for i, pointInput := range input.Points {
 		point := orm.Point{
 			Name:       pointInput.Name,
@@ -63,7 +65,7 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 			tx.Rollback()
 			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "point")
 		}
-		pointColumns[point.Name] = i + columnLength
+		pointColumns[point.Name] = i + pointStartIndex
 	}
 	decodeTemplate.PointColumns = pointColumns
 

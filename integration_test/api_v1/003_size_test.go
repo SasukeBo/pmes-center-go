@@ -1,9 +1,9 @@
 package api_v1
 
 import (
-	"fmt"
 	test "github.com/SasukeBo/ftpviewer/integration_test"
 	"testing"
+	"time"
 )
 
 func TestSize(t *testing.T) {
@@ -12,13 +12,25 @@ func TestSize(t *testing.T) {
 	// test SizeUnYieldTop
 	t.Run("TEST_SizeUnYieldTop", func(t *testing.T) {
 		materialID := generateMaterialData(tester)
-		fmt.Println(materialID)
+		tester.API1(sizeUnYieldTopGQL, test.Object{
+			"groupInput": test.Object{
+				"targetID": materialID,
+				"xAxis":    "Date",
+				"yAxis":    "UnYield",
+				"duration": []time.Time{},
+				"limit":    20,
+				"sort":     "DESC",
+				"filters": test.Object{
+					"shift": "B",
+				},
+			},
+		}).GQLObject().Path("$.data.response")
 	})
 }
 
 // 调用接口创建料号，并且导入对应数据
 // createMaterialGQL 调用说明参见 integration/api_v1/admin/002_material_test.go - TestMaterial
-func generateMaterialData(tester *test.Tester) uint {
+func generateMaterialData(tester *test.Tester) int {
 	var createMaterialGQL = `
 	mutation($input: MaterialCreateInput!) {
 		response: addMaterial(input: $input) {
@@ -71,5 +83,7 @@ func generateMaterialData(tester *test.Tester) uint {
 		},
 	}).GQLObject().Path("$.data.response")
 	id := ret.Object().Value("id").Number().Raw()
-	return uint(id)
+	// wait for data load
+	<-time.After(4 * time.Second)
+	return int(id)
 }

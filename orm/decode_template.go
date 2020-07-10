@@ -7,7 +7,6 @@ import (
 	"github.com/SasukeBo/ftpviewer/orm/types"
 	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
-	"strings"
 )
 
 // 数据文件解析模板
@@ -49,32 +48,17 @@ func (d *DecodeTemplate) AfterSave() error {
 
 /*	functions
 --------------------------------------------------------------------------------------------------------------------- */
-func (d *DecodeTemplate) GenDefaultProductColumns() (int, error) {
-	productColumns := make(types.Map)
-	var config SystemConfig
-	err := config.GetConfig(SystemConfigProductColumnHeadersKey)
-	if err != nil {
-		return 0, err
-	}
-
-	headers := strings.Split(config.Value, ";")
-	for i, header := range headers {
-		vs := strings.Split(header, ":")
-		var column = Column{
-			Label: vs[0],
-			Type:  vs[1],
-			Index: i,
-		}
-		productColumns[fmt.Sprintf("attr_%v", i)] = column
-	}
-
-	d.ProductColumns = productColumns
-	return len(productColumns), nil
-}
-
 func (d *DecodeTemplate) Get(id uint) *errormap.Error {
 	if err := Model(d).Where("id = ?", id).First(d).Error; err != nil {
 		return handleError(err, "id", id)
+	}
+
+	return nil
+}
+
+func (d *DecodeTemplate) GetMaterialDefault(materialID uint) *errormap.Error {
+	if err := Model(d).Where("material_id = ? AND decode_templates.default = 1", materialID).First(d).Error; err != nil {
+		return handleError(err, "material_id", materialID)
 	}
 
 	return nil
@@ -106,6 +90,7 @@ const (
 	ProductColumnTypeDatetime = "Datetime"
 )
 
+// Column template product column struct
 type Column struct {
 	Label string
 	Index int

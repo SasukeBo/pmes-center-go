@@ -6,6 +6,8 @@ import (
 	"github.com/SasukeBo/ftpviewer/api/v1/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
 	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/ftpviewer/orm/types"
+	"strconv"
 )
 
 // 尺寸不良率排行
@@ -15,7 +17,19 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GroupAnalyzeInput) (*m
 	// filters
 	if groupInput.Filters != nil {
 		for k, v := range groupInput.Filters {
-			query = query.Where(fmt.Sprintf("JSON_EXTRACT(products.attribute, '$.\"%s\"') = ?", k), v)
+			switch k {
+			case "device_id":
+				query = query.Where("device_id = ?", v)
+			case "shift":
+				switch fmt.Sprint(v) {
+				case "A":
+					query = query.Where("TIME(products.created_at) >= '08:00:00' AND TIME(products.created_at) <= '17:30:00'")
+				case "B":
+					query = query.Where("TIME(products.created_at) < '08:00:00' OR TIME(products.created_at) > '17:30:00'")
+				}
+			default:
+				query = query.Where(fmt.Sprintf("JSON_EXTRACT(products.attribute, '$.\"%s\"') = ?", k), v)
+			}
 		}
 	}
 
@@ -32,81 +46,72 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GroupAnalyzeInput) (*m
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "size")
 	}
 
-	return &model.EchartsResult{
-		XAxisData:        nil,
-		SeriesData:       nil,
-		SeriesAmountData: nil,
-	}, nil
-
-	type result struct {
-		Name      string
-		Qualified bool
+	var points []orm.Point
+	if err := orm.Model(&orm.Point{}).Where("material_id = ?", groupInput.TargetID).Find(&points).Error; err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "points")
 	}
-	var rs []result
-	//for rows.Next() {
-	//	var r result
-	//	if err := rows.Scan(&r.Name, &r.Qualified); err != nil {
-	//		continue
-	//	}
-	//	rs = append(rs, r)
-	//}
 
-	type summary struct {
-		OK int
-		NG int
+	var xAxisData []string
+	var data []float64
+	var amount []int
+	var total = len(products)
+
+	if total == 0 {
+		return &model.EchartsResult{
+			XAxisData:        []string{},
+			SeriesData:       types.Map{"data": []float64{}},
+			SeriesAmountData: types.Map{"data": []int{}},
+		}, nil
 	}
-	summaryMap := make(map[string]summary)
-	for _, o := range rs {
-		s, ok := summaryMap[o.Name]
-		if !ok {
-			s = summary{}
+
+	for _, point := range points {
+		var ok int
+		for _, product := range products {
+			v := product.PointValues[point.Name]
+			value, err := strconv.ParseFloat(fmt.Sprint(v), 64)
+			if err != nil {
+				continue
+			}
+
+			if value <= point.UpperLimit && value >= point.LowerLimit {
+				ok++
+			}
 		}
-		if o.Qualified {
-			s.OK++
-		} else {
-			s.NG++
-		}
-		summaryMap[o.Name] = s
+		rate := float64(total-ok) / float64(total)
+		xAxisData = append(xAxisData, point.Name)
+		data = append(data, rate)
+		amount = append(amount, total-ok)
 	}
 
-	var points []string
-	var unYields []float64
-	for k, s := range summaryMap {
-		points = append(points, k)
-		var yield float64
-		if s.NG+s.OK == 0 {
-			yield = 0
-		} else {
-			yield = float64(s.NG) / float64(s.OK+s.NG)
-		}
-		unYields = append(unYields, yield)
-	}
-
+	// 排序
 	sort := model.SortDesc
 	if groupInput.Sort != nil {
 		sort = *groupInput.Sort
 	}
 
-	length := len(points)
+	length := len(xAxisData)
 	for i := 0; i < length; i++ {
 		for j := 0; j < length-1-i; j++ {
-			if (unYields[j] <= unYields[j+1] && sort == model.SortAsc) || (unYields[j] >= unYields[j+1] && sort == model.SortDesc) {
+			if (data[j] <= data[j+1] && sort == model.SortAsc) || (data[j] >= data[j+1] && sort == model.SortDesc) {
 				continue
 			}
-			unYields[j], unYields[j+1] = unYields[j+1], unYields[j]
-			points[j], points[j+1] = points[j+1], points[j]
+			data[j], data[j+1] = data[j+1], data[j]
+			xAxisData[j], xAxisData[j+1] = xAxisData[j+1], xAxisData[j]
+			amount[j], amount[j+1] = amount[j+1], amount[j]
 		}
 	}
 
+	// limit
 	if groupInput.Limit != nil && *groupInput.Limit < len(points) {
-		points = points[:*groupInput.Limit]
-		unYields = unYields[:*groupInput.Limit]
+		limit := *groupInput.Limit
+		data = data[:limit]
+		xAxisData = xAxisData[:limit]
+		amount = amount[:limit]
 	}
 
 	return &model.EchartsResult{
-		XAxisData: points,
-		SeriesData: map[string]interface{}{
-			"data": unYields,
-		},
+		XAxisData:        xAxisData,
+		SeriesData:       types.Map{"data": data},
+		SeriesAmountData: types.Map{"data": amount},
 	}, nil
 }

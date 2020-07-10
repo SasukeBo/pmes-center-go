@@ -44,3 +44,12 @@ query($duration: [Time]!, $limit: Int!) {
 	}
 }
 `
+var sizeUnYieldTopGQL = `
+query($groupInput: GroupAnalyzeInput!) {
+	response: sizeUnYieldTop(groupInput: $groupInput) {
+		xAxisData
+		seriesData
+		seriesAmountData
+	}
+}
+`

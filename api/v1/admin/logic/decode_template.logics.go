@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	"github.com/SasukeBo/ftpviewer/api"
 	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
 	"github.com/SasukeBo/ftpviewer/errormap"
@@ -270,4 +271,31 @@ func ChangeDefaultTemplate(ctx context.Context, id int, isDefault bool) (model.R
 	tx.Commit()
 
 	return model.ResponseStatusOk, nil
+}
+
+func genDefaultProductColumns(template *orm.DecodeTemplate) error {
+	productColumns := make(types.Map)
+	var config orm.SystemConfig
+	err := config.GetConfig(orm.SystemConfigProductColumnHeadersKey)
+	if err != nil {
+		return err
+	}
+
+	headers := strings.Split(config.Value, ";")
+	for i, header := range headers {
+		vs := strings.Split(header, ":")
+		if len(vs) < 3 {
+			continue
+		}
+
+		var column = orm.Column{
+			Index: parseIndexFromColumnCode(vs[0]),
+			Label: vs[1],
+			Type:  vs[2],
+		}
+		productColumns[fmt.Sprintf("attr_%v", i)] = column
+	}
+
+	template.ProductColumns = productColumns
+	return nil
 }

@@ -36,6 +36,10 @@ func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput m
 	return logic.GroupAnalyzeMaterial(ctx, analyzeInput)
 }
 
+func (r *queryResolver) ProductAttributes(ctx context.Context, materialID int) ([]*model.ProductAttribute, error) {
+	return logic.ProductAttributes(ctx, materialID)
+}
+
 func (r *queryResolver) Devices(ctx context.Context, materialID int) ([]*model.Device, error) {
 	return logic.Devices(ctx, materialID)
 }

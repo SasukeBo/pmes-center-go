@@ -14,6 +14,8 @@ type Query {
     analyzeMaterial(searchInput: Search!): MaterialResult!
     "分组分析料号，返回图表渲染所需的数据"
     groupAnalyzeMaterial(analyzeInput: GroupAnalyzeInput!): EchartsResult!
+    "获取产品属性列表"
+    productAttributes(materialID: Int!): [ProductAttribute]!
 
     # 设备
     "获取设备生产数据"

@@ -259,3 +259,24 @@ func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*m
 func GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GroupAnalyzeInput) (*model.EchartsResult, error) {
 	return groupAnalyze(ctx, analyzeInput, "material")
 }
+
+func ProductAttributes(ctx context.Context, materialID int) ([]*model.ProductAttribute, error) {
+	var template orm.DecodeTemplate
+	if err := template.GetMaterialDefault(uint(materialID)); err != nil {
+		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
+	}
+
+	var outs []*model.ProductAttribute
+	for k, v := range template.ProductColumns {
+		var out model.ProductAttribute
+		value, ok := v.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		out.Name = k
+		out.Label = fmt.Sprint(value["Label"])
+		outs = append(outs, &out)
+	}
+
+	return outs, nil
+}
