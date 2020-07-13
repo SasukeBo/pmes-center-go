@@ -1,4 +1,8 @@
 type Query {
+    # 用户
+    "获取当前用户"
+    currentUser: User!
+
     # 料号
     "获取料号数据"
     materials(pattern: String, page: Int!, limit: Int!): MaterialWrap!
