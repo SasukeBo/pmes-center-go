@@ -23,10 +23,10 @@ func TestDecodeTemplate(t *testing.T) {
 				"dataRowIndex":         15,
 				"createdAtColumnIndex": "B",
 				"productColumns": []test.Object{
-					{"name": "No.", "index": "A", "type": "Integer"},
-					{"name": "日期", "index": "B", "type": "Datetime"},
-					{"name": "线体号", "index": "C", "type": "String"},
-					{"name": "精度", "index": "D", "type": "Float"},
+					{"name": "attr_0", "label": "No.", "index": "A", "type": "Integer"},
+					{"name": "attr_1", "label": "日期", "index": "B", "type": "Datetime"},
+					{"name": "attr_2", "label": "线体号", "index": "C", "type": "String"},
+					{"name": "attr_3", "label": "精度", "index": "D", "type": "Float"},
 				},
 				"pointColumns": test.Object{
 					"FAI_G5": "E",
@@ -68,10 +68,10 @@ func TestDecodeTemplate(t *testing.T) {
 				"dataRowIndex":         15,
 				"createdAtColumnIndex": "C",
 				"productColumns": []test.Object{
-					{"name": "No.", "index": "A", "type": "Integer"},
-					{"name": "日期", "index": "B", "type": "Datetime"},
-					{"name": "线体号", "index": "C", "type": "String"},
-					{"name": "精度", "index": "D", "type": "Float"},
+					{"name": "attr_0", "label": "No.", "index": "A", "type": "Integer"},
+					{"name": "attr_1", "label": "日期", "index": "B", "type": "Datetime"},
+					{"name": "attr_2", "label": "线体号", "index": "C", "type": "String"},
+					{"name": "attr_3", "label": "精度", "index": "D", "type": "Float"},
 				},
 				"pointColumns": test.Object{
 					"FAI_G5": "E",
@@ -99,11 +99,11 @@ func TestDecodeTemplate(t *testing.T) {
 
 	// Test list decode_templates
 	t.Run("TEST_LIST_DECODE_TEMPLATES", func(t *testing.T) {
-		columns := []orm.Column{
-			{"No.", 0, "Integer"},
-			{"日期", 1, "Datetime"},
-			{"线体号", 2, "String"},
-			{"精度", 3, "Float"},
+		columns := types.Map{
+			"attr_0": orm.Column{Label: "No.", Index: 0, Type: "Integer"},
+			"attr_1": orm.Column{Label: "日期", Index: 1, Type: "Datetime"},
+			"attr_2": orm.Column{Label: "线体号", Index: 2, Type: "String"},
+			"attr_3": orm.Column{Label: "精度", Index: 3, Type: "Float"},
 		}
 		template := orm.DecodeTemplate{
 			Name:                 "template1",
@@ -113,7 +113,7 @@ func TestDecodeTemplate(t *testing.T) {
 			DataRowIndex:         15,
 			CreatedAtColumnIndex: 1,
 			Default:              false,
-			ProductColumns:       types.Map{"columns": columns},
+			ProductColumns:       columns,
 			PointColumns: types.Map{
 				"FAI_G5": 4,
 				"FAI_G6": 5,
@@ -138,8 +138,6 @@ func TestDecodeTemplate(t *testing.T) {
 
 		productColumns := ret.First().Object().Value("productColumns").Array()
 		productColumns.Length().Equal(4)
-		productColumns.First().Object().Value("name").Equal("No.")
-		productColumns.First().Object().Value("index").Equal("A")
 
 		pointColumns := ret.First().Object().Value("pointColumns").Object()
 		pointColumns.Value("FAI_G5").Equal("E")
@@ -148,11 +146,11 @@ func TestDecodeTemplate(t *testing.T) {
 	// Test delete decode template
 	t.Run("TEST_DELETE_DECODE_TEMPLATE", func(t *testing.T) {
 		tester.SetHeader(errormap.LangHeader, errormap.EN)
-		columns := []orm.Column{
-			{"No.", 1, "Integer"},
-			{"日期", 2, "Datetime"},
-			{"线体号", 3, "String"},
-			{"精度", 4, "Float"},
+		columns := types.Map{
+			"attr_0": orm.Column{Label: "No.", Index: 0, Type: "Integer"},
+			"attr_1": orm.Column{Label: "日期", Index: 1, Type: "Datetime"},
+			"attr_2": orm.Column{Label: "线体号", Index: 2, Type: "String"},
+			"attr_3": orm.Column{Label: "精度", Index: 3, Type: "Float"},
 		}
 		template := orm.DecodeTemplate{
 			Name:                 "template1",
@@ -162,7 +160,7 @@ func TestDecodeTemplate(t *testing.T) {
 			DataRowIndex:         15,
 			CreatedAtColumnIndex: 2,
 			Default:              false,
-			ProductColumns:       types.Map{"columns": columns},
+			ProductColumns:       columns,
 			PointColumns: types.Map{
 				"FAI_G5": 5,
 				"FAI_G6": 6,

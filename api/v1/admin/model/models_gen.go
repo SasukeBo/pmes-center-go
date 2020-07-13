@@ -91,6 +91,7 @@ type PointCreateInput struct {
 }
 
 type ProductColumn struct {
+	Label string            `json:"label"`
 	Name  string            `json:"name"`
 	Index string            `json:"index"`
 	Type  ProductColumnType `json:"type"`
@@ -98,6 +99,7 @@ type ProductColumn struct {
 
 type ProductColumnInput struct {
 	Name  string            `json:"name"`
+	Label string            `json:"label"`
 	Index string            `json:"index"`
 	Type  ProductColumnType `json:"type"`
 }

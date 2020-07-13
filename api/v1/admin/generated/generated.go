@@ -157,6 +157,7 @@ type ComplexityRoot struct {
 
 	ProductColumn struct {
 		Index func(childComplexity int) int
+		Label func(childComplexity int) int
 		Name  func(childComplexity int) int
 		Type  func(childComplexity int) int
 	}
@@ -837,6 +838,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProductColumn.Index(childComplexity), true
 
+	case "ProductColumn.label":
+		if e.complexity.ProductColumn.Label == nil {
+			break
+		}
+
+		return e.complexity.ProductColumn.Label(childComplexity), true
+
 	case "ProductColumn.name":
 		if e.complexity.ProductColumn.Name == nil {
 			break
@@ -1128,11 +1136,13 @@ input DecodeTemplateInput {
 
 input ProductColumnInput {
     name: String!
+    label: String!
     index: String!
     type: ProductColumnType!
 }
 
 type ProductColumn {
+    label: String!
     name: String!
     index: String!
     type: ProductColumnType!
@@ -4399,6 +4409,40 @@ func (ec *executionContext) _Point_lowerLimit(ctx context.Context, field graphql
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ProductColumn_label(ctx context.Context, field graphql.CollectedField, obj *model.ProductColumn) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProductColumn",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Label, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ProductColumn_name(ctx context.Context, field graphql.CollectedField, obj *model.ProductColumn) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -6528,6 +6572,12 @@ func (ec *executionContext) unmarshalInputProductColumnInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
+		case "label":
+			var err error
+			it.Label, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "index":
 			var err error
 			it.Index, err = ec.unmarshalNString2string(ctx, v)
@@ -7271,6 +7321,11 @@ func (ec *executionContext) _ProductColumn(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ProductColumn")
+		case "label":
+			out.Values[i] = ec._ProductColumn_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "name":
 			out.Values[i] = ec._ProductColumn_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
