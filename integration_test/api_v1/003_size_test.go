@@ -1,7 +1,7 @@
 package api_v1
 
 import (
-	test "github.com/SasukeBo/ftpviewer/integration_test"
+	test "github.com/SasukeBo/pmes-data-center/integration_test"
 	"testing"
 	"time"
 )

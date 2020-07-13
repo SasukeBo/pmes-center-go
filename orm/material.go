@@ -1,7 +1,7 @@
 package orm
 
 import (
-	"github.com/SasukeBo/ftpviewer/errormap"
+	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/jinzhu/gorm"
 )
 

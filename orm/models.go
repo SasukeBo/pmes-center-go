@@ -3,7 +3,7 @@ package orm
 import (
 	"fmt"
 	"github.com/SasukeBo/configer"
-	"github.com/SasukeBo/ftpviewer/util"
+	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/SasukeBo/log"
 	"github.com/jinzhu/gorm"
 	"time"

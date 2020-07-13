@@ -2,8 +2,8 @@ package logic
 
 import (
 	"context"
-	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
-	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
+	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/jinzhu/copier"
 )
 

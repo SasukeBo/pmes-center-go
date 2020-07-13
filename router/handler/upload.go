@@ -3,8 +3,8 @@ package handler
 import (
 	"fmt"
 	"github.com/SasukeBo/configer"
-	"github.com/SasukeBo/ftpviewer/errormap"
-	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/pmes-data-center/errormap"
+	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"

@@ -2,7 +2,7 @@ package orm
 
 import (
 	"github.com/SasukeBo/configer"
-	"github.com/SasukeBo/ftpviewer/errormap"
+	"github.com/SasukeBo/pmes-data-center/errormap"
 	"io/ioutil"
 	"os"
 	"path"

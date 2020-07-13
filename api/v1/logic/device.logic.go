@@ -3,9 +3,9 @@ package logic
 import (
 	"context"
 	"errors"
-	"github.com/SasukeBo/ftpviewer/api/v1/model"
-	"github.com/SasukeBo/ftpviewer/errormap"
-	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/pmes-data-center/api/v1/model"
+	"github.com/SasukeBo/pmes-data-center/errormap"
+	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/log"
 	"github.com/jinzhu/copier"
 	"time"

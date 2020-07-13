@@ -1,8 +1,8 @@
 *.swp
 .idea
-gateway-docker/ftpviewer.conf
+gateway-docker/data-center.conf
 conf/config.go
-ftpviewer
+pmes-data-center
 docker-compose.yml
 方案书.pdf
 时间计划.pdf
