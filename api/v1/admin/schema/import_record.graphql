@@ -1,0 +1,40 @@
+type ImportRecord {
+    id: Int!
+    file: File
+    fileName: String!
+    material: Material
+    device: Device
+    rowCount: Int!
+    rowFinishedCount: Int!
+    status: ImportStatus!
+    errorMessage: String
+    originErrorMessage: String
+    fileSize: Int!
+    user: User
+    importType: ImportRecordImportType!
+    decodeTemplate: DecodeTemplate
+    createdAt: Time!
+}
+
+type ImportStatusResponse {
+    status: ImportStatus!
+    finishedRowCount: Int!
+}
+
+type ImportRecordsWrap {
+    total: Int!
+    importRecords: [ImportRecord]!
+}
+
+enum ImportRecordImportType {
+    SYSTEM
+    USER
+}
+
+enum ImportStatus {
+    Loading
+    Finished
+    Failed
+    Reverted
+}
+

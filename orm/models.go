@@ -12,6 +12,14 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 )
 
+const (
+	SystemConfigFtpHostKey              = "ftp_host"
+	SystemConfigFtpPortKey              = "ftp_port"
+	SystemConfigFtpUsernameKey          = "ftp_username"
+	SystemConfigFtpPasswordKey          = "ftp_password"
+	SystemConfigProductColumnHeadersKey = "default_product_attribute_index"
+)
+
 // DB connection to database
 var DB *gorm.DB
 
@@ -26,33 +34,38 @@ func createUriWithDBName(name string) string {
 	)
 }
 
-func generateDefaultConfig() {
-	SetIfNotExist("ftp_host", configer.GetString("ftp_host"))
-	SetIfNotExist("ftp_port", configer.GetString("ftp_port"))
-	SetIfNotExist("ftp_username", configer.GetString("ftp_username"))
-	SetIfNotExist("ftp_password", configer.GetString("ftp_password"))
+func setupDefaultConfig() {
+	SetIfNotExist(SystemConfigFtpHostKey)
+	SetIfNotExist(SystemConfigFtpPortKey)
+	SetIfNotExist(SystemConfigFtpUsernameKey)
+	SetIfNotExist(SystemConfigFtpPasswordKey)
+	SetIfNotExist(SystemConfigProductColumnHeadersKey)
 }
 
-func alterTableUtf8(tbname string) {
-	DB.Exec(fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci", tbname))
+func GenerateDefaultConfig() {
+	setupDefaultConfig()
 }
 
-func utf8GeneralCI(tableNames []string) {
-	DB.Exec("SET collation_connection = 'utf8_general_ci'")
-	DB.Exec(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET utf8 COLLATE utf8_general_ci", configer.GetString("db_name")))
+func alterTableUtf8(tbName string) {
+	Exec(fmt.Sprintf("ALTER TABLE %s CONVERT TO CHARACTER SET utf8 COLLATE utf8_general_ci", tbName))
+}
+
+func setupUTF8GeneralCI(tableNames []string) {
+	Exec("SET collation_connection = 'utf8_general_ci'")
+	Exec(fmt.Sprintf("ALTER DATABASE %s CHARACTER SET utf8 COLLATE utf8_general_ci", configer.GetString("db_name")))
 	for _, name := range tableNames {
 		alterTableUtf8(name)
 	}
 }
 
-func generateRootUser() {
-	username := configer.GetString("root_name")
+func setupRootUser() {
+	account := configer.GetString("root_name")
 	var root User
-	err := DB.Model(&User{}).Where("username = ?", username).First(&root).Error
+	err := Model(&User{}).Where("account = ?", account).First(&root).Error
 	if err != nil {
 		root = User{
-			IsAdmin:    true,
-			Username: username,
+			IsAdmin:  true,
+			Account:  account,
 			Password: util.Encrypt(configer.GetString("root_pass")),
 		}
 		err := DB.Create(&root).Error
@@ -60,6 +73,10 @@ func generateRootUser() {
 			panic(fmt.Sprintf("Generate root user failed: %v", err))
 		}
 	}
+}
+
+func createIndex() {
+	DB.Model(&Material{}).AddUniqueIndex("uidx_deleted_at_material_name", "deleted_at", "name")
 }
 
 func init() {
@@ -98,22 +115,26 @@ func init() {
 		&Product{},
 		&SystemConfig{},
 		&User{},
+		&UserLogin{},
+		&UserRole{},
+		&File{},
 	).Error
 	if err != nil {
 		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
 	}
+	createIndex()
 
-	if env != "test" || env != "TEST" {
-		generateRootUser()
+	if env != "test" && env != "TEST" {
+		tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users", "files"}
+		setupUTF8GeneralCI(tableNames)
+		setupRootUser()
+		setupDefaultConfig()
+		setupPointsImportTemplate()
 	}
-	generateDefaultConfig()
-	tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users"}
-	utf8GeneralCI(tableNames)
 
 	if env == "prod" {
 		DB.LogMode(false)
 	} else {
-		log.Info("start service on %s mode", env)
 		DB.LogMode(true)
 	}
 }

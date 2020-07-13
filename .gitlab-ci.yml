@@ -1,0 +1,18 @@
+image: golang
+
+before_script:
+  - export GOPATH=/home/gitlab-runner/go
+  - export WORK_DIR=$GOPATH/src/github.com/SasukeBo/ftpviewer
+  - export http_proxy=http://192.168.9.34:8001
+  - export https_proxy=http://192.168.9.34:8001
+  - export PATH=$PATH:$GOPATH/bin
+  - export GO111MODULE=on
+  - mkdir -p $WORK_DIR
+  - cp -r ./* $WORK_DIR
+  - cd $WORK_DIR
+
+job1:
+  script:
+    - cd integration_test/api_v1
+    - go test
+    - echo "finish test"

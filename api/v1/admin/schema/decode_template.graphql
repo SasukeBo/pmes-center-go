@@ -1,0 +1,45 @@
+type DecodeTemplate {
+    id: Int!
+    name: String!
+    material: Material!
+    user: User!
+    description: String!
+    dataRowIndex: Int!
+    createdAtColumnIndex: String!
+    productColumns: [ProductColumn]!
+    pointColumns: Map!
+    default: Boolean!
+    createdAt: Time!
+    updatedAt: Time!
+}
+
+input DecodeTemplateInput {
+    id: Int
+    name: String!
+    materialID: Int!
+    description: String
+    dataRowIndex: Int!
+    createdAtColumnIndex: String!
+    productColumns: [ProductColumnInput]!
+    pointColumns: Map!
+    default: Boolean!
+}
+
+input ProductColumnInput {
+    name: String!
+    index: String!
+    type: ProductColumnType!
+}
+
+type ProductColumn {
+    name: String!
+    index: String!
+    type: ProductColumnType!
+}
+
+enum ProductColumnType {
+    String
+    Integer
+    Float
+    Datetime
+}

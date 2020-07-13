@@ -2,6 +2,7 @@ package errormap
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
@@ -13,13 +14,15 @@ import (
 )
 
 type object map[string]interface{}
-type Lang string
-type langMap map[Lang]string
+type langMap map[string]string
+
+const (
+	LangHeader = "Lang"
+	ZH_CN      = "zh_cn"
+	EN         = "en"
+)
 
 var (
-	ZH_CN Lang = "zh_cn"
-	EN    Lang = "en"
-
 	internalErr = langMap{
 		ZH_CN: "系统错误。",
 		EN:    "Internal error.",
@@ -27,6 +30,24 @@ var (
 
 	errStore = make(errorStore)
 )
+
+type Error struct {
+	Message   string
+	ErrorCode string
+	Variables []interface{}
+}
+
+func (e *Error) Error() string {
+	return e.Message
+}
+
+func (e *Error) GetCode() string {
+	return e.ErrorCode
+}
+
+func (e *Error) GetVariables() []interface{} {
+	return e.Variables
+}
 
 type errorTemplate struct {
 	StatusCode int
@@ -46,11 +67,19 @@ func register(errorCode string, statusCode int, languages langMap) {
 	}
 }
 
+// key 参数Key
+// languages 为 语言-模板 构成的hash表
+func registerArg(key string, languages langMap) {
+	errStore[key] = errorTemplate{
+		Languages: languages,
+	}
+}
+
 // ErrorPresenter 将error处理为 gqlerror.Error
 // errorCode 为错误代码
 // lang 为 语言
 // variables 为 模板参数值
-func ErrorPresenter(errorCode string, lang Lang, originErr error, variables ...interface{}) *gqlerror.Error {
+func ErrorPresenter(errorCode string, lang string, originErr error, variables ...interface{}) *gqlerror.Error {
 	errTemplate := errStore[errorCode]
 	statusCode := errTemplate.StatusCode
 	tmp := errTemplate.Languages[lang]
@@ -99,7 +128,7 @@ func ErrorPresenter(errorCode string, lang Lang, originErr error, variables ...i
 // parseArguments 解析参数，参数也会根据语言而返回对应值
 // variables 参数数组
 // lang 语言
-func parseArguments(variables []interface{}, lang Lang) interface{} {
+func parseArguments(variables []interface{}, lang string) interface{} {
 	out := make(map[string]interface{})
 	for i, v := range variables {
 		value := v
@@ -115,20 +144,10 @@ func parseArguments(variables []interface{}, lang Lang) interface{} {
 	return out
 }
 
-// NewOrigin new一个origin error，并同时打印错误日志
-func NewOrigin(format string, a ...interface{}) error {
-	msg := fmt.Sprintf(format, a...)
-	err := errors.New(msg)
-	log.Errorln(err)
-	return err
-}
-
 // SendHttpError 返回http请求错误响应信息
 func SendHttpError(ctx *gin.Context, errorCode string, originErr error, variables ...interface{}) {
-	var lang Lang
-	langv := ctx.Request.Header.Get("Lang")
-	lang = Lang(langv)
-	if langv == "" {
+	lang := ctx.Request.Header.Get(LangHeader)
+	if lang == "" {
 		lang = EN
 	}
 	err := ErrorPresenter(errorCode, lang, originErr, variables...)
@@ -137,12 +156,41 @@ func SendHttpError(ctx *gin.Context, errorCode string, originErr error, variable
 }
 
 // SendGQLError 返回 *gqlerror.Error
-func SendGQLError(ctx *gin.Context, errorCode string, originErr error, variables ...interface{}) *gqlerror.Error {
-	var lang Lang
-	langv := ctx.Request.Header.Get("Lang")
-	lang = Lang(langv)
-	if langv == "" {
+func SendGQLError(ctx context.Context, errorCode string, originErr error, variables ...interface{}) *gqlerror.Error {
+	c := ctx.Value("GinContext")
+	gc := c.(*gin.Context)
+	lang := gc.Request.Header.Get(LangHeader)
+	if lang == "" {
 		lang = EN
 	}
 	return ErrorPresenter(errorCode, lang, originErr, variables...)
+}
+
+// NewCodeOrigin 创建一个携带 error code的origin error，同时打印日志
+func NewCodeOrigin(errorCode string, message string, a ...interface{}) *Error {
+	err := &Error{
+		Message:   message,
+		ErrorCode: errorCode,
+		Variables: a,
+	}
+	log.Errorln(err)
+	return err
+}
+
+// NewOrigin new一个origin error，并同时打印错误日志
+func NewOrigin(format string, a ...interface{}) *Error {
+	return NewCodeOrigin("", fmt.Sprintf(format, a...))
+}
+
+// DecodeError 解析ErrorCode为错误信息
+func DecodeError(ctx context.Context, errorCode string) string {
+	c := ctx.Value("GinContext")
+	gc := c.(*gin.Context)
+	lang := gc.Request.Header.Get(LangHeader)
+	if lang == "" {
+		lang = EN
+	}
+
+	err := ErrorPresenter(errorCode, lang, nil, nil)
+	return err.Message
 }

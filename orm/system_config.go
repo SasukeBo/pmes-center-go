@@ -1,6 +1,9 @@
 package orm
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/SasukeBo/configer"
+	"github.com/jinzhu/gorm"
+)
 
 // SystemConfig 系统设置表
 type SystemConfig struct {
@@ -9,9 +12,10 @@ type SystemConfig struct {
 	Value string
 }
 
-func SetIfNotExist(key, value string) {
+func SetIfNotExist(key string) {
 	var s SystemConfig
 	if err := DB.Model(&SystemConfig{}).Where("`system_configs`.`key` = ?", key).First(&s).Error; err != nil {
+		value := configer.GetString(key)
 		s = SystemConfig{
 			Key:   key,
 			Value: value,

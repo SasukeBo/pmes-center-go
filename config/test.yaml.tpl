@@ -15,7 +15,3 @@ ftp_host:
 ftp_port:
 ftp_username:
 ftp_password:
-
-# root user config
-root_name:
-root_pass:

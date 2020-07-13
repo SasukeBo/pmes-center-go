@@ -1,0 +1,27 @@
+type Material {
+    id: Int!
+    name: String!
+    customerCode: String!
+    projectRemark: String!
+    createdAt: Time!
+    updatedAt: Time!
+}
+
+type MaterialWrap {
+    total: Int!
+    materials: [Material!]
+}
+
+input MaterialCreateInput {
+    name: String!
+    customerCode: String
+    projectRemark: String
+    points: [PointCreateInput]!
+}
+
+input MaterialUpdateInput {
+    id: Int!
+    customerCode: String
+    projectRemark: String
+}
+

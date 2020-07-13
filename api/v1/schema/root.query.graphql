@@ -1,0 +1,44 @@
+type Query {
+    # 用户
+    "获取当前用户"
+    currentUser: User!
+
+    # 料号
+    "获取料号列表数据"
+    materials(search: String, page: Int!, limit: Int!): MaterialsWrap!
+    "ID获取料号"
+    material(id: Int!): Material!
+    "料号良率排行"
+    materialYieldTop(duration: [Time]!, limit: Int!): EchartsResult!
+    "分析料号数据"
+    analyzeMaterial(searchInput: Search!): MaterialResult!
+    "分组分析料号，返回图表渲染所需的数据"
+    groupAnalyzeMaterial(analyzeInput: GraphInput!): EchartsResult!
+    "获取产品属性列表"
+    productAttributes(materialID: Int!): [ProductAttribute]!
+
+    # 设备
+    "ID查询设备"
+    device(id: Int!): Device!
+    "获取设备生产数据"
+    devices(materialID: Int!): [Device]!
+    "返回设备数据及分析结果列表"
+    analyzeDevices(materialID: Int!): [DeviceResult]!
+    "分析设备数据，当服务器没有找到数据并且FTP有数据文件时，需要返回pending: true"
+    analyzeDevice(searchInput: Search!): DeviceResult!
+    "分组分析设备，返回图表渲染所需的数据"
+    groupAnalyzeDevice(analyzeInput: GraphInput!): EchartsResult!
+
+
+    # 尺寸
+    "ID查询尺寸"
+    point(id: Int!): Point!
+    "尺寸不良率排行"
+    sizeUnYieldTop(groupInput: GraphInput!): EchartsResult!
+    "获取检测尺寸良率"
+    pointListWithYield(materialID: Int!, limit: Int!, page: Int!): PointListWithYieldResponse!
+    "尺寸正态分布"
+    sizeNormalDistribution(id: Int!, duration: [Time]!, filters: Map!): PointResult!
+    "分组分析尺寸，返回图表渲染所需的数据"
+    groupAnalyzePoint(analyzeInput: GraphInput!): EchartsResult!
+}

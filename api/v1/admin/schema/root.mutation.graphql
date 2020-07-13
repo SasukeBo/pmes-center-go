@@ -1,0 +1,39 @@
+type Mutation {
+    # 系统设置
+    # "添加系统设置"
+    # setting(settingInput: SettingInput!): SystemConfig!
+
+    # 料号
+    "新增料号，附带创建的默认解析模板中，对检测项的定位取决于检测项的创建顺序。"
+    addMaterial(input: MaterialCreateInput!): Material!
+    "删除料号"
+    deleteMaterial(id: Int!): ResponseStatus!
+    "编辑料号"
+    updateMaterial(input: MaterialUpdateInput!): Material!
+
+    # 解析模板
+    "保存解析模板"
+    saveDecodeTemplate(input: DecodeTemplateInput!): DecodeTemplate!
+    "删除解析模板"
+    deleteDecodeTemplate(id: Int!): ResponseStatus!
+    "变更默认解析模板"
+    changeDefaultTemplate(id: Int!, isDefault: Boolean!): ResponseStatus!
+
+    # 检测项
+    "解析导入的检测项，非创建"
+    parseImportPoints(file: Upload!): [Point]!
+    "保存检测项，处理删除的、修改的和新建的检测项"
+    savePoints(materialID: Int!, saveItems: [PointCreateInput]!, deleteItems: [Int!]!): ResponseStatus!
+
+    # 设备
+    "保存设备"
+    saveDevice(input: DeviceInput!): Device!
+    "删除设备"
+    deleteDevice(id: Int!): ResponseStatus!
+
+    # 导入记录
+    "撤销导入"
+    revertImport(id: Int!): ResponseStatus!
+    "导入数据"
+    importData(materialID: Int!, deviceID: Int!, decodeTemplateID: Int!, fileTokens: [String!]!): ResponseStatus!
+}

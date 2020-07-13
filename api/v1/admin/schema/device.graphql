@@ -1,0 +1,27 @@
+type Device {
+    id: Int!
+    uuid: String!
+    name: String!
+    remark: String!
+    ip: String!
+    material: Material!
+    deviceSupplier: String!
+    isRealtime: Boolean!
+    address: String!
+}
+
+input DeviceInput {
+    id: Int
+    name: String!
+    remark: String!
+    ip: String
+    materialID: Int!
+    deviceSupplier: String
+    isRealtime: Boolean!
+    address: String
+}
+
+type DeviceWrap {
+    total: Int!
+    devices: [Device]!
+}

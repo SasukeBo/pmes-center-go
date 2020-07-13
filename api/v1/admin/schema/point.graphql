@@ -1,0 +1,15 @@
+type Point {
+    id: Int!
+    name: String!
+    upperLimit: Float!
+    nominal: Float!
+    lowerLimit: Float!
+}
+
+input PointCreateInput {
+    id: Int
+    name: String!
+    upperLimit: Float!
+    nominal: Float!
+    lowerLimit: Float!
+}

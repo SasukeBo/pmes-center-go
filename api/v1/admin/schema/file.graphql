@@ -1,0 +1,9 @@
+type File {
+    id: Int!
+    name: String!
+    path: String!
+    token: String!
+    user: User!
+    size: Int!
+    contentType: String!
+}

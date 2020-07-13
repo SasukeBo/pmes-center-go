@@ -1,0 +1,33 @@
+type PointListWithYieldResponse {
+    total: Int!
+    list: [PointYield]!
+}
+
+type PointYield {
+    point: Point!
+    ok: Int!
+    total: Int!
+}
+
+type Point {
+    id: Int!
+    name: String!
+    upperLimit: Float!
+    nominal: Float!
+    lowerLimit: Float!
+    material: Material!
+}
+
+type PointResult {
+    total: Int!
+    s: Float!
+    ok: Int!
+    ng: Int!
+    cp: Float!
+    cpk: Float!
+    avg: Float!
+    max: Float!
+    min: Float!
+    dataset: Map!
+    point: Point!
+}
