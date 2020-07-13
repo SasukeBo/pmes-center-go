@@ -35,7 +35,7 @@ resolver:
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.
 autobind:
-  - "github.com/SasukeBo/ftpviewer/api/v1/model"
+  - "github.com/SasukeBo/pmes-data-center/api/v1/model"
 
 # This section declares type mapping between the GraphQL and go type systems
 #
@@ -56,7 +56,7 @@ models:
       - github.com/99designs/gqlgen/graphql.Int32
   Device:
     model:
-      - github.com/SasukeBo/ftpviewer/api/v1/model.Device
+      - github.com/SasukeBo/pmes-data-center/api/v1/model.Device
   Point:
     model:
-      - github.com/SasukeBo/ftpviewer/api/v1/model.Point
+      - github.com/SasukeBo/pmes-data-center/api/v1/model.Point

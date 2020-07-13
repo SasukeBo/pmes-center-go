@@ -1,9 +1,9 @@
 package handler
 
 import (
-	"github.com/SasukeBo/ftpviewer/errormap"
-	"github.com/SasukeBo/ftpviewer/orm"
-	"github.com/SasukeBo/ftpviewer/orm/types"
+	"github.com/SasukeBo/pmes-data-center/errormap"
+	"github.com/SasukeBo/pmes-data-center/orm"
+	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"

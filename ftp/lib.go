@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/jlaffaye/ftp"
 )
 

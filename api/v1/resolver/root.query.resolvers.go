@@ -7,9 +7,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/SasukeBo/ftpviewer/api/v1/generated"
-	"github.com/SasukeBo/ftpviewer/api/v1/logic"
-	"github.com/SasukeBo/ftpviewer/api/v1/model"
+	"github.com/SasukeBo/pmes-data-center/api/v1/generated"
+	"github.com/SasukeBo/pmes-data-center/api/v1/logic"
+	"github.com/SasukeBo/pmes-data-center/api/v1/model"
 )
 
 func (r *queryResolver) Materials(ctx context.Context, search *string, page int, limit int) (*model.MaterialsWrap, error) {

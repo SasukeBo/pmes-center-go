@@ -7,9 +7,9 @@ import (
 	"context"
 
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
-	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
-	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 )
 
 func (r *mutationResolver) AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error) {

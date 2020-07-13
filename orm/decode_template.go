@@ -2,9 +2,9 @@ package orm
 
 import (
 	"fmt"
-	"github.com/SasukeBo/ftpviewer/cache"
-	"github.com/SasukeBo/ftpviewer/errormap"
-	"github.com/SasukeBo/ftpviewer/orm/types"
+	"github.com/SasukeBo/pmes-data-center/cache"
+	"github.com/SasukeBo/pmes-data-center/errormap"
+	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
 )

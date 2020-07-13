@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/SasukeBo/ftpviewer/router"
+	"github.com/SasukeBo/pmes-data-center/router"
 )
 
 func main() {

@@ -2,10 +2,10 @@ package handler
 
 import (
 	"fmt"
-	"github.com/SasukeBo/ftpviewer/cache"
-	"github.com/SasukeBo/ftpviewer/errormap"
-	"github.com/SasukeBo/ftpviewer/orm"
-	"github.com/SasukeBo/ftpviewer/util"
+	"github.com/SasukeBo/pmes-data-center/cache"
+	"github.com/SasukeBo/pmes-data-center/errormap"
+	"github.com/SasukeBo/pmes-data-center/orm"
+	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/SasukeBo/log"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

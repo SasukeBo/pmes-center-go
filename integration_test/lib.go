@@ -3,9 +3,9 @@ package test
 import (
 	"fmt"
 	"github.com/SasukeBo/configer"
-	"github.com/SasukeBo/ftpviewer/orm"
-	"github.com/SasukeBo/ftpviewer/router"
-	"github.com/SasukeBo/ftpviewer/util"
+	"github.com/SasukeBo/pmes-data-center/orm"
+	"github.com/SasukeBo/pmes-data-center/router"
+	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/gavv/httpexpect"
 	"net/http"
 	"net/url"

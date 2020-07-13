@@ -1,9 +1,9 @@
 package api_v1
 
 import (
-	test "github.com/SasukeBo/ftpviewer/integration_test"
-	"github.com/SasukeBo/ftpviewer/orm"
-	"github.com/SasukeBo/ftpviewer/orm/types"
+	test "github.com/SasukeBo/pmes-data-center/integration_test"
+	"github.com/SasukeBo/pmes-data-center/orm"
+	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"testing"
 )
 

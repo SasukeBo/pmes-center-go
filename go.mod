@@ -1,4 +1,4 @@
-module github.com/SasukeBo/ftpviewer
+module github.com/SasukeBo/pmes-data-center
 
 go 1.13
 

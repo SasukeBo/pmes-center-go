@@ -1,9 +1,9 @@
 package admin
 
 import (
-	"github.com/SasukeBo/ftpviewer/errormap"
-	test "github.com/SasukeBo/ftpviewer/integration_test"
-	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/pmes-data-center/errormap"
+	test "github.com/SasukeBo/pmes-data-center/integration_test"
+	"github.com/SasukeBo/pmes-data-center/orm"
 	"testing"
 )
 

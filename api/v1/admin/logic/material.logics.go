@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/SasukeBo/configer"
-	"github.com/SasukeBo/ftpviewer/api"
-	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
-	"github.com/SasukeBo/ftpviewer/errormap"
-	"github.com/SasukeBo/ftpviewer/orm"
-	"github.com/SasukeBo/ftpviewer/orm/types"
+	"github.com/SasukeBo/pmes-data-center/api"
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
+	"github.com/SasukeBo/pmes-data-center/errormap"
+	"github.com/SasukeBo/pmes-data-center/orm"
+	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"github.com/jinzhu/copier"
 )
 

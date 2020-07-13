@@ -2,7 +2,7 @@ package api
 
 import (
 	"context"
-	"github.com/SasukeBo/ftpviewer/orm"
+	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/log"
 	"github.com/gin-gonic/gin"
 )

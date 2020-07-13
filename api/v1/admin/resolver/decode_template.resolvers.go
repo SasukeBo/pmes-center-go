@@ -6,9 +6,9 @@ package resolver
 import (
 	"context"
 
-	"github.com/SasukeBo/ftpviewer/api/v1/admin/generated"
-	"github.com/SasukeBo/ftpviewer/api/v1/admin/logic"
-	"github.com/SasukeBo/ftpviewer/api/v1/admin/model"
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 )
 
 func (r *decodeTemplateResolver) Material(ctx context.Context, obj *model.DecodeTemplate) (*model.Material, error) {

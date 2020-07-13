@@ -1,7 +1,7 @@
 package orm
 
 import (
-	"github.com/SasukeBo/ftpviewer/orm/types"
+	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"time"
 )
 

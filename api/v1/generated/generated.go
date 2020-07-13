@@ -13,7 +13,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/SasukeBo/ftpviewer/api/v1/model"
+	"github.com/SasukeBo/pmes-data-center/api/v1/model"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -966,7 +966,7 @@ func (ec *executionContext) field_Query_analyzeDevice_args(ctx context.Context, 
 	args := map[string]interface{}{}
 	var arg0 model.Search
 	if tmp, ok := rawArgs["searchInput"]; ok {
-		arg0, err = ec.unmarshalNSearch2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSearch(ctx, tmp)
+		arg0, err = ec.unmarshalNSearch2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐSearch(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -994,7 +994,7 @@ func (ec *executionContext) field_Query_analyzeMaterial_args(ctx context.Context
 	args := map[string]interface{}{}
 	var arg0 model.Search
 	if tmp, ok := rawArgs["searchInput"]; ok {
-		arg0, err = ec.unmarshalNSearch2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSearch(ctx, tmp)
+		arg0, err = ec.unmarshalNSearch2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐSearch(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1036,7 +1036,7 @@ func (ec *executionContext) field_Query_groupAnalyzeDevice_args(ctx context.Cont
 	args := map[string]interface{}{}
 	var arg0 model.GraphInput
 	if tmp, ok := rawArgs["analyzeInput"]; ok {
-		arg0, err = ec.unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐGraphInput(ctx, tmp)
+		arg0, err = ec.unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐGraphInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1050,7 +1050,7 @@ func (ec *executionContext) field_Query_groupAnalyzeMaterial_args(ctx context.Co
 	args := map[string]interface{}{}
 	var arg0 model.GraphInput
 	if tmp, ok := rawArgs["analyzeInput"]; ok {
-		arg0, err = ec.unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐGraphInput(ctx, tmp)
+		arg0, err = ec.unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐGraphInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1064,7 +1064,7 @@ func (ec *executionContext) field_Query_groupAnalyzePoint_args(ctx context.Conte
 	args := map[string]interface{}{}
 	var arg0 model.GraphInput
 	if tmp, ok := rawArgs["analyzeInput"]; ok {
-		arg0, err = ec.unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐGraphInput(ctx, tmp)
+		arg0, err = ec.unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐGraphInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1232,7 +1232,7 @@ func (ec *executionContext) field_Query_sizeUnYieldTop_args(ctx context.Context,
 	args := map[string]interface{}{}
 	var arg0 model.GraphInput
 	if tmp, ok := rawArgs["groupInput"]; ok {
-		arg0, err = ec.unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐGraphInput(ctx, tmp)
+		arg0, err = ec.unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐGraphInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1376,7 +1376,7 @@ func (ec *executionContext) _Device_material(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*model.Material)
 	fc.Result = res
-	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterial(ctx, field.Selections, res)
+	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterial(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DeviceResult_device(ctx context.Context, field graphql.CollectedField, obj *model.DeviceResult) (ret graphql.Marshaler) {
@@ -1410,7 +1410,7 @@ func (ec *executionContext) _DeviceResult_device(ctx context.Context, field grap
 	}
 	res := resTmp.(*model.Device)
 	fc.Result = res
-	return ec.marshalNDevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDevice(ctx, field.Selections, res)
+	return ec.marshalNDevice2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDevice(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DeviceResult_ok(ctx context.Context, field graphql.CollectedField, obj *model.DeviceResult) (ret graphql.Marshaler) {
@@ -1818,7 +1818,7 @@ func (ec *executionContext) _MaterialResult_material(ctx context.Context, field 
 	}
 	res := resTmp.(*model.Material)
 	fc.Result = res
-	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterial(ctx, field.Selections, res)
+	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterial(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MaterialResult_ok(ctx context.Context, field graphql.CollectedField, obj *model.MaterialResult) (ret graphql.Marshaler) {
@@ -1954,7 +1954,7 @@ func (ec *executionContext) _MaterialsWrap_materials(ctx context.Context, field 
 	}
 	res := resTmp.([]*model.Material)
 	fc.Result = res
-	return ec.marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterialᚄ(ctx, field.Selections, res)
+	return ec.marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Point_id(ctx context.Context, field graphql.CollectedField, obj *model.Point) (ret graphql.Marshaler) {
@@ -2158,7 +2158,7 @@ func (ec *executionContext) _Point_material(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*model.Material)
 	fc.Result = res
-	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterial(ctx, field.Selections, res)
+	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterial(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PointListWithYieldResponse_total(ctx context.Context, field graphql.CollectedField, obj *model.PointListWithYieldResponse) (ret graphql.Marshaler) {
@@ -2226,7 +2226,7 @@ func (ec *executionContext) _PointListWithYieldResponse_list(ctx context.Context
 	}
 	res := resTmp.([]*model.PointYield)
 	fc.Result = res
-	return ec.marshalNPointYield2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPointYield(ctx, field.Selections, res)
+	return ec.marshalNPointYield2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointYield(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PointResult_total(ctx context.Context, field graphql.CollectedField, obj *model.PointResult) (ret graphql.Marshaler) {
@@ -2600,7 +2600,7 @@ func (ec *executionContext) _PointResult_point(ctx context.Context, field graphq
 	}
 	res := resTmp.(*model.Point)
 	fc.Result = res
-	return ec.marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPoint(ctx, field.Selections, res)
+	return ec.marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PointYield_point(ctx context.Context, field graphql.CollectedField, obj *model.PointYield) (ret graphql.Marshaler) {
@@ -2634,7 +2634,7 @@ func (ec *executionContext) _PointYield_point(ctx context.Context, field graphql
 	}
 	res := resTmp.(*model.Point)
 	fc.Result = res
-	return ec.marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPoint(ctx, field.Selections, res)
+	return ec.marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PointYield_ok(ctx context.Context, field graphql.CollectedField, obj *model.PointYield) (ret graphql.Marshaler) {
@@ -2811,7 +2811,7 @@ func (ec *executionContext) _Query_materials(ctx context.Context, field graphql.
 	}
 	res := resTmp.(*model.MaterialsWrap)
 	fc.Result = res
-	return ec.marshalNMaterialsWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterialsWrap(ctx, field.Selections, res)
+	return ec.marshalNMaterialsWrap2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialsWrap(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_material(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2852,7 +2852,7 @@ func (ec *executionContext) _Query_material(ctx context.Context, field graphql.C
 	}
 	res := resTmp.(*model.Material)
 	fc.Result = res
-	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterial(ctx, field.Selections, res)
+	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterial(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_materialYieldTop(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2893,7 +2893,7 @@ func (ec *executionContext) _Query_materialYieldTop(ctx context.Context, field g
 	}
 	res := resTmp.(*model.EchartsResult)
 	fc.Result = res
-	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
+	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_analyzeMaterial(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2934,7 +2934,7 @@ func (ec *executionContext) _Query_analyzeMaterial(ctx context.Context, field gr
 	}
 	res := resTmp.(*model.MaterialResult)
 	fc.Result = res
-	return ec.marshalNMaterialResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterialResult(ctx, field.Selections, res)
+	return ec.marshalNMaterialResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_groupAnalyzeMaterial(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2975,7 +2975,7 @@ func (ec *executionContext) _Query_groupAnalyzeMaterial(ctx context.Context, fie
 	}
 	res := resTmp.(*model.EchartsResult)
 	fc.Result = res
-	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
+	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_productAttributes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3016,7 +3016,7 @@ func (ec *executionContext) _Query_productAttributes(ctx context.Context, field 
 	}
 	res := resTmp.([]*model.ProductAttribute)
 	fc.Result = res
-	return ec.marshalNProductAttribute2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx, field.Selections, res)
+	return ec.marshalNProductAttribute2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_device(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3057,7 +3057,7 @@ func (ec *executionContext) _Query_device(ctx context.Context, field graphql.Col
 	}
 	res := resTmp.(*model.Device)
 	fc.Result = res
-	return ec.marshalNDevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDevice(ctx, field.Selections, res)
+	return ec.marshalNDevice2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDevice(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_devices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3098,7 +3098,7 @@ func (ec *executionContext) _Query_devices(ctx context.Context, field graphql.Co
 	}
 	res := resTmp.([]*model.Device)
 	fc.Result = res
-	return ec.marshalNDevice2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDevice(ctx, field.Selections, res)
+	return ec.marshalNDevice2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDevice(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_analyzeDevices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3139,7 +3139,7 @@ func (ec *executionContext) _Query_analyzeDevices(ctx context.Context, field gra
 	}
 	res := resTmp.([]*model.DeviceResult)
 	fc.Result = res
-	return ec.marshalNDeviceResult2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx, field.Selections, res)
+	return ec.marshalNDeviceResult2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_analyzeDevice(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3180,7 +3180,7 @@ func (ec *executionContext) _Query_analyzeDevice(ctx context.Context, field grap
 	}
 	res := resTmp.(*model.DeviceResult)
 	fc.Result = res
-	return ec.marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx, field.Selections, res)
+	return ec.marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_groupAnalyzeDevice(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3221,7 +3221,7 @@ func (ec *executionContext) _Query_groupAnalyzeDevice(ctx context.Context, field
 	}
 	res := resTmp.(*model.EchartsResult)
 	fc.Result = res
-	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
+	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_point(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3262,7 +3262,7 @@ func (ec *executionContext) _Query_point(ctx context.Context, field graphql.Coll
 	}
 	res := resTmp.(*model.Point)
 	fc.Result = res
-	return ec.marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPoint(ctx, field.Selections, res)
+	return ec.marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_sizeUnYieldTop(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3303,7 +3303,7 @@ func (ec *executionContext) _Query_sizeUnYieldTop(ctx context.Context, field gra
 	}
 	res := resTmp.(*model.EchartsResult)
 	fc.Result = res
-	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
+	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_pointListWithYield(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3344,7 +3344,7 @@ func (ec *executionContext) _Query_pointListWithYield(ctx context.Context, field
 	}
 	res := resTmp.(*model.PointListWithYieldResponse)
 	fc.Result = res
-	return ec.marshalNPointListWithYieldResponse2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPointListWithYieldResponse(ctx, field.Selections, res)
+	return ec.marshalNPointListWithYieldResponse2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointListWithYieldResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_sizeNormalDistribution(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3385,7 +3385,7 @@ func (ec *executionContext) _Query_sizeNormalDistribution(ctx context.Context, f
 	}
 	res := resTmp.(*model.PointResult)
 	fc.Result = res
-	return ec.marshalNPointResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPointResult(ctx, field.Selections, res)
+	return ec.marshalNPointResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_groupAnalyzePoint(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3426,7 +3426,7 @@ func (ec *executionContext) _Query_groupAnalyzePoint(ctx context.Context, field 
 	}
 	res := resTmp.(*model.EchartsResult)
 	fc.Result = res
-	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
+	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4703,19 +4703,19 @@ func (ec *executionContext) unmarshalInputGraphInput(ctx context.Context, obj in
 			}
 		case "xAxis":
 			var err error
-			it.XAxis, err = ec.unmarshalNCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐCategory(ctx, v)
+			it.XAxis, err = ec.unmarshalNCategory2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐCategory(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "yAxis":
 			var err error
-			it.YAxis, err = ec.unmarshalNYAxis2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐYAxis(ctx, v)
+			it.YAxis, err = ec.unmarshalNYAxis2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐYAxis(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "groupBy":
 			var err error
-			it.GroupBy, err = ec.unmarshalOCategory2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐCategory(ctx, v)
+			it.GroupBy, err = ec.unmarshalOCategory2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐCategory(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4733,7 +4733,7 @@ func (ec *executionContext) unmarshalInputGraphInput(ctx context.Context, obj in
 			}
 		case "sort":
 			var err error
-			it.Sort, err = ec.unmarshalOSort2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSort(ctx, v)
+			it.Sort, err = ec.unmarshalOSort2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐSort(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -5846,20 +5846,20 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, v interface{}) (model.Category, error) {
+func (ec *executionContext) unmarshalNCategory2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, v interface{}) (model.Category, error) {
 	var res model.Category
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v model.Category) graphql.Marshaler {
+func (ec *executionContext) marshalNCategory2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v model.Category) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) marshalNDevice2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v model.Device) graphql.Marshaler {
+func (ec *executionContext) marshalNDevice2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v model.Device) graphql.Marshaler {
 	return ec._Device(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNDevice2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v []*model.Device) graphql.Marshaler {
+func (ec *executionContext) marshalNDevice2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v []*model.Device) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -5883,7 +5883,7 @@ func (ec *executionContext) marshalNDevice2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpvi
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalODevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDevice(ctx, sel, v[i])
+			ret[i] = ec.marshalODevice2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDevice(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -5896,7 +5896,7 @@ func (ec *executionContext) marshalNDevice2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpvi
 	return ret
 }
 
-func (ec *executionContext) marshalNDevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v *model.Device) graphql.Marshaler {
+func (ec *executionContext) marshalNDevice2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v *model.Device) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5906,11 +5906,11 @@ func (ec *executionContext) marshalNDevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewe
 	return ec._Device(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNDeviceResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v model.DeviceResult) graphql.Marshaler {
+func (ec *executionContext) marshalNDeviceResult2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v model.DeviceResult) graphql.Marshaler {
 	return ec._DeviceResult(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNDeviceResult2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v []*model.DeviceResult) graphql.Marshaler {
+func (ec *executionContext) marshalNDeviceResult2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v []*model.DeviceResult) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -5934,7 +5934,7 @@ func (ec *executionContext) marshalNDeviceResult2ᚕᚖgithubᚗcomᚋSasukeBo�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalODeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx, sel, v[i])
+			ret[i] = ec.marshalODeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -5947,7 +5947,7 @@ func (ec *executionContext) marshalNDeviceResult2ᚕᚖgithubᚗcomᚋSasukeBo�
 	return ret
 }
 
-func (ec *executionContext) marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v *model.DeviceResult) graphql.Marshaler {
+func (ec *executionContext) marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v *model.DeviceResult) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5957,11 +5957,11 @@ func (ec *executionContext) marshalNDeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋft
 	return ec._DeviceResult(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNEchartsResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx context.Context, sel ast.SelectionSet, v model.EchartsResult) graphql.Marshaler {
+func (ec *executionContext) marshalNEchartsResult2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx context.Context, sel ast.SelectionSet, v model.EchartsResult) graphql.Marshaler {
 	return ec._EchartsResult(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx context.Context, sel ast.SelectionSet, v *model.EchartsResult) graphql.Marshaler {
+func (ec *executionContext) marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx context.Context, sel ast.SelectionSet, v *model.EchartsResult) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -5985,7 +5985,7 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐGraphInput(ctx context.Context, v interface{}) (model.GraphInput, error) {
+func (ec *executionContext) unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐGraphInput(ctx context.Context, v interface{}) (model.GraphInput, error) {
 	return ec.unmarshalInputGraphInput(ctx, v)
 }
 
@@ -6026,11 +6026,11 @@ func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) marshalNMaterial2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterial(ctx context.Context, sel ast.SelectionSet, v model.Material) graphql.Marshaler {
+func (ec *executionContext) marshalNMaterial2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterial(ctx context.Context, sel ast.SelectionSet, v model.Material) graphql.Marshaler {
 	return ec._Material(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterialᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Material) graphql.Marshaler {
+func (ec *executionContext) marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Material) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -6054,7 +6054,7 @@ func (ec *executionContext) marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋftp
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterial(ctx, sel, v[i])
+			ret[i] = ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterial(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -6067,7 +6067,7 @@ func (ec *executionContext) marshalNMaterial2ᚕᚖgithubᚗcomᚋSasukeBoᚋftp
 	return ret
 }
 
-func (ec *executionContext) marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterial(ctx context.Context, sel ast.SelectionSet, v *model.Material) graphql.Marshaler {
+func (ec *executionContext) marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterial(ctx context.Context, sel ast.SelectionSet, v *model.Material) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6077,11 +6077,11 @@ func (ec *executionContext) marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋftpvie
 	return ec._Material(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMaterialResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterialResult(ctx context.Context, sel ast.SelectionSet, v model.MaterialResult) graphql.Marshaler {
+func (ec *executionContext) marshalNMaterialResult2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialResult(ctx context.Context, sel ast.SelectionSet, v model.MaterialResult) graphql.Marshaler {
 	return ec._MaterialResult(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMaterialResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterialResult(ctx context.Context, sel ast.SelectionSet, v *model.MaterialResult) graphql.Marshaler {
+func (ec *executionContext) marshalNMaterialResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialResult(ctx context.Context, sel ast.SelectionSet, v *model.MaterialResult) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6091,11 +6091,11 @@ func (ec *executionContext) marshalNMaterialResult2ᚖgithubᚗcomᚋSasukeBoᚋ
 	return ec._MaterialResult(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNMaterialsWrap2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterialsWrap(ctx context.Context, sel ast.SelectionSet, v model.MaterialsWrap) graphql.Marshaler {
+func (ec *executionContext) marshalNMaterialsWrap2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialsWrap(ctx context.Context, sel ast.SelectionSet, v model.MaterialsWrap) graphql.Marshaler {
 	return ec._MaterialsWrap(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMaterialsWrap2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐMaterialsWrap(ctx context.Context, sel ast.SelectionSet, v *model.MaterialsWrap) graphql.Marshaler {
+func (ec *executionContext) marshalNMaterialsWrap2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialsWrap(ctx context.Context, sel ast.SelectionSet, v *model.MaterialsWrap) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6105,11 +6105,11 @@ func (ec *executionContext) marshalNMaterialsWrap2ᚖgithubᚗcomᚋSasukeBoᚋf
 	return ec._MaterialsWrap(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPoint2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPoint(ctx context.Context, sel ast.SelectionSet, v model.Point) graphql.Marshaler {
+func (ec *executionContext) marshalNPoint2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx context.Context, sel ast.SelectionSet, v model.Point) graphql.Marshaler {
 	return ec._Point(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPoint(ctx context.Context, sel ast.SelectionSet, v *model.Point) graphql.Marshaler {
+func (ec *executionContext) marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx context.Context, sel ast.SelectionSet, v *model.Point) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6119,11 +6119,11 @@ func (ec *executionContext) marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋftpviewer
 	return ec._Point(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPointListWithYieldResponse2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPointListWithYieldResponse(ctx context.Context, sel ast.SelectionSet, v model.PointListWithYieldResponse) graphql.Marshaler {
+func (ec *executionContext) marshalNPointListWithYieldResponse2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointListWithYieldResponse(ctx context.Context, sel ast.SelectionSet, v model.PointListWithYieldResponse) graphql.Marshaler {
 	return ec._PointListWithYieldResponse(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPointListWithYieldResponse2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPointListWithYieldResponse(ctx context.Context, sel ast.SelectionSet, v *model.PointListWithYieldResponse) graphql.Marshaler {
+func (ec *executionContext) marshalNPointListWithYieldResponse2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointListWithYieldResponse(ctx context.Context, sel ast.SelectionSet, v *model.PointListWithYieldResponse) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6133,11 +6133,11 @@ func (ec *executionContext) marshalNPointListWithYieldResponse2ᚖgithubᚗcom�
 	return ec._PointListWithYieldResponse(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPointResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPointResult(ctx context.Context, sel ast.SelectionSet, v model.PointResult) graphql.Marshaler {
+func (ec *executionContext) marshalNPointResult2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointResult(ctx context.Context, sel ast.SelectionSet, v model.PointResult) graphql.Marshaler {
 	return ec._PointResult(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPointResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPointResult(ctx context.Context, sel ast.SelectionSet, v *model.PointResult) graphql.Marshaler {
+func (ec *executionContext) marshalNPointResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointResult(ctx context.Context, sel ast.SelectionSet, v *model.PointResult) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6147,7 +6147,7 @@ func (ec *executionContext) marshalNPointResult2ᚖgithubᚗcomᚋSasukeBoᚋftp
 	return ec._PointResult(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNPointYield2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPointYield(ctx context.Context, sel ast.SelectionSet, v []*model.PointYield) graphql.Marshaler {
+func (ec *executionContext) marshalNPointYield2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointYield(ctx context.Context, sel ast.SelectionSet, v []*model.PointYield) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -6171,7 +6171,7 @@ func (ec *executionContext) marshalNPointYield2ᚕᚖgithubᚗcomᚋSasukeBoᚋf
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOPointYield2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPointYield(ctx, sel, v[i])
+			ret[i] = ec.marshalOPointYield2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointYield(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -6184,7 +6184,7 @@ func (ec *executionContext) marshalNPointYield2ᚕᚖgithubᚗcomᚋSasukeBoᚋf
 	return ret
 }
 
-func (ec *executionContext) marshalNProductAttribute2ᚕᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx context.Context, sel ast.SelectionSet, v []*model.ProductAttribute) graphql.Marshaler {
+func (ec *executionContext) marshalNProductAttribute2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx context.Context, sel ast.SelectionSet, v []*model.ProductAttribute) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -6208,7 +6208,7 @@ func (ec *executionContext) marshalNProductAttribute2ᚕᚖgithubᚗcomᚋSasuke
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOProductAttribute2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx, sel, v[i])
+			ret[i] = ec.marshalOProductAttribute2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -6221,7 +6221,7 @@ func (ec *executionContext) marshalNProductAttribute2ᚕᚖgithubᚗcomᚋSasuke
 	return ret
 }
 
-func (ec *executionContext) unmarshalNSearch2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSearch(ctx context.Context, v interface{}) (model.Search, error) {
+func (ec *executionContext) unmarshalNSearch2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐSearch(ctx context.Context, v interface{}) (model.Search, error) {
 	return ec.unmarshalInputSearch(ctx, v)
 }
 
@@ -6329,12 +6329,12 @@ func (ec *executionContext) marshalNTime2ᚖtimeᚐTime(ctx context.Context, sel
 	return ec.marshalNTime2timeᚐTime(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalNYAxis2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐYAxis(ctx context.Context, v interface{}) (model.YAxis, error) {
+func (ec *executionContext) unmarshalNYAxis2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐYAxis(ctx context.Context, v interface{}) (model.YAxis, error) {
 	var res model.YAxis
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalNYAxis2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐYAxis(ctx context.Context, sel ast.SelectionSet, v model.YAxis) graphql.Marshaler {
+func (ec *executionContext) marshalNYAxis2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐYAxis(ctx context.Context, sel ast.SelectionSet, v model.YAxis) graphql.Marshaler {
 	return v
 }
 
@@ -6587,46 +6587,46 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
 }
 
-func (ec *executionContext) unmarshalOCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, v interface{}) (model.Category, error) {
+func (ec *executionContext) unmarshalOCategory2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, v interface{}) (model.Category, error) {
 	var res model.Category
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v model.Category) graphql.Marshaler {
+func (ec *executionContext) marshalOCategory2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v model.Category) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOCategory2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, v interface{}) (*model.Category, error) {
+func (ec *executionContext) unmarshalOCategory2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, v interface{}) (*model.Category, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOCategory2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐCategory(ctx, v)
+	res, err := ec.unmarshalOCategory2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐCategory(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOCategory2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v *model.Category) graphql.Marshaler {
+func (ec *executionContext) marshalOCategory2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐCategory(ctx context.Context, sel ast.SelectionSet, v *model.Category) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return v
 }
 
-func (ec *executionContext) marshalODevice2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v model.Device) graphql.Marshaler {
+func (ec *executionContext) marshalODevice2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v model.Device) graphql.Marshaler {
 	return ec._Device(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalODevice2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v *model.Device) graphql.Marshaler {
+func (ec *executionContext) marshalODevice2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v *model.Device) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._Device(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalODeviceResult2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v model.DeviceResult) graphql.Marshaler {
+func (ec *executionContext) marshalODeviceResult2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v model.DeviceResult) graphql.Marshaler {
 	return ec._DeviceResult(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalODeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v *model.DeviceResult) graphql.Marshaler {
+func (ec *executionContext) marshalODeviceResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐDeviceResult(ctx context.Context, sel ast.SelectionSet, v *model.DeviceResult) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
@@ -6670,46 +6670,46 @@ func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.Selecti
 	return graphql.MarshalMap(v)
 }
 
-func (ec *executionContext) marshalOPointYield2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPointYield(ctx context.Context, sel ast.SelectionSet, v model.PointYield) graphql.Marshaler {
+func (ec *executionContext) marshalOPointYield2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointYield(ctx context.Context, sel ast.SelectionSet, v model.PointYield) graphql.Marshaler {
 	return ec._PointYield(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOPointYield2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐPointYield(ctx context.Context, sel ast.SelectionSet, v *model.PointYield) graphql.Marshaler {
+func (ec *executionContext) marshalOPointYield2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointYield(ctx context.Context, sel ast.SelectionSet, v *model.PointYield) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._PointYield(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOProductAttribute2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx context.Context, sel ast.SelectionSet, v model.ProductAttribute) graphql.Marshaler {
+func (ec *executionContext) marshalOProductAttribute2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx context.Context, sel ast.SelectionSet, v model.ProductAttribute) graphql.Marshaler {
 	return ec._ProductAttribute(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOProductAttribute2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx context.Context, sel ast.SelectionSet, v *model.ProductAttribute) graphql.Marshaler {
+func (ec *executionContext) marshalOProductAttribute2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx context.Context, sel ast.SelectionSet, v *model.ProductAttribute) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	return ec._ProductAttribute(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOSort2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSort(ctx context.Context, v interface{}) (model.Sort, error) {
+func (ec *executionContext) unmarshalOSort2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐSort(ctx context.Context, v interface{}) (model.Sort, error) {
 	var res model.Sort
 	return res, res.UnmarshalGQL(v)
 }
 
-func (ec *executionContext) marshalOSort2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSort(ctx context.Context, sel ast.SelectionSet, v model.Sort) graphql.Marshaler {
+func (ec *executionContext) marshalOSort2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐSort(ctx context.Context, sel ast.SelectionSet, v model.Sort) graphql.Marshaler {
 	return v
 }
 
-func (ec *executionContext) unmarshalOSort2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSort(ctx context.Context, v interface{}) (*model.Sort, error) {
+func (ec *executionContext) unmarshalOSort2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐSort(ctx context.Context, v interface{}) (*model.Sort, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := ec.unmarshalOSort2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSort(ctx, v)
+	res, err := ec.unmarshalOSort2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐSort(ctx, v)
 	return &res, err
 }
 
-func (ec *executionContext) marshalOSort2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐSort(ctx context.Context, sel ast.SelectionSet, v *model.Sort) graphql.Marshaler {
+func (ec *executionContext) marshalOSort2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐSort(ctx context.Context, sel ast.SelectionSet, v *model.Sort) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
