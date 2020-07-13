@@ -15,5 +15,19 @@ type Point {
     upperLimit: Float!
     nominal: Float!
     lowerLimit: Float!
+    material: Material!
 }
 
+type PointResult {
+    total: Int!
+    s: Float!
+    ok: Int!
+    ng: Int!
+    cp: Float!
+    cpk: Float!
+    avg: Float!
+    max: Float!
+    min: Float!
+    dataset: Map!
+    point: Point!
+}

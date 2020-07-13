@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/SasukeBo/ftpviewer/api/v1/generated"
@@ -61,12 +60,24 @@ func (r *queryResolver) GroupAnalyzeDevice(ctx context.Context, analyzeInput mod
 	return logic.GroupAnalyzeDevice(ctx, analyzeInput)
 }
 
+func (r *queryResolver) Point(ctx context.Context, id int) (*model.Point, error) {
+	return logic.Point(ctx, id)
+}
+
 func (r *queryResolver) SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput) (*model.EchartsResult, error) {
 	return logic.SizeUnYieldTop(ctx, groupInput)
 }
 
 func (r *queryResolver) PointListWithYield(ctx context.Context, materialID int, limit int, page int) (*model.PointListWithYieldResponse, error) {
-	panic(fmt.Errorf("not implemented"))
+	return logic.PointListWithYield(ctx, materialID, limit, page)
+}
+
+func (r *queryResolver) SizeNormalDistribution(ctx context.Context, id int, duration []*time.Time, filters map[string]interface{}) (*model.PointResult, error) {
+	return logic.SizeNormalDistribution(ctx, id, duration, filters)
+}
+
+func (r *queryResolver) GroupAnalyzePoint(ctx context.Context, analyzeInput model.GraphInput) (*model.EchartsResult, error) {
+	return logic.GroupAnalyzePoint(ctx, analyzeInput)
 }
 
 // Query returns generated.QueryResolver implementation.

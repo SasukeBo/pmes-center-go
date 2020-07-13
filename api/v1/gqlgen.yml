@@ -57,3 +57,6 @@ models:
   Device:
     model:
       - github.com/SasukeBo/ftpviewer/api/v1/model.Device
+  Point:
+    model:
+      - github.com/SasukeBo/ftpviewer/api/v1/model.Point

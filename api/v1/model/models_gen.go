@@ -55,17 +55,23 @@ type MaterialsWrap struct {
 	Materials []*Material `json:"materials"`
 }
 
-type Point struct {
-	ID         int     `json:"id"`
-	Name       string  `json:"name"`
-	UpperLimit float64 `json:"upperLimit"`
-	Nominal    float64 `json:"nominal"`
-	LowerLimit float64 `json:"lowerLimit"`
-}
-
 type PointListWithYieldResponse struct {
 	Total int           `json:"total"`
 	List  []*PointYield `json:"list"`
+}
+
+type PointResult struct {
+	Total   int                    `json:"total"`
+	S       float64                `json:"s"`
+	Ok      int                    `json:"ok"`
+	Ng      int                    `json:"ng"`
+	Cp      float64                `json:"cp"`
+	Cpk     float64                `json:"cpk"`
+	Avg     float64                `json:"avg"`
+	Max     float64                `json:"max"`
+	Min     float64                `json:"min"`
+	Dataset map[string]interface{} `json:"dataset"`
+	Point   *Point                 `json:"point"`
 }
 
 type PointYield struct {
