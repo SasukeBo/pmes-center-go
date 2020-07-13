@@ -27,11 +27,13 @@ input DecodeTemplateInput {
 
 input ProductColumnInput {
     name: String!
+    label: String!
     index: String!
     type: ProductColumnType!
 }
 
 type ProductColumn {
+    label: String!
     name: String!
     index: String!
     type: ProductColumnType!

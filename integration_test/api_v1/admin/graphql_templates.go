@@ -106,6 +106,7 @@ query($materialID: Int!) {
     dataRowIndex
     createdAtColumnIndex
     productColumns {
+      label
       name
       index
       type

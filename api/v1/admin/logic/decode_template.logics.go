@@ -56,16 +56,16 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*
 	template.CreatedAtColumnIndex = parseIndexFromColumnCode(input.CreatedAtColumnIndex)
 	log.Warn("parse createdAtColumnIndex from %v to %v", input.CreatedAtColumnIndex, template.CreatedAtColumnIndex)
 
-	var productColumns []orm.Column
+	productColumns := make(types.Map)
 	for _, iColumn := range input.ProductColumns {
 		var column orm.Column
 		if err := copier.Copy(&column, &iColumn); err != nil {
 			continue
 		}
 		column.Index = parseIndexFromColumnCode(iColumn.Index)
-		productColumns = append(productColumns, column)
+		productColumns[iColumn.Name] = column
 	}
-	template.ProductColumns = types.Map{"columns": productColumns}
+	template.ProductColumns = productColumns
 	pointColumns := make(types.Map)
 
 	for k, v := range input.PointColumns {
@@ -139,12 +139,9 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 
 	out.CreatedAtColumnIndex = parseColumnCodeFromIndex(template.CreatedAtColumnIndex)
 	var oProductColumns []*model.ProductColumn
-	iProductColumns, ok := template.ProductColumns["columns"].([]interface{})
-	if !ok {
-		return nil, errormap.NewOrigin("type assert decode template product columns to array failed")
-	}
+	iProductColumns := template.ProductColumns
 
-	for _, iColumn := range iProductColumns {
+	for name, iColumn := range iProductColumns {
 		column, ok := iColumn.(map[string]interface{})
 		if !ok {
 			log.Warnln("type assert interface{} to map[string]interface{} failed")
@@ -152,8 +149,9 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 		}
 
 		var oColumn model.ProductColumn
-		if name, ok := column["Name"].(string); ok {
-			oColumn.Name = name
+		oColumn.Name = name
+		if label, ok := column["Label"].(string); ok {
+			oColumn.Label = label
 		}
 
 		if idx, ok := column["Index"].(float64); ok {
