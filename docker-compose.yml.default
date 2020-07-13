@@ -49,6 +49,7 @@ services:
       ENV: 'production'
     volumes:
       - "/path/to/your/gopath:/go"
+	  - "/path/to/your/file_cache_path:/file_cache_path"
 
   gateway:
     image: nginx
