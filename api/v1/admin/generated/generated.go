@@ -163,6 +163,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		CurrentUser        func(childComplexity int) int
 		Device             func(childComplexity int, id int) int
 		ImportRecords      func(childComplexity int, materialID int, deviceID *int, page int, limit int) int
 		ImportStatus       func(childComplexity int, id int) int
@@ -227,6 +228,7 @@ type MutationResolver interface {
 	ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) (model.ResponseStatus, error)
 }
 type QueryResolver interface {
+	CurrentUser(ctx context.Context) (*model.User, error)
 	Materials(ctx context.Context, pattern *string, page int, limit int) (*model.MaterialWrap, error)
 	Material(ctx context.Context, id int) (*model.Material, error)
 	ListMaterialPoints(ctx context.Context, materialID int) ([]*model.Point, error)
@@ -859,6 +861,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProductColumn.Type(childComplexity), true
 
+	case "Query.currentUser":
+		if e.complexity.Query.CurrentUser == nil {
+			break
+		}
+
+		return e.complexity.Query.CurrentUser(childComplexity), true
+
 	case "Query.device":
 		if e.complexity.Query.Device == nil {
 			break
@@ -1317,6 +1326,10 @@ input PointCreateInput {
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "schema/root.query.graphql", Input: `type Query {
+    # 用户
+    "获取当前用户"
+    currentUser: User!
+
     # 料号
     "获取料号数据"
     materials(pattern: String, page: Int!, limit: Int!): MaterialWrap!
@@ -4545,6 +4558,40 @@ func (ec *executionContext) _ProductColumn_type(ctx context.Context, field graph
 	return ec.marshalNProductColumnType2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋadminᚋmodelᚐProductColumnType(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CurrentUser(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋadminᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_materials(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -7367,6 +7414,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "currentUser":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_currentUser(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "materials":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

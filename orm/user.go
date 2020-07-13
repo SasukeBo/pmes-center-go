@@ -24,8 +24,8 @@ func (u *User) BeforeCreate() error {
 	return nil
 }
 
-func (u *User) GetWithToken(token string) error {
-	return DB.Model(u).Where("token = ?", token).First(u).Error
+func (u *User) GetWithUUID(uuid string) error {
+	return DB.Model(u).Where("uuid = ?", uuid).First(u).Error
 }
 
 func (u *User) Get(id uint) error {

@@ -126,7 +126,6 @@ type ComplexityRoot struct {
 		AnalyzeDevice          func(childComplexity int, searchInput model.Search) int
 		AnalyzeDevices         func(childComplexity int, materialID int) int
 		AnalyzeMaterial        func(childComplexity int, searchInput model.Search) int
-		CurrentUser            func(childComplexity int) int
 		Device                 func(childComplexity int, id int) int
 		Devices                func(childComplexity int, materialID int) int
 		GroupAnalyzeDevice     func(childComplexity int, analyzeInput model.GraphInput) int
@@ -157,7 +156,6 @@ type PointResolver interface {
 	Material(ctx context.Context, obj *model.Point) (*model.Material, error)
 }
 type QueryResolver interface {
-	CurrentUser(ctx context.Context) (*model.User, error)
 	Materials(ctx context.Context, search *string, page int, limit int) (*model.MaterialsWrap, error)
 	Material(ctx context.Context, id int) (*model.Material, error)
 	MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error)
@@ -535,13 +533,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.AnalyzeMaterial(childComplexity, args["searchInput"].(model.Search)), true
 
-	case "Query.currentUser":
-		if e.complexity.Query.CurrentUser == nil {
-			break
-		}
-
-		return e.complexity.Query.CurrentUser(childComplexity), true
-
 	case "Query.device":
 		if e.complexity.Query.Device == nil {
 			break
@@ -880,10 +871,6 @@ type PointResult {
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "schema/root.query.graphql", Input: `type Query {
-    # 用户
-    "获取当前用户"
-    currentUser: User!
-
     # 料号
     "获取料号列表数据"
     materials(search: String, page: Int!, limit: Int!): MaterialsWrap!
@@ -2784,40 +2771,6 @@ func (ec *executionContext) _ProductAttribute_name(ctx context.Context, field gr
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().CurrentUser(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_materials(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5353,20 +5306,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "currentUser":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_currentUser(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "materials":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -6388,20 +6327,6 @@ func (ec *executionContext) marshalNTime2ᚖtimeᚐTime(ctx context.Context, sel
 		return graphql.Null
 	}
 	return ec.marshalNTime2timeᚐTime(ctx, sel, *v)
-}
-
-func (ec *executionContext) marshalNUser2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
-	return ec._User(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._User(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNYAxis2githubᚗcomᚋSasukeBoᚋftpviewerᚋapiᚋv1ᚋmodelᚐYAxis(ctx context.Context, v interface{}) (model.YAxis, error) {

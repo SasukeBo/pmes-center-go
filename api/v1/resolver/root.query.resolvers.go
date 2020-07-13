@@ -12,10 +12,6 @@ import (
 	"github.com/SasukeBo/ftpviewer/api/v1/model"
 )
 
-func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
-	return logic.CurrentUser(ctx)
-}
-
 func (r *queryResolver) Materials(ctx context.Context, search *string, page int, limit int) (*model.MaterialsWrap, error) {
 	return logic.Materials(ctx, search, page, limit)
 }

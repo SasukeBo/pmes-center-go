@@ -35,10 +35,10 @@ func Start() {
 	}
 
 	// API v1
-	api1 := r.Group("/api", handler.Authenticate(), handler.GraphqlResponseLogger(), handler.InjectGinContext())
+	api1 := r.Group("/api", handler.GraphqlResponseLogger(), handler.InjectGinContext())
 	{
 		api1.POST("/v1", handler.API1())
-		api1.POST("/v1/admin", handler.API1Admin())
+		api1.POST("/v1/admin", handler.Authenticate(), handler.API1Admin())
 	}
 
 	// Active
