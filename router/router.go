@@ -5,24 +5,12 @@ import (
 	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/router/handler"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"time"
 )
 
 func Start() {
 	r := gin.Default()
 	//r.Use(cors.Default())
-
-	// CORS
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:8080", "http://192.168.13.104", "http://localhost"},
-		AllowMethods:     []string{"POST"},
-		AllowHeaders:     []string{"Origin", "content-type"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
 
 	// Panic Recovery
 	r.Use(gin.Recovery())
