@@ -296,7 +296,7 @@ func store(xr *XLSXReader) {
 
 	for _, row := range xr.DataSet {
 		qualified := true
-		createdAt := timer.ParseTime(row[xr.DecodeTemplate.CreatedAtColumnIndex], 8)
+		createdAt := timer.ParseTime(row[xr.DecodeTemplate.CreatedAtColumnIndex - 1], 8)
 		attribute := make(types.Map)
 		for name, iColumn := range productColumns {
 			column := iColumn.(map[string]interface{})

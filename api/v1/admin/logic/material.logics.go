@@ -42,7 +42,7 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 		UserID:               user.ID,
 		Description:          "创建料号时自动生成的默认解析模板",
 		DataRowIndex:         15,
-		CreatedAtColumnIndex: 1,
+		CreatedAtColumnIndex: 2,
 		Default:              true,
 	}
 	err := genDefaultProductColumns(&decodeTemplate)
