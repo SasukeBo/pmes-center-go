@@ -3,12 +3,12 @@ package logic
 import (
 	"context"
 	"fmt"
+	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
-	"github.com/SasukeBo/log"
 	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
 	"math"
@@ -208,14 +208,13 @@ func parseIndexFromColumnCode(columnCode string) int {
 		ascii := int(r)
 		sum = sum + int(math.Pow(26, float64(length-1-i)))*(ascii-64)
 	}
-	return sum - 1
+	return sum
 }
 
 const charAASCII = 65
 
 // 读取存储列号时，将数组index加1解析为英文列号
 func parseColumnCodeFromIndex(index int) string {
-	index = index + 1
 	offsets := make([]int, 0)
 	for {
 		if index <= 26 {
@@ -223,8 +222,14 @@ func parseColumnCodeFromIndex(index int) string {
 			break
 		}
 
-		offsets = append(offsets, index%26)
-		index = index / 26
+		offset := index % 26
+		if offset == 0 {
+			offset = 26
+			index = index/26 - 1
+		} else {
+			index = index / 26
+		}
+		offsets = append(offsets, offset)
 	}
 
 	codes := make([]string, 0)
