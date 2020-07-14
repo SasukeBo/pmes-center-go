@@ -6,22 +6,21 @@ import (
 	"errors"
 	"fmt"
 	"github.com/SasukeBo/configer"
+	timer "github.com/SasukeBo/lib/time"
+	"github.com/SasukeBo/log"
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/ftp"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
-	timer "github.com/SasukeBo/lib/time"
-	"github.com/SasukeBo/log"
 	"github.com/tealeg/xlsx"
 	"io/ioutil"
 	"path/filepath"
-	"regexp"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 )
-
-const fileNameDecodePattern = `([\w]*)-([\w]*)-.*-([A|B|w|b]?).xlsx`
 
 type XLSXReader struct {
 	DataSet        [][]string          // only cache data of sheet 1
@@ -111,7 +110,7 @@ type fetchItem struct {
 // FetchMaterialData 判断是否需要从FTP拉取数据
 // 给定料号，对比数据库中已拉取文件路径，得出是否有需要拉取的文件路径
 func FetchMaterialData(material *orm.Material) error {
-	var needFetch []fetchItem
+	var needFetch []string
 
 	template, err := material.GetDefaultTemplate()
 	if err != nil {
@@ -124,13 +123,11 @@ func FetchMaterialData(material *orm.Material) error {
 	}
 
 	for _, p := range ftpFileList {
-		need, deviceRemark := checkFile(material.ID, p)
+		need := checkFile(material.ID, p)
 		if !need {
 			continue
 		}
-		var device orm.Device
-		device.CreateIfNotExist(material.ID, deviceRemark)
-		needFetch = append(needFetch, fetchItem{device, p})
+		needFetch = append(needFetch, p)
 	}
 
 	if len(needFetch) == 0 {
@@ -140,16 +137,15 @@ func FetchMaterialData(material *orm.Material) error {
 	return fetchMaterialData(*material, needFetch, template)
 }
 
-func fetchMaterialData(material orm.Material, files []fetchItem, dt *orm.DecodeTemplate) error {
+func fetchMaterialData(material orm.Material, files []string, dt *orm.DecodeTemplate) error {
 	for _, f := range files {
-		xr := newXLSXReader(&material, &f.Device, dt)
-		path := resolvePath(material.Name, f.FileName)
+		xr := newXLSXReader(&material, nil, dt)
+		path := resolvePath(material.Name, f)
 
 		importRecord := &orm.ImportRecord{
-			FileName:         filepath.Base(f.FileName),
+			FileName:         filepath.Base(f),
 			Path:             path,
 			MaterialID:       material.ID,
-			DeviceID:         f.Device.ID,
 			Status:           orm.ImportStatusLoading,
 			ImportType:       orm.ImportRecordTypeSystem,
 			DecodeTemplateID: dt.ID,
@@ -234,24 +230,23 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 }
 
 // checkFile 仅检查文件是否已经被读取到指定料号
-func checkFile(materialID uint, fileName string) (bool, string) {
+func checkFile(materialID uint, fileName string) bool {
 	var importRecord orm.ImportRecord
 	// 查找 当前料号的 当前文件名的 已完成的 且 没有处理错误的 文件导入记录，若存在则忽略此文件
 	orm.DB.Model(&importRecord).Where(
-		"file_name = ? AND material_id = ? AND finished = 1 AND error IS NULL",
-		fileName, materialID,
+		"file_name = ? AND material_id = ? AND status = ?",
+		fileName, materialID, model.ImportStatusFinished,
 	).First(&importRecord)
 
 	if importRecord.ID != 0 {
-		return false, ""
+		return false
 	}
 
-	reg := regexp.MustCompile(fileNameDecodePattern)
-	matched := reg.FindStringSubmatch(fileName)
-	if len(matched) != 4 {
-		return false, ""
+	if !strings.Contains(fileName, ".xlsx") {
+		return false
 	}
-	return true, matched[2]
+
+	return true
 }
 
 func resolvePath(m, path string) string {
@@ -355,10 +350,14 @@ func store(xr *XLSXReader) {
 			}
 			pointValues[v.Name] = value
 		}
+		var deviceID uint
+		if xr.Device != nil {
+			deviceID = xr.Device.ID
+		}
 		productValueExpands = append(productValueExpands,
 			xr.Record.ID,
 			xr.Material.ID,
-			xr.Device.ID,
+			deviceID,
 			qualified,
 			*createdAt,
 			attribute,

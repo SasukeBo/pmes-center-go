@@ -20,7 +20,11 @@ func DeviceProduce() gin.HandlerFunc {
 		}
 
 		qualifiedStr := c.PostForm("qualified")
-		qualified, _ := strconv.ParseBool(qualifiedStr)
+		qualifiedInt, _ := strconv.ParseInt(qualifiedStr, 10, 64)
+		var qualified bool
+		if qualifiedInt == 1 {
+			qualified = true
+		}
 
 		attributesStr := c.PostForm("attributes")
 		attribute := make(types.Map)

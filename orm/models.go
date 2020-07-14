@@ -3,8 +3,8 @@ package orm
 import (
 	"fmt"
 	"github.com/SasukeBo/configer"
-	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/SasukeBo/log"
+	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/jinzhu/gorm"
 	"time"
 
