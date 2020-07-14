@@ -10,6 +10,8 @@ type Mutation {
     deleteMaterial(id: Int!): ResponseStatus!
     "编辑料号"
     updateMaterial(input: MaterialUpdateInput!): Material!
+    "拉取数据"
+    materialFetch(id: Int!): ResponseStatus!
 
     # 解析模板
     "保存解析模板"

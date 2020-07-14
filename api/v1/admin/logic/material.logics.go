@@ -82,9 +82,9 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 	}
 
 	// 解析FTP服务器指定料号路径下的所有未解析文件
-	if err := FetchMaterialData(&material); err != nil {
-		return &out, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateSuccessButFetchFailed, err)
-	}
+	//if err := FetchMaterialData(&material); err != nil {
+	//	return &out, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateSuccessButFetchFailed, err)
+	//}
 
 	return &out, nil
 }
@@ -215,4 +215,18 @@ func Material(ctx context.Context, id int) (*model.Material, error) {
 	}
 
 	return &out, nil
+}
+
+func MaterialFetch(ctx context.Context, id int) (model.ResponseStatus, error) {
+	var material orm.Material
+	if err := material.Get(uint(id)); err != nil {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
+	}
+
+	// 解析FTP服务器指定料号路径下的所有未解析文件
+	if err := FetchMaterialData(&material); err != nil {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeMaterialDataFetchFailed, err)
+	}
+
+	return model.ResponseStatusOk, nil
 }

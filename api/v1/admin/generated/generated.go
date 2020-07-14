@@ -139,6 +139,7 @@ type ComplexityRoot struct {
 		DeleteDevice          func(childComplexity int, id int) int
 		DeleteMaterial        func(childComplexity int, id int) int
 		ImportData            func(childComplexity int, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) int
+		MaterialFetch         func(childComplexity int, id int) int
 		ParseImportPoints     func(childComplexity int, file graphql.Upload) int
 		RevertImport          func(childComplexity int, id int) int
 		SaveDecodeTemplate    func(childComplexity int, input model.DecodeTemplateInput) int
@@ -217,6 +218,7 @@ type MutationResolver interface {
 	AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error)
 	DeleteMaterial(ctx context.Context, id int) (model.ResponseStatus, error)
 	UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error)
+	MaterialFetch(ctx context.Context, id int) (model.ResponseStatus, error)
 	SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*model.DecodeTemplate, error)
 	DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, error)
 	ChangeDefaultTemplate(ctx context.Context, id int, isDefault bool) (model.ResponseStatus, error)
@@ -725,6 +727,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ImportData(childComplexity, args["materialID"].(int), args["deviceID"].(int), args["decodeTemplateID"].(int), args["fileTokens"].([]string)), true
+
+	case "Mutation.materialFetch":
+		if e.complexity.Mutation.MaterialFetch == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_materialFetch_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.MaterialFetch(childComplexity, args["id"].(int)), true
 
 	case "Mutation.parseImportPoints":
 		if e.complexity.Mutation.ParseImportPoints == nil {
@@ -1297,6 +1311,8 @@ input PointCreateInput {
     deleteMaterial(id: Int!): ResponseStatus!
     "编辑料号"
     updateMaterial(input: MaterialUpdateInput!): Material!
+    "拉取数据"
+    materialFetch(id: Int!): ResponseStatus!
 
     # 解析模板
     "保存解析模板"
@@ -1495,6 +1511,20 @@ func (ec *executionContext) field_Mutation_importData_args(ctx context.Context, 
 		}
 	}
 	args["fileTokens"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_materialFetch_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -3881,6 +3911,47 @@ func (ec *executionContext) _Mutation_updateMaterial(ctx context.Context, field 
 	res := resTmp.(*model.Material)
 	fc.Result = res
 	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterial(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_materialFetch(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_materialFetch_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().MaterialFetch(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ResponseStatus)
+	fc.Result = res
+	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_saveDecodeTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7251,6 +7322,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "updateMaterial":
 			out.Values[i] = ec._Mutation_updateMaterial(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "materialFetch":
+			out.Values[i] = ec._Mutation_materialFetch(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
