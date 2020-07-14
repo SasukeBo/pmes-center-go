@@ -52,7 +52,7 @@ func (rw responseWriter) Write(b []byte) (int, error) {
 
 func GraphqlResponseLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if configer.GetEnv("env") == "prod" {
+		if false && configer.GetEnv("env") == "prod" {
 			c.Next()
 			return
 		}

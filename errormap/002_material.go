@@ -11,7 +11,7 @@ const (
 	ErrorCodeMaterialAnalyzeMissingAttributeGroup = "E0002S0400N0003"
 	ErrorCodeMaterialAnalyzeIllegalInput          = "E0002S0400N0004"
 	// 500
-	ErrorCodeCreateSuccessButFetchFailed = "E0002S0500N0001"
+	ErrorCodeMaterialDataFetchFailed = "E0002S0500N0001"
 	ErrorCodeMaterialAnalyzeError        = "E0002S0500N0002"
 )
 
@@ -35,9 +35,9 @@ func init() {
 	})
 
 	// 500
-	register(ErrorCodeCreateSuccessButFetchFailed, http.StatusInternalServerError, langMap{
-		ZH_CN: "抱歉，材料已创建，但由于某些错误未能获取数据，请向系统管理员寻求帮助。",
-		EN:    "Sorry, material created but failed to fetch data with some errors, please ask help from your system administrator.",
+	register(ErrorCodeMaterialDataFetchFailed, http.StatusInternalServerError, langMap{
+		ZH_CN: "抱歉，拉取料号数据失败，请向系统管理员寻求帮助。",
+		EN:    "Sorry, failed to fetch data with some errors, please ask help from your system administrator.",
 	})
 	register(ErrorCodeMaterialAnalyzeError, http.StatusInternalServerError, langMap{
 		ZH_CN: "抱歉，分析料号数据时发生了一些错误，分析失败。",
