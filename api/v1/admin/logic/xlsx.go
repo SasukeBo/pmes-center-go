@@ -305,7 +305,7 @@ func store(xr *XLSXReader) {
 			column := iColumn.(map[string]interface{})
 			index := int(column["Index"].(float64))
 			cType := column["Type"].(string)
-			value := row[index]
+			value := row[index - 1]
 
 			switch cType {
 			case orm.ProductColumnTypeDatetime:
