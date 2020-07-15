@@ -90,11 +90,11 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string) (
 	// time duration
 	if len(params.Duration) > 0 {
 		t := params.Duration[0]
-		query = query.Where("created_at > ?", *t)
+		query = query.Where("products.created_at > ?", *t)
 	}
 	if len(params.Duration) > 1 {
 		t := params.Duration[1]
-		query = query.Where("created_at < ?", *t)
+		query = query.Where("products.created_at < ?", *t)
 	}
 	// order by xAxis
 	sort := "ASC"
