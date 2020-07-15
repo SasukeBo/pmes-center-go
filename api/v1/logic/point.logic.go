@@ -295,7 +295,9 @@ func GroupAnalyzePoint(ctx context.Context, analyzeInput model.GraphInput) (*mod
 		selectVariables = append(selectVariables, "devices.name")
 		joinDevice = true
 	case model.CategoryShift:
-		selectVariables = append(selectVariables, "TIME(products.created_at) >= '08:00:00' && TIME(products.created_at) <= '17:30:00'")
+		// TODO: 解决UTC时区问题
+		// 暂时采用UTC 00:00:00 - 09:30:00
+		selectVariables = append(selectVariables, "TIME(products.created_at) >= '00:00:00' && TIME(products.created_at) <= '09:30:00'")
 	default:
 		if analyzeInput.AttributeXAxis == nil {
 			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("need AttributeXAxis when xAxis type is attribute"))
@@ -314,7 +316,7 @@ func GroupAnalyzePoint(ctx context.Context, analyzeInput model.GraphInput) (*mod
 			selectVariables = append(selectVariables, "devices.name")
 			joinDevice = true
 		case model.CategoryShift:
-			selectVariables = append(selectVariables, "TIME(products.created_at) >= '08:00:00' && TIME(products.created_at) <= '17:30:00'")
+			selectVariables = append(selectVariables, "TIME(products.created_at) >= '00:00:00' && TIME(products.created_at) <= '09:30:00'")
 		default:
 			if analyzeInput.AttributeGroup == nil {
 				return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("need AttributeGroup when groupBy type is attribute"))

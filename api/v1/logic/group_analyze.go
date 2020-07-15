@@ -48,7 +48,7 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string) (
 		selectVariables = append(selectVariables, "devices.name")
 		joinDevice = true
 	case model.CategoryShift:
-		selectVariables = append(selectVariables, "TIME(created_at) >= '08:00:00' && TIME(created_at) <= '17:30:00'")
+		selectVariables = append(selectVariables, "TIME(created_at) >= '00:00:00' && TIME(created_at) <= '09:30:00'")
 	case model.CategoryAttribute:
 		if params.AttributeXAxis == nil {
 			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("need AttributeXAxis when xAxis type is attribute"))
@@ -67,7 +67,7 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string) (
 			selectVariables = append(selectVariables, "devices.name")
 			joinDevice = true
 		case model.CategoryShift:
-			selectVariables = append(selectVariables, "TIME(created_at) >= '08:00:00' && TIME(created_at) <= '17:30:00'")
+			selectVariables = append(selectVariables, "TIME(created_at) >= '00:00:00' && TIME(created_at) <= '09:30:00'")
 		case model.CategoryAttribute:
 			if params.AttributeGroup == nil {
 				return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("need AttributeGroup when groupBy type is attribute"))
