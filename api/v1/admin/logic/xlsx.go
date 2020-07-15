@@ -296,7 +296,10 @@ func store(xr *XLSXReader) {
 
 	for _, row := range xr.DataSet {
 		qualified := true
-		createdAt := timer.ParseTime(row[xr.DecodeTemplate.CreatedAtColumnIndex - 1], 8)
+		createdAt := time.Now()
+		if t := timer.ParseTime(row[xr.DecodeTemplate.CreatedAtColumnIndex-1], 8); t != nil {
+			createdAt = *t
+		}
 		attribute := make(types.Map)
 		for name, iColumn := range productColumns {
 			column := iColumn.(map[string]interface{})
@@ -354,12 +357,13 @@ func store(xr *XLSXReader) {
 		if xr.Device != nil {
 			deviceID = xr.Device.ID
 		}
+
 		productValueExpands = append(productValueExpands,
 			xr.Record.ID,
 			xr.Material.ID,
 			deviceID,
 			qualified,
-			*createdAt,
+			createdAt,
 			attribute,
 			pointValues,
 		)
