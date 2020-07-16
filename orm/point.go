@@ -3,9 +3,7 @@ package orm
 import (
 	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/pmes-data-center/errormap"
-	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 )
 
@@ -38,12 +36,8 @@ func (p *Point) Get(id uint) *errormap.Error {
 func setupPointsImportTemplate() {
 	var iptFile File
 	var token = configer.GetString("points_import_template_token")
-	iptFile.GetByToken(token)
-
-	var fileCachePath = configer.GetString("file_cache_path")
-	p := path.Join(fileCachePath, DirPrivate, "templates")
-	if err := os.MkdirAll(p, os.ModePerm); err != nil {
-		panic("cannot create templates directory.")
+	if err := iptFile.GetByToken(token); err == nil {
+		return
 	}
 
 	pwd, err := os.Getwd()
@@ -51,29 +45,15 @@ func setupPointsImportTemplate() {
 		panic(err)
 	}
 
-	tplFile, err := os.Open(filepath.Join(pwd, "priv/import_points_template.xlsx"))
-	if err != nil {
-		panic(err)
-	}
-	content, err := ioutil.ReadAll(tplFile)
-	if err != nil {
-		panic(err)
-	}
-
-	size := len(content)
-
-	err = ioutil.WriteFile(path.Join(p, "import_points_template.xlsx"), content, 0644)
-	if err != nil {
-		panic(err)
+	filePath := filepath.Join(pwd, "priv/import_points_template.xlsx")
+	iptFile = File{
+		Token:       token,
+		Name:        "检测点位导入模板.xlsx",
+		Path:        filePath,
+		ContentType: XlsxContentType,
 	}
 
-	iptFile.Token = token
-	iptFile.Name = "检测点位导入模板.xlsx"
-	iptFile.Path = "/priv/templates/import_points_template.xlsx"
-	iptFile.Size = uint(size)
-	iptFile.ContentType = XlsxContentType
-
-	if err := Save(&iptFile).Error; err != nil {
+	if err := Create(&iptFile).Error; err != nil {
 		panic(err)
 	}
 }

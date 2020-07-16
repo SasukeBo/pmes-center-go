@@ -3,16 +3,12 @@ package handler
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/SasukeBo/configer"
 	v1generatedadmin "github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
 	v1resolveradmin "github.com/SasukeBo/pmes-data-center/api/v1/admin/resolver"
 	v1generated "github.com/SasukeBo/pmes-data-center/api/v1/generated"
 	v1resolver "github.com/SasukeBo/pmes-data-center/api/v1/resolver"
 	"github.com/gin-gonic/gin"
-	"gopkg.in/gookit/color.v1"
-	"io/ioutil"
 )
 
 func API1() gin.HandlerFunc {
@@ -50,23 +46,3 @@ func (rw responseWriter) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(b)
 }
 
-func GraphqlResponseLogger() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if false && configer.GetEnv("env") == "prod" {
-			c.Next()
-			return
-		}
-
-		rw := &responseWriter{
-			ResponseWriter: c.Writer,
-			body:           bytes.NewBufferString(""),
-		}
-		c.Writer = rw
-		body, _ := ioutil.ReadAll(c.Request.Body)
-		c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
-		c.Next()
-		fmt.Printf("\n%s\n", color.Warn.Render("[Debug GraphQL]"))
-		fmt.Printf("%s %s\n", color.Notice.Render("[Request Body]"), string(body))
-		fmt.Printf("%s %s\n\n", color.Notice.Render("[Response Body]"), rw.body.String())
-	}
-}

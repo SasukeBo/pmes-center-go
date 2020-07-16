@@ -107,6 +107,7 @@ func GetDeepFilePath(path string) ([]string, error) {
 		return nil, err
 	}
 	defer ftpConn.Quit()
+	//fmt.Println("start path:", path)
 	return deepGetEntries(ftpConn, path)
 }
 
@@ -122,7 +123,7 @@ func deepGetEntries(conn *ftp.ServerConn, path string) ([]string, error) {
 
 	for _, v := range entries {
 		dp := filepath.Join(path, v.Name)
-		fmt.Printf("path: %s\n", dp)
+		//fmt.Printf("entry path: %s\n", dp)
 		switch v.Type {
 		case ftp.EntryTypeFile:
 			if strings.Contains(v.Name, ".xlsx") {

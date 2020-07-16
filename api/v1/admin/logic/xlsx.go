@@ -45,7 +45,7 @@ func newXLSXReader(material *orm.Material, device *orm.Device, template *orm.Dec
 }
 
 func (xr *XLSXReader) ReadFile(file *orm.File) error {
-	content, err := ioutil.ReadFile(filepath.Join(configer.GetString("file_cache_path"), file.Path))
+	content, err := ioutil.ReadFile(file.Path)
 	if err != nil {
 		return fmt.Errorf("读取文件失败：%v", err)
 	}

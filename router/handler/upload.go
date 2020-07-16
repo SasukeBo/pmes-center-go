@@ -67,7 +67,7 @@ func Post() gin.HandlerFunc {
 
 func init() {
 	var fileCachePath = configer.GetString("file_cache_path")
-	p := path.Join(fileCachePath, "posts")
+	p := path.Join(fileCachePath, orm.DirUpload)
 	if err := os.MkdirAll(p, os.ModePerm); err != nil {
 		panic("cannot create templates directory.")
 	}
