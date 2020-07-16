@@ -31,9 +31,13 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string) (
 	case "device":
 		query = query.Where("products.device_id = ?", params.TargetID)
 	}
-	var selectQueries, groupColumns []string
+	var selectQueries, groupColumns, joins []string
 	var selectVariables []interface{}
 	var joinDevice = false
+
+	// 连接 import_records
+	joins = append(joins, "JOIN import_records ON products.import_record_id = import_records.id")
+	query = query.Where("import_records.blocked = ?", false)
 
 	// amount
 	selectQueries = append(selectQueries, "COUNT(products.id) as amount")
@@ -43,17 +47,17 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string) (
 	groupColumns = append(groupColumns, "axis")
 	switch params.XAxis {
 	case model.CategoryDate:
-		selectVariables = append(selectVariables, "DATE(created_at)")
+		selectVariables = append(selectVariables, "DATE(products.created_at)")
 	case model.CategoryDevice:
 		selectVariables = append(selectVariables, "devices.name")
 		joinDevice = true
 	case model.CategoryShift:
-		selectVariables = append(selectVariables, "TIME(created_at) >= '00:00:00' && TIME(created_at) <= '09:30:00'")
+		selectVariables = append(selectVariables, "TIME(products.created_at) >= '00:00:00' && TIME(products.created_at) <= '09:30:00'")
 	case model.CategoryAttribute:
 		if params.AttributeXAxis == nil {
 			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("need AttributeXAxis when xAxis type is attribute"))
 		}
-		selectVariables = append(selectVariables, fmt.Sprintf("JSON_UNQUOTE(JSON_EXTRACT(`attribute`, '$.\"%v\"'))", *params.AttributeXAxis))
+		selectVariables = append(selectVariables, fmt.Sprintf("JSON_UNQUOTE(JSON_EXTRACT(products.`attribute`, '$.\"%v\"'))", *params.AttributeXAxis))
 	}
 
 	// group by
@@ -62,24 +66,27 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string) (
 		groupColumns = append(groupColumns, "group_by")
 		switch *params.GroupBy {
 		case model.CategoryDate:
-			selectVariables = append(selectVariables, "DATE(created_at)")
+			selectVariables = append(selectVariables, "DATE(products.created_at)")
 		case model.CategoryDevice:
 			selectVariables = append(selectVariables, "devices.name")
 			joinDevice = true
 		case model.CategoryShift:
-			selectVariables = append(selectVariables, "TIME(created_at) >= '00:00:00' && TIME(created_at) <= '09:30:00'")
+			selectVariables = append(selectVariables, "TIME(products.created_at) >= '00:00:00' && TIME(products.created_at) <= '09:30:00'")
 		case model.CategoryAttribute:
 			if params.AttributeGroup == nil {
 				return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("need AttributeGroup when groupBy type is attribute"))
 			}
-			selectVariables = append(selectVariables, fmt.Sprintf("JSON_UNQUOTE(JSON_EXTRACT(`attribute`, '$.\"%v\"'))", *params.AttributeGroup))
+			selectVariables = append(selectVariables, fmt.Sprintf("JSON_UNQUOTE(JSON_EXTRACT(products.`attribute`, '$.\"%v\"'))", *params.AttributeGroup))
 		}
 	}
 
 	// join device
 	if joinDevice {
-		query = query.Joins("JOIN devices ON products.device_id = devices.id")
+		joins = append(joins, "JOIN devices ON products.device_id = devices.id")
 	}
+
+	// assemble joins
+	query = query.Joins(strings.Join(joins, " "))
 
 	// assemble selects
 	query = query.Select(fmt.Sprintf(strings.Join(selectQueries, ", "), selectVariables...))
@@ -120,7 +127,7 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string) (
 			qualified = false
 		}
 
-		rows, err := query.Where("qualified = ?", qualified).Rows()
+		rows, err := query.Where("products.qualified = ?", qualified).Rows()
 		if err != nil {
 			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
 		}

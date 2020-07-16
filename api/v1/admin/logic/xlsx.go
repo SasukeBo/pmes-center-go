@@ -8,18 +8,22 @@ import (
 	"github.com/SasukeBo/configer"
 	timer "github.com/SasukeBo/lib/time"
 	"github.com/SasukeBo/log"
-	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/ftp"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
+	"github.com/google/uuid"
 	"github.com/tealeg/xlsx"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strconv"
-	"strings"
 	"time"
+)
+
+const (
+	fileModeReadWrite os.FileMode = 0666
 )
 
 type XLSXReader struct {
@@ -41,7 +45,7 @@ func newXLSXReader(material *orm.Material, device *orm.Device, template *orm.Dec
 }
 
 func (xr *XLSXReader) ReadFile(file *orm.File) error {
-	content, err := ioutil.ReadFile(filepath.Join(configer.GetString("file_cache_path"), file.Path))
+	content, err := ioutil.ReadFile(file.Path)
 	if err != nil {
 		return fmt.Errorf("读取文件失败：%v", err)
 	}
@@ -51,7 +55,11 @@ func (xr *XLSXReader) ReadFile(file *orm.File) error {
 	return xr.setData(content)
 }
 
+// ReadFTP 从FTP服务器读取文件
+// 删除已读取的文件
+// 存储文件到本地缓存
 func (xr *XLSXReader) ReadFTP(path string) error {
+	// 读取文件
 	content, err := ftp.ReadFile(path)
 	if err != nil {
 		if fe, ok := err.(*ftp.FTPError); ok {
@@ -65,13 +73,56 @@ func (xr *XLSXReader) ReadFTP(path string) error {
 			OriginErr: err,
 		}
 	}
+	// 获取配置
+	dst := configer.GetString("file_cache_path")
 
-	return xr.setData(content)
+	// 创建目录
+	var directory = filepath.Join(dst, orm.DirSource, xr.Material.Name, "default")
+	if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+		return &ftp.FTPError{
+			Message:   fmt.Sprintf("create directory(%s) failed: %v", directory, err),
+			OriginErr: err,
+		}
+	}
+
+	// 存储文件到本地
+	token, err := uuid.NewRandom()
+	if err != nil {
+		return &ftp.FTPError{
+			Message:   fmt.Sprintf("failed to generate token for file: %v", err),
+			OriginErr: err,
+		}
+	}
+	var localPath = filepath.Join(directory, token.String())
+	if err := ioutil.WriteFile(localPath, content, fileModeReadWrite); err != nil {
+		return &ftp.FTPError{
+			Message:   fmt.Sprintf("save file to localpath(%s) failed: %v", localPath, err),
+			OriginErr: err,
+		}
+	}
+	var file = &orm.File{
+		Name:        filepath.Base(path),
+		Path:        localPath,
+		Token:       token.String(),
+		Size:        uint(len(content)),
+		ContentType: orm.XlsxContentType,
+	}
+	orm.Create(file)
+
+	// 删除Ftp文件
+	_ = ftp.RemoveFile(path)
+
+	xr.Record.FileID = file.ID
+	if err := xr.setData(content); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (xr *XLSXReader) setData(content []byte) error {
 	size := len(content)
-	file, err := xlsx.OpenBinary(content)
+	file, err := xlsx.OpenBinary(content) // TODO: 该步骤很慢
 	if err != nil {
 		return fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
 	}
@@ -97,6 +148,10 @@ func (xr *XLSXReader) setData(content []byte) error {
 	dataSet := dataSheet[bIdx : eIdx+1]
 	xr.DataSet = dataSet
 	xr.Size = size
+	// update record
+	xr.Record.FileSize = size
+	xr.Record.RowCount = len(dataSet)
+	orm.Save(xr.Record)
 
 	log.Info("data begin idx: %v, end idx: %v\n", bIdx, eIdx)
 	return nil
@@ -110,51 +165,39 @@ type fetchItem struct {
 // FetchMaterialData 判断是否需要从FTP拉取数据
 // 给定料号，对比数据库中已拉取文件路径，得出是否有需要拉取的文件路径
 func FetchMaterialData(material *orm.Material) error {
-	var needFetch []string
-
 	template, err := material.GetDefaultTemplate()
 	if err != nil {
 		return errormap.NewOrigin("get default decode template for material(id = %v) failed: %v", material.ID, err)
 	}
 
-	ftpFileList, err := ftp.GetList("./" + material.Name)
+	fetchList, err := ftp.GetDeepFilePath("./" + material.Name)
 	if err != nil {
 		return err
 	}
 
-	for _, p := range ftpFileList {
-		need := checkFile(material.ID, p)
-		if !need {
-			continue
-		}
-		needFetch = append(needFetch, p)
-	}
-
-	if len(needFetch) == 0 {
+	if len(fetchList) == 0 {
 		return nil
 	}
 
-	return fetchMaterialData(*material, needFetch, template)
+	return fetchMaterialData(*material, fetchList, template)
 }
 
-func fetchMaterialData(material orm.Material, files []string, dt *orm.DecodeTemplate) error {
-	for _, f := range files {
+func fetchMaterialData(material orm.Material, paths []string, dt *orm.DecodeTemplate) error {
+	for _, path := range paths {
 		xr := newXLSXReader(&material, nil, dt)
-		path := resolvePath(material.Name, f)
 
 		importRecord := &orm.ImportRecord{
-			FileName:         filepath.Base(f),
-			Path:             path,
+			FileName:         filepath.Base(path),
 			MaterialID:       material.ID,
 			Status:           orm.ImportStatusLoading,
 			ImportType:       orm.ImportRecordTypeSystem,
 			DecodeTemplateID: dt.ID,
 		}
 		if err := orm.Create(importRecord).Error; err != nil {
-			// TODO: add log
 			log.Errorln(err)
 			continue
 		}
+		xr.Record = importRecord
 
 		go func() {
 			log.Warn("start read routine with file: %s\n", path)
@@ -163,14 +206,6 @@ func fetchMaterialData(material orm.Material, files []string, dt *orm.DecodeTemp
 				log.Error("read path(%s) error: %v", path, err)
 				return
 			}
-			importRecord.RowCount = len(xr.DataSet)
-			importRecord.FileSize = xr.Size
-			if err := orm.Save(importRecord).Error; err != nil {
-				// TODO: add log
-				log.Errorln(err)
-				return
-			}
-			xr.Record = importRecord
 			go store(xr)
 		}()
 	}
@@ -190,19 +225,12 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 	}()
 
 	for _, token := range tokens {
-		xr := newXLSXReader(&material, &device, &template)
 		var file orm.File
 		if err := file.GetByToken(token); err != nil {
 			log.Error("[FetchFileData] Get file with token=%s failed: %v", token, err)
 			return err
 		}
-
-		if err := xr.ReadFile(&file); err != nil {
-			message := fmt.Sprintf("[FetchFileData] Read file(%s) failed: %v", file.Name, err)
-			log.Errorln(message)
-			return errormap.NewCodeOrigin(errormap.ErrorCodeFileOpenFailedError, message)
-		}
-
+		xr := newXLSXReader(&material, &device, &template)
 		importRecord := &orm.ImportRecord{
 			FileID:           file.ID,
 			FileName:         file.Name,
@@ -213,7 +241,6 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 			ImportType:       orm.ImportRecordTypeUser,
 			UserID:           user.ID,
 			DecodeTemplateID: template.ID,
-			RowCount:         len(xr.DataSet),
 			FileSize:         xr.Size,
 		}
 		if err := orm.Create(importRecord).Error; err != nil {
@@ -221,40 +248,52 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 			log.Error("[FetchFileData] create import record failed: %v", err)
 			continue
 		}
-
 		xr.Record = importRecord
-		go store(xr)
+
+		go func() {
+			if err := xr.ReadFile(&file); err != nil {
+				err := fmt.Errorf("[FetchFileData] Read file(%s) failed: %v", file.Name, err)
+				xr.Record.Failed(errormap.ErrorCodeFileOpenFailedError, err)
+				return
+			}
+
+			xr.Record.Status = orm.ImportStatusImporting
+			orm.Save(xr.Record)
+
+			go store(xr)
+		}()
 	}
 
 	return err
 }
 
-// checkFile 仅检查文件是否已经被读取到指定料号
-func checkFile(materialID uint, fileName string) bool {
-	var importRecord orm.ImportRecord
-	// 查找 当前料号的 当前文件名的 已完成的 且 没有处理错误的 文件导入记录，若存在则忽略此文件
-	orm.DB.Model(&importRecord).Where(
-		"file_name = ? AND material_id = ? AND status = ?",
-		fileName, materialID, model.ImportStatusFinished,
-	).First(&importRecord)
+//// checkFile 仅检查文件是否已经被读取到指定料号
+// TODO: 遗弃
+//func checkFile(materialID uint, fileName string) bool {
+//	var importRecord orm.ImportRecord
+//	// 查找 当前料号的 当前文件名的 已完成的 且 没有处理错误的 文件导入记录，若存在则忽略此文件
+//	orm.DB.Model(&importRecord).Where(
+//		"file_name = ? AND material_id = ? AND status = ?",
+//		fileName, materialID, model.ImportStatusFinished,
+//	).First(&importRecord)
+//
+//	if importRecord.ID != 0 {
+//		return false
+//	}
+//
+//	if !strings.Contains(fileName, ".xlsx") {
+//		return false
+//	}
+//
+//	return true
+//}
 
-	if importRecord.ID != 0 {
-		return false
-	}
-
-	if !strings.Contains(fileName, ".xlsx") {
-		return false
-	}
-
-	return true
-}
-
-func resolvePath(m, path string) string {
-	return fmt.Sprintf("./%s/%s", m, filepath.Base(path))
-}
+//func resolvePath(m, path string) string {
+//	return fmt.Sprintf("./%s/%s", m, filepath.Base(path))
+//}
 
 var (
-	singleInsertLimit = 10000
+	singleInsertLimit = 5000
 	insertProductsTpl = `
 		INSERT INTO products (
 			import_record_id,
@@ -294,6 +333,7 @@ func store(xr *XLSXReader) {
 	productColumns := xr.DecodeTemplate.ProductColumns
 	productValueExpands := make([]interface{}, 0)
 
+	var importOK int
 	for _, row := range xr.DataSet {
 		qualified := true
 		createdAt := time.Now()
@@ -305,7 +345,7 @@ func store(xr *XLSXReader) {
 			column := iColumn.(map[string]interface{})
 			index := int(column["Index"].(float64))
 			cType := column["Type"].(string)
-			value := row[index - 1]
+			value := row[index-1]
 
 			switch cType {
 			case orm.ProductColumnTypeDatetime:
@@ -367,16 +407,28 @@ func store(xr *XLSXReader) {
 			attribute,
 			pointValues,
 		)
+		if qualified {
+			importOK++
+		}
 	}
 
 	execInsert(productValueExpands, productValueCount, insertProductsTpl, productValueFieldTpl, xr.Record)
-	_ = xr.Record.Finish()
+	// 记录单次导入良率
+	var yield float64
+	if total := len(xr.DataSet); total == 0 {
+		yield = 0
+	} else {
+		yield = float64(importOK) / float64(total)
+	}
+	_ = xr.Record.Finish(yield)
 
 	var time2 = time.Now()
 	fmt.Printf("___________________________ process duration is %v\n", time2.Sub(time1))
 }
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, record *orm.ImportRecord) {
+	fmt.Printf("dataset length: %v\nitemLen: %v\n", len(dataset), itemLen)
+
 	tx := orm.DB.Begin()
 	tx.LogMode(false)
 	dataLen := len(dataset)
@@ -389,9 +441,10 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, rec
 	for i := 0; i < totalLen/singleInsertLimit; i++ {
 		begin := i * singleInsertLimit * itemLen
 		end := (i + 1) * singleInsertLimit * itemLen
+		fmt.Printf("dataset[begin:end] length: %v\n", len(dataset[begin:end]))
 		err := tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...).Error
 		if err != nil {
-			fmt.Printf("[execInsert] %v\n", err)
+			fmt.Printf("[execInsert LoopInsert] %v\n", err)
 		}
 		record.RowFinishedCount = record.RowFinishedCount + singleInsertLimit
 		orm.Save(record)
@@ -405,9 +458,10 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, rec
 		}
 		end := dataLen
 		begin := dataLen - restLen*itemLen
+		fmt.Printf("dataset[begin:end] length: %v\n", len(dataset[begin:end]))
 		err := tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...).Error
 		if err != nil {
-			fmt.Printf("[execInsert] %v\n", err)
+			fmt.Printf("[execInsert restInsert] %v\n", err)
 		}
 		record.RowFinishedCount = record.RowFinishedCount + restLen
 		orm.Save(record)

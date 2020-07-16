@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/gin-gonic/gin"
@@ -30,7 +29,7 @@ func DownloadXlsxFile() gin.HandlerFunc {
 			return
 		}
 
-		filePath := filepath.Join(configer.GetString("file_cache_path"), file.Path)
+		filePath := filepath.Join(file.Path)
 		data, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			errormap.SendHttpError(c, errormap.ErrorCodeFileDownloadError, err)

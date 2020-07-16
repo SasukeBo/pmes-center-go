@@ -36,6 +36,8 @@ type Mutation {
     # 导入记录
     "撤销导入"
     revertImport(id: Int!): ResponseStatus!
+    "打开或关闭屏蔽导入"
+    toggleBlockImport(id: Int!): ResponseStatus!
     "导入数据"
     importData(materialID: Int!, deviceID: Int!, decodeTemplateID: Int!, fileTokens: [String!]!): ResponseStatus!
 }

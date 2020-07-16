@@ -3,12 +3,11 @@ package logic
 import (
 	"context"
 	"fmt"
+	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api/v1/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
-	"github.com/SasukeBo/log"
 	"github.com/jinzhu/copier"
-	"strings"
 	"time"
 )
 
@@ -74,10 +73,11 @@ type qualifiedResult struct {
 }
 
 func countProductQualifiedForMaterial(id uint) (int, int) {
-	sql := orm.Model(&orm.Product{}).Where("material_id = ?", id)
-	sql = sql.Select("qualified, COUNT(id) as total")
-	sql = sql.Group("qualified")
-	rows, err := sql.Rows()
+	query := orm.Model(&orm.Product{}).Joins("JOIN import_records ON import_records.id = products.import_record_id")
+	query = query.Where("products.material_id = ? AND import_records.blocked = ?", id, false)
+	query = query.Select("products.qualified, COUNT(products.id) as total")
+	query = query.Group("products.qualified")
+	rows, err := query.Rows()
 	if err != nil {
 		_ = rows.Close()
 		log.Error("[logic.countProductQualifiedForMaterial] Rows() failed: %v", err)
@@ -111,48 +111,21 @@ func AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.Mate
 	if err := material.Get(uint(*searchInput.MaterialID)); err != nil {
 		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
 	}
-	beginTime := searchInput.BeginTime
-	endTime := searchInput.EndTime
-	if endTime == nil {
-		t := time.Now()
-		endTime = &t
-	}
-	if beginTime == nil {
-		t := endTime.AddDate(-1, 0, 0)
-		beginTime = &t
-	}
 
-	conditions := []string{"material_id = ?", "created_at < ?", "created_at > ?"}
-	vars := []interface{}{searchInput.MaterialID, endTime, beginTime}
+	query := orm.Model(&orm.Product{}).Joins("JOIN import_records ON import_records.id = products.import_record_id")
+	query = query.Where("products.material_id = ? AND import_records.blocked = ?", material.ID, false)
 
-	if lineID, ok := searchInput.Extra["lineID"]; ok {
-		conditions = append(conditions, "line_id = ?")
-		vars = append(vars, lineID)
+	if searchInput.BeginTime != nil {
+		query = query.Where("products.created_at > ?", *searchInput.BeginTime)
 	}
-
-	if mouldID, ok := searchInput.Extra["mouldID"]; ok {
-		conditions = append(conditions, "mould_id = ?")
-		vars = append(vars, mouldID)
+	if searchInput.EndTime != nil {
+		query = query.Where("products.created_at < ?", *searchInput.EndTime)
 	}
-
-	if jigID, ok := searchInput.Extra["jigID"]; ok {
-		conditions = append(conditions, "jig_id = ?")
-		vars = append(vars, jigID)
-	}
-
-	if shiftNumber, ok := searchInput.Extra["shiftNumber"]; ok {
-		conditions = append(conditions, "shift_number = ?")
-		vars = append(vars, shiftNumber)
-	}
-	conditions = append(conditions, "qualified = ?")
 
 	var ok int
 	var ng int
-	cond := strings.Join(conditions, " AND ")
-	varsQualified := append(vars, 1)
-	orm.DB.Model(&orm.Product{}).Where(cond, varsQualified...).Count(&ok)
-	varsUnqualified := append(vars, 0)
-	orm.DB.Model(&orm.Product{}).Where(cond, varsUnqualified...).Count(&ng)
+	query.Where("products.qualified = ?", true).Count(&ok)
+	query.Where("products.qualified = ?", false).Count(&ng)
 
 	var out model.Material
 	if err := copier.Copy(&out, &material); err != nil {
@@ -166,11 +139,9 @@ func AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.Mate
 }
 
 func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error) {
-	query := orm.Model(&orm.Product{}).Select(
-		"materials.name AS name, COUNT(products.id) AS amount",
-	).Joins(
-		"JOIN materials ON products.material_id = materials.id",
-	).Group("products.material_id")
+	query := orm.Model(&orm.Product{}).Select("materials.name AS name, COUNT(products.id) AS amount").Group("products.material_id")
+	query = query.Joins("JOIN materials ON products.material_id = materials.id JOIN import_records ON import_records.id = products.import_record_id")
+	query = query.Where("import_records.blocked = ?", false)
 
 	if len(duration) > 0 {
 		t := duration[0]
@@ -198,7 +169,6 @@ func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*m
 
 		totalResult[name] = int(amount)
 	}
-	fmt.Println(totalResult)
 
 	var ngResult = make(map[string]int)
 	ngRows, err := query.Where("qualified = ?", false).Rows()
@@ -216,7 +186,6 @@ func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*m
 
 		ngResult[name] = int(amount)
 	}
-	fmt.Println(ngResult)
 
 	var seriesData []float64
 	var xAxisData []string

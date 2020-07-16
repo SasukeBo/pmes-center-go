@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/SasukeBo/pmes-data-center/orm"
@@ -47,6 +49,23 @@ func connect() (*ftp.ServerConn, error) {
 	return ftpConn, nil
 }
 
+// RemoveFile 删除Ftp指定文件
+func RemoveFile(path string) error {
+	ftpConn, err := connect()
+	if err != nil {
+		return err
+	}
+	defer ftpConn.Quit()
+	if err := ftpConn.Delete(path); err != nil {
+		return &FTPError{
+			Message:   fmt.Sprintf("remove ftp file(%s) failed: %v", path, err),
+			OriginErr: nil,
+		}
+	}
+
+	return nil
+}
+
 // ReadFile read file by path
 func ReadFile(path string) ([]byte, error) {
 	ftpConn, err := connect()
@@ -80,23 +99,50 @@ func ReadFile(path string) ([]byte, error) {
 	return buf, nil
 }
 
-// GetList return current workspace file list
-func GetList(path string) ([]string, error) {
+// GetDeepFilePath return current workspace file list
+// 获取Ftp服务器上指定文件夹下的所有文件，返回路径列表
+func GetDeepFilePath(path string) ([]string, error) {
 	ftpConn, err := connect()
 	if err != nil {
 		return nil, err
 	}
 	defer ftpConn.Quit()
-	var entries []string
-	entries, err = ftpConn.NameList(path)
+	//fmt.Println("start path:", path)
+	return deepGetEntries(ftpConn, path)
+}
+
+func deepGetEntries(conn *ftp.ServerConn, path string) ([]string, error) {
+	var paths []string
+	entries, err := conn.List(path)
 	if err != nil {
-		return entries, &FTPError{
-			Message:   fmt.Sprintf("获取路径%s下文件列表失败", path),
+		return paths, &FTPError{
+			Message:   fmt.Sprintf("获取路径%s下文件列表失败: %v", path, err),
 			OriginErr: err,
 		}
 	}
 
-	return entries, nil
+	for _, v := range entries {
+		dp := filepath.Join(path, v.Name)
+		//fmt.Printf("entry path: %s\n", dp)
+		switch v.Type {
+		case ftp.EntryTypeFile:
+			if strings.Contains(v.Name, ".xlsx") {
+				paths = append(paths, dp)
+			}
+		case ftp.EntryTypeFolder:
+			deepPaths, err := deepGetEntries(conn, dp)
+			if err != nil {
+				return paths, &FTPError{
+					Message:   fmt.Sprintf("获取路径%s下文件列表失败: %v", dp, err),
+					OriginErr: err,
+				}
+			}
+
+			paths = append(paths, deepPaths...)
+		}
+	}
+
+	return paths, nil
 }
 
 // FTPError _

@@ -105,6 +105,7 @@ func init() {
 	}
 	DB.LogMode(false)
 	env := configer.GetString("env")
+	log.Warn("Current runtime environment is %s", env)
 
 	err = DB.AutoMigrate(
 		&DecodeTemplate{},
@@ -128,9 +129,9 @@ func init() {
 		tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users", "files"}
 		setupUTF8GeneralCI(tableNames)
 		setupRootUser()
-		setupDefaultConfig()
 		setupPointsImportTemplate()
 	}
+	setupDefaultConfig() // Test env need system config
 
 	if env == "prod" {
 		DB.LogMode(false)

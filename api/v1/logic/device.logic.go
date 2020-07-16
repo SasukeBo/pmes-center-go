@@ -3,10 +3,10 @@ package logic
 import (
 	"context"
 	"errors"
+	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api/v1/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
-	"github.com/SasukeBo/log"
 	"github.com/jinzhu/copier"
 	"time"
 )
@@ -43,7 +43,10 @@ func AnalyzeDevices(ctx context.Context, materialID int) ([]*model.DeviceResult,
 				Name: d.Name,
 			},
 		}
-		rows, err := orm.DB.Model(&orm.Product{}).Where("device_id = ?", d.ID).Select("COUNT(id), qualified").Group("qualified").Rows()
+		query := orm.Model(&orm.Product{}).Select("COUNT(products.id), products.qualified")
+		query = query.Joins("JOIN import_records ON products.import_record_id = import_records.id")
+		query = query.Where("products.device_id = ?", d.ID).Where("import_records.blocked = ?", false)
+		rows, err := query.Group("products.qualified").Rows()
 		if err != nil {
 			outs = append(outs, &out)
 			continue
@@ -98,14 +101,11 @@ func AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.Device
 
 	var ok int
 	var ng int
-	orm.DB.Model(&orm.Product{}).Where(
-		"device_id = ? and created_at < ? and created_at > ? and qualified = 1",
-		searchInput.DeviceID, endTime, beginTime,
-	).Count(&ok)
-	orm.DB.Model(&orm.Product{}).Where(
-		"device_id = ? and created_at < ? and created_at > ? and qualified = 0",
-		searchInput.DeviceID, endTime, beginTime,
-	).Count(&ng)
+	query := orm.Model(&orm.Product{}).Joins("JOIN import_records ON import_records.id = products.import_record_id")
+	query = query.Where("import_records.blocked = ? AND products.device_id = ?", false, searchInput.DeviceID)
+	query = query.Where("products.created_at < ? AND products.created_at > ?", endTime, beginTime)
+	query.Where("products.qualified = ?", true).Count(&ok)
+	query.Where("products.qualified = ?", false).Count(&ng)
 
 	return &model.DeviceResult{
 		Device: &out,
