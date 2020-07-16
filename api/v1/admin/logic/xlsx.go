@@ -100,18 +100,31 @@ func (xr *XLSXReader) ReadFTP(path string) error {
 			OriginErr: err,
 		}
 	}
-	orm.Create(&orm.File{
+	var file = &orm.File{
 		Name:        filepath.Base(path),
 		Path:        localPath,
 		Token:       token.String(),
 		Size:        uint(len(content)),
 		ContentType: orm.XlsxContentType,
-	})
+	}
+	orm.Create(file)
 
 	// 删除Ftp文件
 	_ = ftp.RemoveFile(path)
 
-	return xr.setData(content)
+	if err := xr.setData(content); err != nil {
+		return err
+	}
+
+	xr.Record.RowCount = len(xr.DataSet)
+	xr.Record.FileSize = xr.Size
+	xr.Record.FileID = file.ID
+	if err := orm.Save(xr.Record).Error; err != nil {
+		log.Errorln(err)
+		return err
+	}
+
+	return nil
 }
 
 func (xr *XLSXReader) setData(content []byte) error {
@@ -187,6 +200,7 @@ func fetchMaterialData(material orm.Material, paths []string, dt *orm.DecodeTemp
 			log.Errorln(err)
 			continue
 		}
+		xr.Record = importRecord
 
 		go func() {
 			log.Warn("start read routine with file: %s\n", path)
@@ -195,13 +209,6 @@ func fetchMaterialData(material orm.Material, paths []string, dt *orm.DecodeTemp
 				log.Error("read path(%s) error: %v", path, err)
 				return
 			}
-			importRecord.RowCount = len(xr.DataSet)
-			importRecord.FileSize = xr.Size
-			if err := orm.Save(importRecord).Error; err != nil {
-				log.Errorln(err)
-				return
-			}
-			xr.Record = importRecord
 			go store(xr)
 		}()
 	}
