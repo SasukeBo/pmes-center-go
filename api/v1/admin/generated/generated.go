@@ -91,6 +91,7 @@ type ComplexityRoot struct {
 	}
 
 	ImportRecord struct {
+		Blocked            func(childComplexity int) int
 		CreatedAt          func(childComplexity int) int
 		DecodeTemplate     func(childComplexity int) int
 		Device             func(childComplexity int) int
@@ -106,6 +107,7 @@ type ComplexityRoot struct {
 		RowFinishedCount   func(childComplexity int) int
 		Status             func(childComplexity int) int
 		User               func(childComplexity int) int
+		Yield              func(childComplexity int) int
 	}
 
 	ImportRecordsWrap struct {
@@ -114,8 +116,11 @@ type ComplexityRoot struct {
 	}
 
 	ImportStatusResponse struct {
+		FileSize         func(childComplexity int) int
 		FinishedRowCount func(childComplexity int) int
+		RowCount         func(childComplexity int) int
 		Status           func(childComplexity int) int
+		Yield            func(childComplexity int) int
 	}
 
 	Material struct {
@@ -145,6 +150,7 @@ type ComplexityRoot struct {
 		SaveDecodeTemplate    func(childComplexity int, input model.DecodeTemplateInput) int
 		SaveDevice            func(childComplexity int, input model.DeviceInput) int
 		SavePoints            func(childComplexity int, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) int
+		ToggleBlockImport     func(childComplexity int, id int) int
 		UpdateMaterial        func(childComplexity int, input model.MaterialUpdateInput) int
 	}
 
@@ -227,6 +233,7 @@ type MutationResolver interface {
 	SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, error)
 	DeleteDevice(ctx context.Context, id int) (model.ResponseStatus, error)
 	RevertImport(ctx context.Context, id int) (model.ResponseStatus, error)
+	ToggleBlockImport(ctx context.Context, id int) (model.ResponseStatus, error)
 	ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) (model.ResponseStatus, error)
 }
 type QueryResolver interface {
@@ -467,6 +474,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.File.User(childComplexity), true
 
+	case "ImportRecord.blocked":
+		if e.complexity.ImportRecord.Blocked == nil {
+			break
+		}
+
+		return e.complexity.ImportRecord.Blocked(childComplexity), true
+
 	case "ImportRecord.createdAt":
 		if e.complexity.ImportRecord.CreatedAt == nil {
 			break
@@ -572,6 +586,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ImportRecord.User(childComplexity), true
 
+	case "ImportRecord.yield":
+		if e.complexity.ImportRecord.Yield == nil {
+			break
+		}
+
+		return e.complexity.ImportRecord.Yield(childComplexity), true
+
 	case "ImportRecordsWrap.importRecords":
 		if e.complexity.ImportRecordsWrap.ImportRecords == nil {
 			break
@@ -586,6 +607,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ImportRecordsWrap.Total(childComplexity), true
 
+	case "ImportStatusResponse.fileSize":
+		if e.complexity.ImportStatusResponse.FileSize == nil {
+			break
+		}
+
+		return e.complexity.ImportStatusResponse.FileSize(childComplexity), true
+
 	case "ImportStatusResponse.finishedRowCount":
 		if e.complexity.ImportStatusResponse.FinishedRowCount == nil {
 			break
@@ -593,12 +621,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ImportStatusResponse.FinishedRowCount(childComplexity), true
 
+	case "ImportStatusResponse.rowCount":
+		if e.complexity.ImportStatusResponse.RowCount == nil {
+			break
+		}
+
+		return e.complexity.ImportStatusResponse.RowCount(childComplexity), true
+
 	case "ImportStatusResponse.status":
 		if e.complexity.ImportStatusResponse.Status == nil {
 			break
 		}
 
 		return e.complexity.ImportStatusResponse.Status(childComplexity), true
+
+	case "ImportStatusResponse.yield":
+		if e.complexity.ImportStatusResponse.Yield == nil {
+			break
+		}
+
+		return e.complexity.ImportStatusResponse.Yield(childComplexity), true
 
 	case "Material.createdAt":
 		if e.complexity.Material.CreatedAt == nil {
@@ -799,6 +841,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SavePoints(childComplexity, args["materialID"].(int), args["saveItems"].([]*model.PointCreateInput), args["deleteItems"].([]int)), true
+
+	case "Mutation.toggleBlockImport":
+		if e.complexity.Mutation.ToggleBlockImport == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_toggleBlockImport_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ToggleBlockImport(childComplexity, args["id"].(int)), true
 
 	case "Mutation.updateMaterial":
 		if e.complexity.Mutation.UpdateMaterial == nil {
@@ -1230,10 +1284,15 @@ type DeviceWrap {
     importType: ImportRecordImportType!
     decodeTemplate: DecodeTemplate
     createdAt: Time!
+    blocked: Boolean!
+    yield: Float!
 }
 
 type ImportStatusResponse {
+    yield: Float!
     status: ImportStatus!
+    fileSize: Int!
+    rowCount: Int!
     finishedRowCount: Int!
 }
 
@@ -1248,6 +1307,7 @@ enum ImportRecordImportType {
 }
 
 enum ImportStatus {
+    Importing
     Loading
     Finished
     Failed
@@ -1337,6 +1397,8 @@ input PointCreateInput {
     # 导入记录
     "撤销导入"
     revertImport(id: Int!): ResponseStatus!
+    "打开或关闭屏蔽导入"
+    toggleBlockImport(id: Int!): ResponseStatus!
     "导入数据"
     importData(materialID: Int!, deviceID: Int!, decodeTemplateID: Int!, fileTokens: [String!]!): ResponseStatus!
 }
@@ -1611,6 +1673,20 @@ func (ec *executionContext) field_Mutation_savePoints_args(ctx context.Context, 
 		}
 	}
 	args["deleteItems"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_toggleBlockImport_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -3385,6 +3461,74 @@ func (ec *executionContext) _ImportRecord_createdAt(ctx context.Context, field g
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ImportRecord_blocked(ctx context.Context, field graphql.CollectedField, obj *model.ImportRecord) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ImportRecord",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Blocked, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImportRecord_yield(ctx context.Context, field graphql.CollectedField, obj *model.ImportRecord) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ImportRecord",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Yield, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ImportRecordsWrap_total(ctx context.Context, field graphql.CollectedField, obj *model.ImportRecordsWrap) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3453,6 +3597,40 @@ func (ec *executionContext) _ImportRecordsWrap_importRecords(ctx context.Context
 	return ec.marshalNImportRecord2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportRecord(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ImportStatusResponse_yield(ctx context.Context, field graphql.CollectedField, obj *model.ImportStatusResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ImportStatusResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Yield, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ImportStatusResponse_status(ctx context.Context, field graphql.CollectedField, obj *model.ImportStatusResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3485,6 +3663,74 @@ func (ec *executionContext) _ImportStatusResponse_status(ctx context.Context, fi
 	res := resTmp.(model.ImportStatus)
 	fc.Result = res
 	return ec.marshalNImportStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImportStatusResponse_fileSize(ctx context.Context, field graphql.CollectedField, obj *model.ImportStatusResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ImportStatusResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FileSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImportStatusResponse_rowCount(ctx context.Context, field graphql.CollectedField, obj *model.ImportStatusResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ImportStatusResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RowCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ImportStatusResponse_finishedRowCount(ctx context.Context, field graphql.CollectedField, obj *model.ImportStatusResponse) (ret graphql.Marshaler) {
@@ -4266,6 +4512,47 @@ func (ec *executionContext) _Mutation_revertImport(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().RevertImport(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ResponseStatus)
+	fc.Result = res
+	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_toggleBlockImport(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_toggleBlockImport_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ToggleBlockImport(rctx, args["id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7139,6 +7426,16 @@ func (ec *executionContext) _ImportRecord(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "blocked":
+			out.Values[i] = ec._ImportRecord_blocked(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "yield":
+			out.Values[i] = ec._ImportRecord_yield(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7193,8 +7490,23 @@ func (ec *executionContext) _ImportStatusResponse(ctx context.Context, sel ast.S
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ImportStatusResponse")
+		case "yield":
+			out.Values[i] = ec._ImportStatusResponse_yield(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "status":
 			out.Values[i] = ec._ImportStatusResponse_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "fileSize":
+			out.Values[i] = ec._ImportStatusResponse_fileSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "rowCount":
+			out.Values[i] = ec._ImportStatusResponse_rowCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7367,6 +7679,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "revertImport":
 			out.Values[i] = ec._Mutation_revertImport(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "toggleBlockImport":
+			out.Values[i] = ec._Mutation_toggleBlockImport(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

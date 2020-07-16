@@ -43,7 +43,10 @@ type ImportRecordsWrap struct {
 }
 
 type ImportStatusResponse struct {
+	Yield            float64      `json:"yield"`
 	Status           ImportStatus `json:"status"`
+	FileSize         int          `json:"fileSize"`
+	RowCount         int          `json:"rowCount"`
 	FinishedRowCount int          `json:"finishedRowCount"`
 }
 
@@ -168,13 +171,15 @@ func (e ImportRecordImportType) MarshalGQL(w io.Writer) {
 type ImportStatus string
 
 const (
-	ImportStatusLoading  ImportStatus = "Loading"
-	ImportStatusFinished ImportStatus = "Finished"
-	ImportStatusFailed   ImportStatus = "Failed"
-	ImportStatusReverted ImportStatus = "Reverted"
+	ImportStatusImporting ImportStatus = "Importing"
+	ImportStatusLoading   ImportStatus = "Loading"
+	ImportStatusFinished  ImportStatus = "Finished"
+	ImportStatusFailed    ImportStatus = "Failed"
+	ImportStatusReverted  ImportStatus = "Reverted"
 )
 
 var AllImportStatus = []ImportStatus{
+	ImportStatusImporting,
 	ImportStatusLoading,
 	ImportStatusFinished,
 	ImportStatusFailed,
@@ -183,7 +188,7 @@ var AllImportStatus = []ImportStatus{
 
 func (e ImportStatus) IsValid() bool {
 	switch e {
-	case ImportStatusLoading, ImportStatusFinished, ImportStatusFailed, ImportStatusReverted:
+	case ImportStatusImporting, ImportStatusLoading, ImportStatusFinished, ImportStatusFailed, ImportStatusReverted:
 		return true
 	}
 	return false

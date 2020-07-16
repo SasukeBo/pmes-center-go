@@ -15,15 +15,16 @@ const (
 	ImportRecordTypeSystem = "SYSTEM"
 	ImportRecordTypeUser   = "USER"
 
-	ImportStatusLoading  ImportStatus = "Loading"
-	ImportStatusFinished ImportStatus = "Finished"
-	ImportStatusFailed   ImportStatus = "Failed"
-	ImportStatusReverted ImportStatus = "Reverted"
+	ImportStatusLoading   ImportStatus = "Loading"
+	ImportStatusImporting ImportStatus = "Importing"
+	ImportStatusFinished  ImportStatus = "Finished"
+	ImportStatusFailed    ImportStatus = "Failed"
+	ImportStatusReverted  ImportStatus = "Reverted"
 )
 
 type ImportRecord struct {
 	gorm.Model
-	FileID             uint          `gorm:"column:file_id"'` // 关联文件的ID
+	FileID             uint         `gorm:"column:file_id"'` // 关联文件的ID
 	FileName           string       `gorm:"not null"`        // 文件名称
 	Path               string       `gorm:"not null"`        // 存储路径
 	MaterialID         uint         `gorm:"not null;index"`  // 关联料号ID
@@ -35,8 +36,10 @@ type ImportRecord struct {
 	OriginErrorMessage string       // 原始错误信息
 	FileSize           int
 	UserID             uint
-	ImportType         string `gorm:"not null;default:'SYSTEM'"` // 导入方式，默认为系统
-	DecodeTemplateID   uint   `gorm:"not null"`                  // 文件解析模板ID
+	ImportType         string  `gorm:"not null;default:'SYSTEM'"` // 导入方式，默认为系统
+	DecodeTemplateID   uint    `gorm:"not null"`                  // 文件解析模板ID
+	Blocked            bool    `gorm:"default:false"`             // 屏蔽导入的数据
+	Yield              float64 // 单次导入记录的良率
 }
 
 func (i *ImportRecord) Get(id uint) *errormap.Error {
@@ -47,8 +50,9 @@ func (i *ImportRecord) Get(id uint) *errormap.Error {
 	return nil
 }
 
-func (i *ImportRecord) Finish() error {
+func (i *ImportRecord) Finish(yield float64) error {
 	i.Status = ImportStatusFinished
+	i.Yield = yield
 	return Save(i).Error
 }
 

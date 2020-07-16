@@ -12,6 +12,7 @@ import (
 func HttpRequestLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if false && configer.GetEnv("env") == "prod" {
+			//if true || configer.GetEnv("env") == "prod" {
 			c.Next()
 			return
 		}

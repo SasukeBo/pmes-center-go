@@ -14,10 +14,15 @@ type ImportRecord {
     importType: ImportRecordImportType!
     decodeTemplate: DecodeTemplate
     createdAt: Time!
+    blocked: Boolean!
+    yield: Float!
 }
 
 type ImportStatusResponse {
+    yield: Float!
     status: ImportStatus!
+    fileSize: Int!
+    rowCount: Int!
     finishedRowCount: Int!
 }
 
@@ -32,6 +37,7 @@ enum ImportRecordImportType {
 }
 
 enum ImportStatus {
+    Importing
     Loading
     Finished
     Failed

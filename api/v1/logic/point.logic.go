@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api/v1/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
-	"github.com/SasukeBo/log"
 	"github.com/jinzhu/copier"
 	"strconv"
 	"strings"
@@ -32,13 +32,15 @@ func Point(ctx context.Context, id int) (*model.Point, error) {
 // 尺寸不良率排行
 func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput) (*model.EchartsResult, error) {
 	query := orm.DB.Model(&orm.Product{}).Where("products.material_id = ?", groupInput.TargetID)
+	query = query.Joins("JOIN import_records ON import_records.id = products.import_record_id")
+	query = query.Where("import_records.blocked = ?", false)
 
 	// filters
 	if groupInput.Filters != nil {
 		for k, v := range groupInput.Filters {
 			switch k {
 			case "device_id":
-				query = query.Where("device_id = ?", v)
+				query = query.Where("products.device_id = ?", v)
 			case "shift":
 				switch fmt.Sprint(v) {
 				case "A":
@@ -151,7 +153,10 @@ func PointListWithYield(ctx context.Context, materialID int, limit int, page int
 	var products []orm.Product
 	var now = time.Now()
 	now = now.AddDate(0, -1, 0)
-	if err := orm.Model(&orm.Product{}).Where("material_id = ? AND created_at > ?", materialID, now).Find(&products).Error; err != nil {
+	query := orm.Model(&orm.Product{}).Where("products.material_id = ? AND products.created_at > ?", materialID, now)
+	query = query.Joins("JOIN import_records ON import_records.id = products.import_record_id")
+	query = query.Where("import_records.blocked = ?", false)
+	if err := query.Find(&products).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
 	}
 
@@ -201,20 +206,22 @@ func SizeNormalDistribution(ctx context.Context, id int, duration []*time.Time, 
 		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "point")
 	}
 
-	query := orm.Model(&orm.Product{}).Select(fmt.Sprintf("JSON_EXTRACT(`point_values`, '$.\"%s\"') AS point_value", point.Name))
-	query = query.Where("material_id = ?", point.MaterialID)
+	query := orm.Model(&orm.Product{}).Select(fmt.Sprintf("JSON_EXTRACT(products.`point_values`, '$.\"%s\"') AS point_value", point.Name))
+	query = query.Joins("JOIN import_records ON import_records.id = products.import_record_id")
+	query = query.Where("import_records.blocked = ?", false)
+	query = query.Where("products.material_id = ?", point.MaterialID)
 	if len(duration) > 0 {
-		query = query.Where("created_at > ?", duration[0])
+		query = query.Where("products.created_at > ?", duration[0])
 	}
 
 	if len(duration) > 1 {
-		query = query.Where("created_at < ?", duration[1])
+		query = query.Where("products.created_at < ?", duration[1])
 	}
 
 	for key, value := range filters {
 		switch key {
 		case "device_id":
-			query = query.Where("device_id = ?", fmt.Sprint(value))
+			query = query.Where("products.device_id = ?", fmt.Sprint(value))
 		case "shift":
 			switch fmt.Sprint(value) {
 			case "A":
@@ -277,6 +284,8 @@ func GroupAnalyzePoint(ctx context.Context, analyzeInput model.GraphInput) (*mod
 	}
 
 	query := orm.DB.Model(orm.Product{}).Where("products.material_id = ?", point.MaterialID)
+	query = query.Joins("JOIN import_records ON import_records.id = products.import_record_id")
+	query = query.Where("import_records.blocked = ?", false)
 
 	var selectQueries, groupColumns []string
 	var selectVariables []interface{}
@@ -302,7 +311,7 @@ func GroupAnalyzePoint(ctx context.Context, analyzeInput model.GraphInput) (*mod
 		if analyzeInput.AttributeXAxis == nil {
 			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("need AttributeXAxis when xAxis type is attribute"))
 		}
-		selectVariables = append(selectVariables, fmt.Sprintf("JSON_UNQUOTE(JSON_EXTRACT(`attribute`, '$.\"%v\"'))", *analyzeInput.AttributeXAxis))
+		selectVariables = append(selectVariables, fmt.Sprintf("JSON_UNQUOTE(JSON_EXTRACT(products.`attribute`, '$.\"%v\"'))", *analyzeInput.AttributeXAxis))
 	}
 
 	// group by
@@ -321,7 +330,7 @@ func GroupAnalyzePoint(ctx context.Context, analyzeInput model.GraphInput) (*mod
 			if analyzeInput.AttributeGroup == nil {
 				return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("need AttributeGroup when groupBy type is attribute"))
 			}
-			selectVariables = append(selectVariables, fmt.Sprintf("JSON_UNQUOTE(JSON_EXTRACT(`attribute`, '$.\"%v\"'))", *analyzeInput.AttributeGroup))
+			selectVariables = append(selectVariables, fmt.Sprintf("JSON_UNQUOTE(JSON_EXTRACT(products.`attribute`, '$.\"%v\"'))", *analyzeInput.AttributeGroup))
 		}
 	}
 
@@ -360,12 +369,12 @@ func GroupAnalyzePoint(ctx context.Context, analyzeInput model.GraphInput) (*mod
 
 	if analyzeInput.YAxis == "UnYield" {
 		query = query.Where(
-			fmt.Sprintf("JSON_EXTRACT(`point_values`, '$.\"%s\"') < ? OR JSON_EXTRACT(`point_values`, '$.\"%s\"') > ?", point.Name, point.Name),
+			fmt.Sprintf("JSON_EXTRACT(products.`point_values`, '$.\"%s\"') < ? OR JSON_EXTRACT(products.`point_values`, '$.\"%s\"') > ?", point.Name, point.Name),
 			point.LowerLimit, point.UpperLimit,
 		)
 	} else {
 		query = query.Where(
-			fmt.Sprintf("JSON_EXTRACT(`point_values`, '$.\"%s\"') >= ? AND JSON_EXTRACT(`point_values`, '$.\"%s\"') <= ?", point.Name, point.Name),
+			fmt.Sprintf("JSON_EXTRACT(products.`point_values`, '$.\"%s\"') >= ? AND JSON_EXTRACT(products.`point_values`, '$.\"%s\"') <= ?", point.Name, point.Name),
 			point.LowerLimit, point.UpperLimit,
 		)
 	}

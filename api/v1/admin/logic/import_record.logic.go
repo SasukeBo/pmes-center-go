@@ -2,11 +2,11 @@ package logic
 
 import (
 	"context"
+	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
-	"github.com/SasukeBo/log"
 	"github.com/jinzhu/copier"
 )
 
@@ -148,7 +148,29 @@ func ImportStatus(ctx context.Context, id int) (*model.ImportStatusResponse, err
 	}
 
 	return &model.ImportStatusResponse{
+		Yield:            record.Yield,
 		Status:           model.ImportStatus(record.Status),
+		RowCount:         record.RowCount,
+		FileSize:         record.FileSize,
 		FinishedRowCount: record.RowFinishedCount,
 	}, nil
+}
+
+func ToggleBlockImport(ctx context.Context, id int) (model.ResponseStatus, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	var record orm.ImportRecord
+	if err := record.Get(uint(id)); err != nil {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, err.GetCode(), err, "import_record")
+	}
+
+	record.Blocked = !record.Blocked
+	if err := orm.Save(&record).Error; err != nil {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "import_record")
+	}
+
+	return model.ResponseStatusOk, nil
 }

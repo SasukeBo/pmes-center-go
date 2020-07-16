@@ -112,15 +112,8 @@ func (xr *XLSXReader) ReadFTP(path string) error {
 	// 删除Ftp文件
 	_ = ftp.RemoveFile(path)
 
-	if err := xr.setData(content); err != nil {
-		return err
-	}
-
-	xr.Record.RowCount = len(xr.DataSet)
-	xr.Record.FileSize = xr.Size
 	xr.Record.FileID = file.ID
-	if err := orm.Save(xr.Record).Error; err != nil {
-		log.Errorln(err)
+	if err := xr.setData(content); err != nil {
 		return err
 	}
 
@@ -129,7 +122,7 @@ func (xr *XLSXReader) ReadFTP(path string) error {
 
 func (xr *XLSXReader) setData(content []byte) error {
 	size := len(content)
-	file, err := xlsx.OpenBinary(content)
+	file, err := xlsx.OpenBinary(content) // TODO: 该步骤很慢
 	if err != nil {
 		return fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
 	}
@@ -155,6 +148,10 @@ func (xr *XLSXReader) setData(content []byte) error {
 	dataSet := dataSheet[bIdx : eIdx+1]
 	xr.DataSet = dataSet
 	xr.Size = size
+	// update record
+	xr.Record.FileSize = size
+	xr.Record.RowCount = len(dataSet)
+	orm.Save(xr.Record)
 
 	log.Info("data begin idx: %v, end idx: %v\n", bIdx, eIdx)
 	return nil
@@ -228,19 +225,12 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 	}()
 
 	for _, token := range tokens {
-		xr := newXLSXReader(&material, &device, &template)
 		var file orm.File
 		if err := file.GetByToken(token); err != nil {
 			log.Error("[FetchFileData] Get file with token=%s failed: %v", token, err)
 			return err
 		}
-
-		if err := xr.ReadFile(&file); err != nil {
-			message := fmt.Sprintf("[FetchFileData] Read file(%s) failed: %v", file.Name, err)
-			log.Errorln(message)
-			return errormap.NewCodeOrigin(errormap.ErrorCodeFileOpenFailedError, message)
-		}
-
+		xr := newXLSXReader(&material, &device, &template)
 		importRecord := &orm.ImportRecord{
 			FileID:           file.ID,
 			FileName:         file.Name,
@@ -251,7 +241,6 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 			ImportType:       orm.ImportRecordTypeUser,
 			UserID:           user.ID,
 			DecodeTemplateID: template.ID,
-			RowCount:         len(xr.DataSet),
 			FileSize:         xr.Size,
 		}
 		if err := orm.Create(importRecord).Error; err != nil {
@@ -259,9 +248,20 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 			log.Error("[FetchFileData] create import record failed: %v", err)
 			continue
 		}
-
 		xr.Record = importRecord
-		go store(xr)
+
+		go func() {
+			if err := xr.ReadFile(&file); err != nil {
+				err := fmt.Errorf("[FetchFileData] Read file(%s) failed: %v", file.Name, err)
+				xr.Record.Failed(errormap.ErrorCodeFileOpenFailedError, err)
+				return
+			}
+
+			xr.Record.Status = orm.ImportStatusImporting
+			orm.Save(xr.Record)
+
+			go store(xr)
+		}()
 	}
 
 	return err
@@ -293,7 +293,7 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 //}
 
 var (
-	singleInsertLimit = 10000
+	singleInsertLimit = 5000
 	insertProductsTpl = `
 		INSERT INTO products (
 			import_record_id,
@@ -333,6 +333,7 @@ func store(xr *XLSXReader) {
 	productColumns := xr.DecodeTemplate.ProductColumns
 	productValueExpands := make([]interface{}, 0)
 
+	var importOK int
 	for _, row := range xr.DataSet {
 		qualified := true
 		createdAt := time.Now()
@@ -406,16 +407,28 @@ func store(xr *XLSXReader) {
 			attribute,
 			pointValues,
 		)
+		if qualified {
+			importOK++
+		}
 	}
 
 	execInsert(productValueExpands, productValueCount, insertProductsTpl, productValueFieldTpl, xr.Record)
-	_ = xr.Record.Finish()
+	// 记录单次导入良率
+	var yield float64
+	if total := len(xr.DataSet); total == 0 {
+		yield = 0
+	} else {
+		yield = float64(importOK) / float64(total)
+	}
+	_ = xr.Record.Finish(yield)
 
 	var time2 = time.Now()
 	fmt.Printf("___________________________ process duration is %v\n", time2.Sub(time1))
 }
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, record *orm.ImportRecord) {
+	fmt.Printf("dataset length: %v\nitemLen: %v\n", len(dataset), itemLen)
+
 	tx := orm.DB.Begin()
 	tx.LogMode(false)
 	dataLen := len(dataset)
@@ -428,9 +441,10 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, rec
 	for i := 0; i < totalLen/singleInsertLimit; i++ {
 		begin := i * singleInsertLimit * itemLen
 		end := (i + 1) * singleInsertLimit * itemLen
+		fmt.Printf("dataset[begin:end] length: %v\n", len(dataset[begin:end]))
 		err := tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...).Error
 		if err != nil {
-			fmt.Printf("[execInsert] %v\n", err)
+			fmt.Printf("[execInsert LoopInsert] %v\n", err)
 		}
 		record.RowFinishedCount = record.RowFinishedCount + singleInsertLimit
 		orm.Save(record)
@@ -444,9 +458,10 @@ func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, rec
 		}
 		end := dataLen
 		begin := dataLen - restLen*itemLen
+		fmt.Printf("dataset[begin:end] length: %v\n", len(dataset[begin:end]))
 		err := tx.Exec(fmt.Sprintf(sqltpl, vSQL), dataset[begin:end]...).Error
 		if err != nil {
-			fmt.Printf("[execInsert] %v\n", err)
+			fmt.Printf("[execInsert restInsert] %v\n", err)
 		}
 		record.RowFinishedCount = record.RowFinishedCount + restLen
 		orm.Save(record)
