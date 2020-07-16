@@ -8,18 +8,22 @@ import (
 	"github.com/SasukeBo/configer"
 	timer "github.com/SasukeBo/lib/time"
 	"github.com/SasukeBo/log"
-	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/ftp"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
+	"github.com/google/uuid"
 	"github.com/tealeg/xlsx"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strconv"
-	"strings"
 	"time"
+)
+
+const (
+	fileModeReadWrite os.FileMode = 0666
 )
 
 type XLSXReader struct {
@@ -51,7 +55,11 @@ func (xr *XLSXReader) ReadFile(file *orm.File) error {
 	return xr.setData(content)
 }
 
+// ReadFTP 从FTP服务器读取文件
+// 删除已读取的文件
+// 存储文件到本地缓存
 func (xr *XLSXReader) ReadFTP(path string) error {
+	// 读取文件
 	content, err := ftp.ReadFile(path)
 	if err != nil {
 		if fe, ok := err.(*ftp.FTPError); ok {
@@ -65,6 +73,43 @@ func (xr *XLSXReader) ReadFTP(path string) error {
 			OriginErr: err,
 		}
 	}
+	// 获取配置
+	dst := configer.GetString("file_cache_path")
+
+	// 创建目录
+	var directory = filepath.Join(dst, orm.DirSource, xr.Material.Name, "default")
+	if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+		return &ftp.FTPError{
+			Message:   fmt.Sprintf("create directory(%s) failed: %v", directory, err),
+			OriginErr: err,
+		}
+	}
+
+	// 存储文件到本地
+	token, err := uuid.NewRandom()
+	if err != nil {
+		return &ftp.FTPError{
+			Message:   fmt.Sprintf("failed to generate token for file: %v", err),
+			OriginErr: err,
+		}
+	}
+	var localPath = filepath.Join(directory, token.String())
+	if err := ioutil.WriteFile(localPath, content, fileModeReadWrite); err != nil {
+		return &ftp.FTPError{
+			Message:   fmt.Sprintf("save file to localpath(%s) failed: %v", localPath, err),
+			OriginErr: err,
+		}
+	}
+	orm.Create(&orm.File{
+		Name:        filepath.Base(path),
+		Path:        localPath,
+		Token:       token.String(),
+		Size:        uint(len(content)),
+		ContentType: orm.XlsxContentType,
+	})
+
+	// 删除Ftp文件
+	_ = ftp.RemoveFile(path)
 
 	return xr.setData(content)
 }
@@ -110,48 +155,35 @@ type fetchItem struct {
 // FetchMaterialData 判断是否需要从FTP拉取数据
 // 给定料号，对比数据库中已拉取文件路径，得出是否有需要拉取的文件路径
 func FetchMaterialData(material *orm.Material) error {
-	var needFetch []string
-
 	template, err := material.GetDefaultTemplate()
 	if err != nil {
 		return errormap.NewOrigin("get default decode template for material(id = %v) failed: %v", material.ID, err)
 	}
 
-	ftpFileList, err := ftp.GetList("./" + material.Name)
+	fetchList, err := ftp.GetDeepFilePath("./" + material.Name)
 	if err != nil {
 		return err
 	}
 
-	for _, p := range ftpFileList {
-		need := checkFile(material.ID, p)
-		if !need {
-			continue
-		}
-		needFetch = append(needFetch, p)
-	}
-
-	if len(needFetch) == 0 {
+	if len(fetchList) == 0 {
 		return nil
 	}
 
-	return fetchMaterialData(*material, needFetch, template)
+	return fetchMaterialData(*material, fetchList, template)
 }
 
-func fetchMaterialData(material orm.Material, files []string, dt *orm.DecodeTemplate) error {
-	for _, f := range files {
+func fetchMaterialData(material orm.Material, paths []string, dt *orm.DecodeTemplate) error {
+	for _, path := range paths {
 		xr := newXLSXReader(&material, nil, dt)
-		path := resolvePath(material.Name, f)
 
 		importRecord := &orm.ImportRecord{
-			FileName:         filepath.Base(f),
-			Path:             path,
+			FileName:         filepath.Base(path),
 			MaterialID:       material.ID,
 			Status:           orm.ImportStatusLoading,
 			ImportType:       orm.ImportRecordTypeSystem,
 			DecodeTemplateID: dt.ID,
 		}
 		if err := orm.Create(importRecord).Error; err != nil {
-			// TODO: add log
 			log.Errorln(err)
 			continue
 		}
@@ -166,7 +198,6 @@ func fetchMaterialData(material orm.Material, files []string, dt *orm.DecodeTemp
 			importRecord.RowCount = len(xr.DataSet)
 			importRecord.FileSize = xr.Size
 			if err := orm.Save(importRecord).Error; err != nil {
-				// TODO: add log
 				log.Errorln(err)
 				return
 			}
@@ -229,29 +260,30 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 	return err
 }
 
-// checkFile 仅检查文件是否已经被读取到指定料号
-func checkFile(materialID uint, fileName string) bool {
-	var importRecord orm.ImportRecord
-	// 查找 当前料号的 当前文件名的 已完成的 且 没有处理错误的 文件导入记录，若存在则忽略此文件
-	orm.DB.Model(&importRecord).Where(
-		"file_name = ? AND material_id = ? AND status = ?",
-		fileName, materialID, model.ImportStatusFinished,
-	).First(&importRecord)
+//// checkFile 仅检查文件是否已经被读取到指定料号
+// TODO: 遗弃
+//func checkFile(materialID uint, fileName string) bool {
+//	var importRecord orm.ImportRecord
+//	// 查找 当前料号的 当前文件名的 已完成的 且 没有处理错误的 文件导入记录，若存在则忽略此文件
+//	orm.DB.Model(&importRecord).Where(
+//		"file_name = ? AND material_id = ? AND status = ?",
+//		fileName, materialID, model.ImportStatusFinished,
+//	).First(&importRecord)
+//
+//	if importRecord.ID != 0 {
+//		return false
+//	}
+//
+//	if !strings.Contains(fileName, ".xlsx") {
+//		return false
+//	}
+//
+//	return true
+//}
 
-	if importRecord.ID != 0 {
-		return false
-	}
-
-	if !strings.Contains(fileName, ".xlsx") {
-		return false
-	}
-
-	return true
-}
-
-func resolvePath(m, path string) string {
-	return fmt.Sprintf("./%s/%s", m, filepath.Base(path))
-}
+//func resolvePath(m, path string) string {
+//	return fmt.Sprintf("./%s/%s", m, filepath.Base(path))
+//}
 
 var (
 	singleInsertLimit = 10000
@@ -305,7 +337,7 @@ func store(xr *XLSXReader) {
 			column := iColumn.(map[string]interface{})
 			index := int(column["Index"].(float64))
 			cType := column["Type"].(string)
-			value := row[index - 1]
+			value := row[index-1]
 
 			switch cType {
 			case orm.ProductColumnTypeDatetime:

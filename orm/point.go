@@ -41,7 +41,7 @@ func setupPointsImportTemplate() {
 	iptFile.GetByToken(token)
 
 	var fileCachePath = configer.GetString("file_cache_path")
-	p := path.Join(fileCachePath, "priv", "templates")
+	p := path.Join(fileCachePath, DirPrivate, "templates")
 	if err := os.MkdirAll(p, os.ModePerm); err != nil {
 		panic("cannot create templates directory.")
 	}
@@ -71,7 +71,7 @@ func setupPointsImportTemplate() {
 	iptFile.Name = "检测点位导入模板.xlsx"
 	iptFile.Path = "/priv/templates/import_points_template.xlsx"
 	iptFile.Size = uint(size)
-	iptFile.ContentType = xlsxContentType
+	iptFile.ContentType = XlsxContentType
 
 	if err := Save(&iptFile).Error; err != nil {
 		panic(err)

@@ -6,7 +6,14 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-const xlsxContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+const (
+	XlsxContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+	// 文件存储二级目录
+	DirPrivate = "priv"
+	DirUpload = "post"
+	DirSource = "source"
+)
 
 // 文件 model，用于存储文件信息。
 

@@ -14,9 +14,16 @@ func TestReadFile(t *testing.T) {
 }
 
 func TestGetList(t *testing.T) {
-	nameList, err := GetList("/1828")
+	nameList, err := GetDeepFilePath("/1828")
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println(nameList)
+}
+
+func TestRemoveFile(t *testing.T) {
+	err := RemoveFile("/1828/def/ghi/1828-EDAC_E568_1-20200427-b.xls")
+	if err != nil {
+		fmt.Println(err)
+	}
 }
