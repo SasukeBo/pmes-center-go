@@ -15,6 +15,10 @@ func (r *queryResolver) CurrentUser(ctx context.Context) (*model.User, error) {
 	return logic.CurrentUser(ctx)
 }
 
+func (r *queryResolver) Users(ctx context.Context) ([]*model.User, error) {
+	return logic.Users(ctx)
+}
+
 func (r *queryResolver) Materials(ctx context.Context, pattern *string, page int, limit int) (*model.MaterialWrap, error) {
 	return logic.Materials(ctx, pattern, page, limit)
 }
@@ -27,8 +31,8 @@ func (r *queryResolver) ListMaterialPoints(ctx context.Context, materialID int) 
 	return logic.ListMaterialPoints(ctx, materialID)
 }
 
-func (r *queryResolver) ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int) (*model.ImportRecordsWrap, error) {
-	return logic.ImportRecords(ctx, materialID, deviceID, page, limit)
+func (r *queryResolver) ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error) {
+	return logic.ImportRecords(ctx, materialID, deviceID, page, limit, search)
 }
 
 func (r *queryResolver) MyImportRecords(ctx context.Context, page int, limit int) (*model.ImportRecordsWrap, error) {

@@ -37,6 +37,14 @@ type DeviceWrap struct {
 	Devices []*Device `json:"devices"`
 }
 
+type ImportRecordSearch struct {
+	Date     *time.Time      `json:"date"`
+	Duration []*time.Time    `json:"duration"`
+	Status   []*ImportStatus `json:"status"`
+	FileName *string         `json:"fileName"`
+	UserID   *int            `json:"userID"`
+}
+
 type ImportRecordsWrap struct {
 	Total         int             `json:"total"`
 	ImportRecords []*ImportRecord `json:"importRecords"`

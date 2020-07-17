@@ -2,6 +2,8 @@ type Query {
     # 用户
     "获取当前用户"
     currentUser: User!
+    "获取用户列表"
+    users: [User]!
 
     # 料号
     "获取料号数据"
@@ -15,7 +17,7 @@ type Query {
 
     # 导入记录
     "获取导入记录"
-    importRecords(materialID: Int!, deviceID: Int, page: Int!, limit: Int!): ImportRecordsWrap!
+    importRecords(materialID: Int!, deviceID: Int, page: Int!, limit: Int!, search: ImportRecordSearch!): ImportRecordsWrap!
     "获取当前用户的导入记录"
     myImportRecords(page: Int!, limit: Int!): ImportRecordsWrap!
     "查询导入完成状态"
