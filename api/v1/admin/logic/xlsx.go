@@ -77,7 +77,8 @@ func (xr *XLSXReader) ReadFTP(path string) error {
 	dst := configer.GetString("file_cache_path")
 
 	// 创建目录
-	var directory = filepath.Join(dst, orm.DirSource, xr.Material.Name, "default")
+	var relevantPath = filepath.Join(orm.DirSource, xr.Material.Name, "default")
+	var directory = filepath.Join(dst, relevantPath)
 	if err := os.MkdirAll(directory, os.ModePerm); err != nil {
 		return &ftp.FTPError{
 			Message:   fmt.Sprintf("create directory(%s) failed: %v", directory, err),
@@ -102,7 +103,7 @@ func (xr *XLSXReader) ReadFTP(path string) error {
 	}
 	var file = &orm.File{
 		Name:        filepath.Base(path),
-		Path:        localPath,
+		Path:        relevantPath,
 		Token:       token.String(),
 		Size:        uint(len(content)),
 		ContentType: orm.XlsxContentType,
