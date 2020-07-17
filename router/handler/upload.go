@@ -35,7 +35,8 @@ func Post() gin.HandlerFunc {
 			return
 		}
 
-		path := filepath.Join(dst, orm.DirUpload, token.String())
+		var relevantPath = filepath.Join(orm.DirUpload, token.String())
+		path := filepath.Join(dst, relevantPath)
 		err = c.SaveUploadedFile(post, path)
 		if err != nil {
 			errormap.SendHttpError(c, errormap.ErrorCodeFileUploadError, err)
@@ -46,7 +47,7 @@ func Post() gin.HandlerFunc {
 
 		file := orm.File{
 			Name:        post.Filename,
-			Path:        path,
+			Path:        relevantPath,
 			Token:       token.String(),
 			UserID:      currentUser.ID,
 			Size:        uint(post.Size),
