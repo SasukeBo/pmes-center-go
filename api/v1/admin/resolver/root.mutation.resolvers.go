@@ -56,12 +56,12 @@ func (r *mutationResolver) DeleteDevice(ctx context.Context, id int) (model.Resp
 	return logic.DeleteDevice(ctx, id)
 }
 
-func (r *mutationResolver) RevertImport(ctx context.Context, id int) (model.ResponseStatus, error) {
-	return logic.RevertImport(ctx, id)
+func (r *mutationResolver) RevertImports(ctx context.Context, ids []int) (model.ResponseStatus, error) {
+	return logic.RevertImports(ctx, ids)
 }
 
-func (r *mutationResolver) ToggleBlockImport(ctx context.Context, id int) (model.ResponseStatus, error) {
-	return logic.ToggleBlockImport(ctx, id)
+func (r *mutationResolver) ToggleBlockImports(ctx context.Context, ids []int, block bool) (model.ResponseStatus, error) {
+	return logic.ToggleBlockImports(ctx, ids, block)
 }
 
 func (r *mutationResolver) ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) (model.ResponseStatus, error) {

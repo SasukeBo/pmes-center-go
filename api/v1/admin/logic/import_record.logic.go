@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
@@ -10,24 +11,47 @@ import (
 	"github.com/jinzhu/copier"
 )
 
-func ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int) (*model.ImportRecordsWrap, error) {
+func ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
-	sql := orm.Model(&orm.ImportRecord{}).Where("material_id = ?", materialID)
+	query := orm.Model(&orm.ImportRecord{}).Where("material_id = ?", materialID)
 	if deviceID != nil {
-		sql = sql.Where("device_id = ?", *deviceID)
+		query = query.Where("device_id = ?", *deviceID)
 	}
+	if search.UserID != nil {
+		query = query.Where("user_id = ?", *search.UserID)
+	}
+	if search.Date != nil {
+		query = query.Where("DATE(created_at) = DATE(?)", *search.Date)
+	} else if len(search.Duration) > 0 {
+		query = query.Where("DATE(created_at) >= DATE(?)", *search.Duration[0])
+		if len(search.Duration) > 1 {
+			query = query.Where("DATE(created_at) <= DATE(?)", *search.Duration[1])
+		}
+	}
+	if search.FileName != nil {
+		query = query.Where("file_name like ?", fmt.Sprintf("%%%s%%", *search.FileName))
+	}
+	if len(search.Status) > 0 {
+		var status []string
+		for _, s := range search.Status {
+			status = append(status, string(*s))
+		}
+
+		query = query.Where("status in (?)", status)
+	}
+
 	var count int
-	if err := sql.Count(&count).Error; err != nil {
+	if err := query.Count(&count).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "import_record")
 	}
 
 	var records []orm.ImportRecord
 	offset := (page - 1) * limit
-	if err := sql.Order("created_at desc").Offset(offset).Limit(limit).Find(&records).Error; err != nil {
+	if err := query.Order("created_at desc").Offset(offset).Limit(limit).Find(&records).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "import_record")
 	}
 
@@ -46,27 +70,24 @@ func ImportRecords(ctx context.Context, materialID int, deviceID *int, page int,
 	}, nil
 }
 
-func RevertImport(ctx context.Context, id int) (model.ResponseStatus, error) {
+func RevertImports(ctx context.Context, ids []int) (model.ResponseStatus, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return "", errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
-	var record orm.ImportRecord
-	if err := record.Get(uint(id)); err != nil {
-		return "", errormap.SendGQLError(ctx, err.GetCode(), err, "import_record")
-	}
-
 	tx := orm.Begin()
-	if err := tx.Where("import_record_id = ?", record.ID).Delete(&orm.Product{}).Error; err != nil {
-		tx.Rollback()
-		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeRevertImportFailed, err)
-	}
+	for _, id := range ids {
+		if err := tx.Where("import_record_id = ?", id).Delete(&orm.Product{}).Error; err != nil {
+			tx.Rollback()
+			return "", errormap.SendGQLError(ctx, errormap.ErrorCodeRevertImportFailed, err)
+		}
 
-	err := tx.Model(&orm.ImportRecord{}).Where("id = ?", record.ID).Update("status", orm.ImportStatusReverted).Error
-	if err != nil {
-		tx.Rollback()
-		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeRevertImportFailed, err)
+		err := tx.Model(&orm.ImportRecord{}).Where("id = ?", id).Update("status", orm.ImportStatusReverted).Error
+		if err != nil {
+			tx.Rollback()
+			return "", errormap.SendGQLError(ctx, errormap.ErrorCodeRevertImportFailed, err)
+		}
 	}
 
 	tx.Commit()
@@ -156,19 +177,13 @@ func ImportStatus(ctx context.Context, id int) (*model.ImportStatusResponse, err
 	}, nil
 }
 
-func ToggleBlockImport(ctx context.Context, id int) (model.ResponseStatus, error) {
+func ToggleBlockImports(ctx context.Context, ids []int, block bool) (model.ResponseStatus, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
-	var record orm.ImportRecord
-	if err := record.Get(uint(id)); err != nil {
-		return model.ResponseStatusError, errormap.SendGQLError(ctx, err.GetCode(), err, "import_record")
-	}
-
-	record.Blocked = !record.Blocked
-	if err := orm.Save(&record).Error; err != nil {
+	if err := orm.Model(&orm.ImportRecord{}).Where("id in (?)", ids).Update("blocked", block).Error; err != nil {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "import_record")
 	}
 

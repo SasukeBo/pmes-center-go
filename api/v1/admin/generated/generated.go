@@ -146,11 +146,11 @@ type ComplexityRoot struct {
 		ImportData            func(childComplexity int, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) int
 		MaterialFetch         func(childComplexity int, id int) int
 		ParseImportPoints     func(childComplexity int, file graphql.Upload) int
-		RevertImport          func(childComplexity int, id int) int
+		RevertImports         func(childComplexity int, ids []int) int
 		SaveDecodeTemplate    func(childComplexity int, input model.DecodeTemplateInput) int
 		SaveDevice            func(childComplexity int, input model.DeviceInput) int
 		SavePoints            func(childComplexity int, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) int
-		ToggleBlockImport     func(childComplexity int, id int) int
+		ToggleBlockImports    func(childComplexity int, ids []int, block bool) int
 		UpdateMaterial        func(childComplexity int, input model.MaterialUpdateInput) int
 	}
 
@@ -172,7 +172,7 @@ type ComplexityRoot struct {
 	Query struct {
 		CurrentUser        func(childComplexity int) int
 		Device             func(childComplexity int, id int) int
-		ImportRecords      func(childComplexity int, materialID int, deviceID *int, page int, limit int) int
+		ImportRecords      func(childComplexity int, materialID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) int
 		ImportStatus       func(childComplexity int, id int) int
 		ListDecodeTemplate func(childComplexity int, materialID int) int
 		ListDevices        func(childComplexity int, pattern *string, materialID *int, page int, limit int) int
@@ -180,6 +180,7 @@ type ComplexityRoot struct {
 		Material           func(childComplexity int, id int) int
 		Materials          func(childComplexity int, pattern *string, page int, limit int) int
 		MyImportRecords    func(childComplexity int, page int, limit int) int
+		Users              func(childComplexity int) int
 	}
 
 	SystemConfig struct {
@@ -232,16 +233,17 @@ type MutationResolver interface {
 	SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error)
 	SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, error)
 	DeleteDevice(ctx context.Context, id int) (model.ResponseStatus, error)
-	RevertImport(ctx context.Context, id int) (model.ResponseStatus, error)
-	ToggleBlockImport(ctx context.Context, id int) (model.ResponseStatus, error)
+	RevertImports(ctx context.Context, ids []int) (model.ResponseStatus, error)
+	ToggleBlockImports(ctx context.Context, ids []int, block bool) (model.ResponseStatus, error)
 	ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) (model.ResponseStatus, error)
 }
 type QueryResolver interface {
 	CurrentUser(ctx context.Context) (*model.User, error)
+	Users(ctx context.Context) ([]*model.User, error)
 	Materials(ctx context.Context, pattern *string, page int, limit int) (*model.MaterialWrap, error)
 	Material(ctx context.Context, id int) (*model.Material, error)
 	ListMaterialPoints(ctx context.Context, materialID int) ([]*model.Point, error)
-	ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int) (*model.ImportRecordsWrap, error)
+	ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error)
 	MyImportRecords(ctx context.Context, page int, limit int) (*model.ImportRecordsWrap, error)
 	ImportStatus(ctx context.Context, id int) (*model.ImportStatusResponse, error)
 	ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error)
@@ -794,17 +796,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ParseImportPoints(childComplexity, args["file"].(graphql.Upload)), true
 
-	case "Mutation.revertImport":
-		if e.complexity.Mutation.RevertImport == nil {
+	case "Mutation.revertImports":
+		if e.complexity.Mutation.RevertImports == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_revertImport_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_revertImports_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RevertImport(childComplexity, args["id"].(int)), true
+		return e.complexity.Mutation.RevertImports(childComplexity, args["ids"].([]int)), true
 
 	case "Mutation.saveDecodeTemplate":
 		if e.complexity.Mutation.SaveDecodeTemplate == nil {
@@ -842,17 +844,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SavePoints(childComplexity, args["materialID"].(int), args["saveItems"].([]*model.PointCreateInput), args["deleteItems"].([]int)), true
 
-	case "Mutation.toggleBlockImport":
-		if e.complexity.Mutation.ToggleBlockImport == nil {
+	case "Mutation.toggleBlockImports":
+		if e.complexity.Mutation.ToggleBlockImports == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_toggleBlockImport_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_toggleBlockImports_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ToggleBlockImport(childComplexity, args["id"].(int)), true
+		return e.complexity.Mutation.ToggleBlockImports(childComplexity, args["ids"].([]int), args["block"].(bool)), true
 
 	case "Mutation.updateMaterial":
 		if e.complexity.Mutation.UpdateMaterial == nil {
@@ -958,7 +960,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ImportRecords(childComplexity, args["materialID"].(int), args["deviceID"].(*int), args["page"].(int), args["limit"].(int)), true
+		return e.complexity.Query.ImportRecords(childComplexity, args["materialID"].(int), args["deviceID"].(*int), args["page"].(int), args["limit"].(int), args["search"].(model.ImportRecordSearch)), true
 
 	case "Query.importStatus":
 		if e.complexity.Query.ImportStatus == nil {
@@ -1043,6 +1045,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.MyImportRecords(childComplexity, args["page"].(int), args["limit"].(int)), true
+
+	case "Query.users":
+		if e.complexity.Query.Users == nil {
+			break
+		}
+
+		return e.complexity.Query.Users(childComplexity), true
 
 	case "SystemConfig.createdAt":
 		if e.complexity.SystemConfig.CreatedAt == nil {
@@ -1314,7 +1323,13 @@ enum ImportStatus {
     Reverted
 }
 
-`, BuiltIn: false},
+input ImportRecordSearch {
+    date: Time # 指定看某一日的
+    duration: [Time]! # 指定看日期范围内的
+    status: [ImportStatus]! # 指定状态
+    fileName: String # 文件名称模糊搜索
+    userID: Int # 导入人
+}`, BuiltIn: false},
 	&ast.Source{Name: "schema/material.graphql", Input: `type Material {
     id: Int!
     name: String!
@@ -1395,10 +1410,10 @@ input PointCreateInput {
     deleteDevice(id: Int!): ResponseStatus!
 
     # 导入记录
-    "撤销导入"
-    revertImport(id: Int!): ResponseStatus!
-    "打开或关闭屏蔽导入"
-    toggleBlockImport(id: Int!): ResponseStatus!
+    "批量撤销导入"
+    revertImports(ids: [Int!]!): ResponseStatus!
+    "批量打开或关闭屏蔽导入"
+    toggleBlockImports(ids: [Int!]!, block: Boolean!): ResponseStatus!
     "导入数据"
     importData(materialID: Int!, deviceID: Int!, decodeTemplateID: Int!, fileTokens: [String!]!): ResponseStatus!
 }
@@ -1407,6 +1422,8 @@ input PointCreateInput {
     # 用户
     "获取当前用户"
     currentUser: User!
+    "获取用户列表"
+    users: [User]!
 
     # 料号
     "获取料号数据"
@@ -1420,7 +1437,7 @@ input PointCreateInput {
 
     # 导入记录
     "获取导入记录"
-    importRecords(materialID: Int!, deviceID: Int, page: Int!, limit: Int!): ImportRecordsWrap!
+    importRecords(materialID: Int!, deviceID: Int, page: Int!, limit: Int!, search: ImportRecordSearch!): ImportRecordsWrap!
     "获取当前用户的导入记录"
     myImportRecords(page: Int!, limit: Int!): ImportRecordsWrap!
     "查询导入完成状态"
@@ -1604,17 +1621,17 @@ func (ec *executionContext) field_Mutation_parseImportPoints_args(ctx context.Co
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_revertImport_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_revertImports_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+	var arg0 []int
+	if tmp, ok := rawArgs["ids"]; ok {
+		arg0, err = ec.unmarshalNInt2ᚕintᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
+	args["ids"] = arg0
 	return args, nil
 }
 
@@ -1676,17 +1693,25 @@ func (ec *executionContext) field_Mutation_savePoints_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_toggleBlockImport_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_toggleBlockImports_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+	var arg0 []int
+	if tmp, ok := rawArgs["ids"]; ok {
+		arg0, err = ec.unmarshalNInt2ᚕintᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
+	args["ids"] = arg0
+	var arg1 bool
+	if tmp, ok := rawArgs["block"]; ok {
+		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["block"] = arg1
 	return args, nil
 }
 
@@ -1767,6 +1792,14 @@ func (ec *executionContext) field_Query_importRecords_args(ctx context.Context, 
 		}
 	}
 	args["limit"] = arg3
+	var arg4 model.ImportRecordSearch
+	if tmp, ok := rawArgs["search"]; ok {
+		arg4, err = ec.unmarshalNImportRecordSearch2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportRecordSearch(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["search"] = arg4
 	return args, nil
 }
 
@@ -4487,7 +4520,7 @@ func (ec *executionContext) _Mutation_deleteDevice(ctx context.Context, field gr
 	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_revertImport(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_revertImports(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4503,7 +4536,7 @@ func (ec *executionContext) _Mutation_revertImport(ctx context.Context, field gr
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_revertImport_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_revertImports_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4511,7 +4544,7 @@ func (ec *executionContext) _Mutation_revertImport(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RevertImport(rctx, args["id"].(int))
+		return ec.resolvers.Mutation().RevertImports(rctx, args["ids"].([]int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4528,7 +4561,7 @@ func (ec *executionContext) _Mutation_revertImport(ctx context.Context, field gr
 	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_toggleBlockImport(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_toggleBlockImports(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4544,7 +4577,7 @@ func (ec *executionContext) _Mutation_toggleBlockImport(ctx context.Context, fie
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_toggleBlockImport_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_toggleBlockImports_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4552,7 +4585,7 @@ func (ec *executionContext) _Mutation_toggleBlockImport(ctx context.Context, fie
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ToggleBlockImport(rctx, args["id"].(int))
+		return ec.resolvers.Mutation().ToggleBlockImports(rctx, args["ids"].([]int), args["block"].(bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4950,6 +4983,40 @@ func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphq
 	return ec.marshalNUser2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Users(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_materials(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5094,7 +5161,7 @@ func (ec *executionContext) _Query_importRecords(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ImportRecords(rctx, args["materialID"].(int), args["deviceID"].(*int), args["page"].(int), args["limit"].(int))
+		return ec.resolvers.Query().ImportRecords(rctx, args["materialID"].(int), args["deviceID"].(*int), args["page"].(int), args["limit"].(int), args["search"].(model.ImportRecordSearch))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6857,6 +6924,48 @@ func (ec *executionContext) unmarshalInputDeviceInput(ctx context.Context, obj i
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputImportRecordSearch(ctx context.Context, obj interface{}) (model.ImportRecordSearch, error) {
+	var it model.ImportRecordSearch
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "date":
+			var err error
+			it.Date, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "duration":
+			var err error
+			it.Duration, err = ec.unmarshalNTime2ᚕᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "status":
+			var err error
+			it.Status, err = ec.unmarshalNImportStatus2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fileName":
+			var err error
+			it.FileName, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "userID":
+			var err error
+			it.UserID, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputMaterialCreateInput(ctx context.Context, obj interface{}) (model.MaterialCreateInput, error) {
 	var it model.MaterialCreateInput
 	var asMap = obj.(map[string]interface{})
@@ -7677,13 +7786,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "revertImport":
-			out.Values[i] = ec._Mutation_revertImport(ctx, field)
+		case "revertImports":
+			out.Values[i] = ec._Mutation_revertImports(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "toggleBlockImport":
-			out.Values[i] = ec._Mutation_toggleBlockImport(ctx, field)
+		case "toggleBlockImports":
+			out.Values[i] = ec._Mutation_toggleBlockImports(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -7816,6 +7925,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_currentUser(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "users":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_users(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -8476,6 +8599,10 @@ func (ec *executionContext) marshalNImportRecordImportType2githubᚗcomᚋSasuke
 	return v
 }
 
+func (ec *executionContext) unmarshalNImportRecordSearch2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportRecordSearch(ctx context.Context, v interface{}) (model.ImportRecordSearch, error) {
+	return ec.unmarshalInputImportRecordSearch(ctx, v)
+}
+
 func (ec *executionContext) marshalNImportRecordsWrap2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportRecordsWrap(ctx context.Context, sel ast.SelectionSet, v model.ImportRecordsWrap) graphql.Marshaler {
 	return ec._ImportRecordsWrap(ctx, sel, &v)
 }
@@ -8497,6 +8624,63 @@ func (ec *executionContext) unmarshalNImportStatus2githubᚗcomᚋSasukeBoᚋpme
 
 func (ec *executionContext) marshalNImportStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx context.Context, sel ast.SelectionSet, v model.ImportStatus) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) unmarshalNImportStatus2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx context.Context, v interface{}) ([]*model.ImportStatus, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.ImportStatus, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOImportStatus2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNImportStatus2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx context.Context, sel ast.SelectionSet, v []*model.ImportStatus) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOImportStatus2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalNImportStatusResponse2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatusResponse(ctx context.Context, sel ast.SelectionSet, v model.ImportStatusResponse) graphql.Marshaler {
@@ -8818,6 +9002,35 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
+func (ec *executionContext) unmarshalNTime2ᚕᚖtimeᚐTime(ctx context.Context, v interface{}) ([]*time.Time, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*time.Time, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNTime2ᚕᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v []*time.Time) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOTime2ᚖtimeᚐTime(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v interface{}) (graphql.Upload, error) {
 	return graphql.UnmarshalUpload(v)
 }
@@ -8834,6 +9047,43 @@ func (ec *executionContext) marshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋg
 
 func (ec *executionContext) marshalNUser2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
 	return ec._User(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOUser2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐUser(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
@@ -9137,6 +9387,30 @@ func (ec *executionContext) marshalOImportRecord2ᚖgithubᚗcomᚋSasukeBoᚋpm
 		return graphql.Null
 	}
 	return ec._ImportRecord(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOImportStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx context.Context, v interface{}) (model.ImportStatus, error) {
+	var res model.ImportStatus
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOImportStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx context.Context, sel ast.SelectionSet, v model.ImportStatus) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOImportStatus2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx context.Context, v interface{}) (*model.ImportStatus, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOImportStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOImportStatus2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatus(ctx context.Context, sel ast.SelectionSet, v *model.ImportStatus) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {

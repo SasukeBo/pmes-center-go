@@ -44,3 +44,10 @@ enum ImportStatus {
     Reverted
 }
 
+input ImportRecordSearch {
+    date: Time # 指定看某一日的
+    duration: [Time]! # 指定看日期范围内的
+    status: [ImportStatus]! # 指定状态
+    fileName: String # 文件名称模糊搜索
+    userID: Int # 导入人
+}
