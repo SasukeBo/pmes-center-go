@@ -45,7 +45,8 @@ func newXLSXReader(material *orm.Material, device *orm.Device, template *orm.Dec
 }
 
 func (xr *XLSXReader) ReadFile(file *orm.File) error {
-	content, err := ioutil.ReadFile(file.Path)
+	baseDir := configer.GetString("file_cache_path")
+	content, err := ioutil.ReadFile(filepath.Join(baseDir, file.Path))
 	if err != nil {
 		return fmt.Errorf("读取文件失败：%v", err)
 	}
@@ -495,7 +496,7 @@ func fetch() {
 
 	for _, m := range materials {
 		// TODO: add log
-		log.Info("[autoFetch] fetch file(%s) data", m.Name)
+		log.Info("[autoFetch] fetch data for %s", m.Name)
 
 		go func() {
 			err := FetchMaterialData(&m)

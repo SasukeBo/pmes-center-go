@@ -26,15 +26,17 @@ input DecodeTemplateInput {
 }
 
 input ProductColumnInput {
-    name: String!
+    prefix: String!
+    token: String!
     label: String!
     index: String!
     type: ProductColumnType!
 }
 
 type ProductColumn {
+    prefix: String! # 展示为数据项时，加上此前缀
     label: String!
-    name: String!
+    token: String!
     index: String!
     type: ProductColumnType!
 }

@@ -92,7 +92,9 @@ const (
 
 // Column template product column struct
 type Column struct {
-	Label string
-	Index int
-	Type  string
+	Prefix string
+	Token  string
+	Label  string
+	Index  int
+	Type   string
 }

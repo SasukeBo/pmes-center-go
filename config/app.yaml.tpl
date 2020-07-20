@@ -7,8 +7,8 @@ file_cache_path: your_download_file_cache_path
 # 检测尺寸导入模板Token，用于在数据库中检索该文件对象
 points_import_template_token: points_import_template_token
 
-# 默认解析模板中产品属性列 Index:Label:Type
-default_product_attribute_index: "C:2D条码号:String;D:线体号:String;E:冶具号:String;F:模号:String"
+# 默认解析模板中产品属性列 Index:Token:Label:Type
+default_product_attribute_index: "C:2dcode:2D条码号:String;D:line:线体号:String;E:fixture:冶具号:String;F:tool:模号:String"
 # 默认检测项第一列序号
 default_point_begin_index: H
 

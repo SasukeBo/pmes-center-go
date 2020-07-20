@@ -236,14 +236,15 @@ func ProductAttributes(ctx context.Context, materialID int) ([]*model.ProductAtt
 	}
 
 	var outs []*model.ProductAttribute
-	for k, v := range template.ProductColumns {
+	for _, v := range template.ProductColumns {
 		var out model.ProductAttribute
 		value, ok := v.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		out.Name = k
+		out.Token = fmt.Sprint(value["Token"])
 		out.Label = fmt.Sprint(value["Label"])
+		out.Prefix = fmt.Sprint(value["Prefix"])
 		outs = append(outs, &out)
 	}
 
