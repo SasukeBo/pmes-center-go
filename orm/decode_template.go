@@ -16,6 +16,7 @@ type DecodeTemplate struct {
 	gorm.Model
 	Name                 string `gorm:"not null"`
 	MaterialID           uint   `gorm:"not null"`
+	MaterialVersionID    uint   `gorm:"not null"` // 料号版本ID
 	UserID               uint
 	Description          string
 	DataRowIndex         int

@@ -80,6 +80,14 @@ type MaterialUpdateInput struct {
 	ProjectRemark *string `json:"projectRemark"`
 }
 
+type MaterialVersionInput struct {
+	ID          *int    `json:"id"`
+	Version     string  `json:"version"`
+	Description *string `json:"description"`
+	MaterialID  int     `json:"materialID"`
+	Active      bool    `json:"active"`
+}
+
 type MaterialWrap struct {
 	Total     int         `json:"total"`
 	Materials []*Material `json:"materials"`

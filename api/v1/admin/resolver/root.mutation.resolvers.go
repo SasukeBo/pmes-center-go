@@ -28,6 +28,10 @@ func (r *mutationResolver) MaterialFetch(ctx context.Context, id int) (model.Res
 	return logic.MaterialFetch(ctx, id)
 }
 
+func (r *mutationResolver) SaveMaterialVersion(ctx context.Context, input model.MaterialVersionInput) (model.ResponseStatus, error) {
+	return logic.SaveMaterialVersion(ctx, input)
+}
+
 func (r *mutationResolver) SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*model.DecodeTemplate, error) {
 	return logic.SaveDecodeTemplate(ctx, input)
 }

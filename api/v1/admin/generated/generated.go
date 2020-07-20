@@ -149,6 +149,7 @@ type ComplexityRoot struct {
 		RevertImports         func(childComplexity int, ids []int) int
 		SaveDecodeTemplate    func(childComplexity int, input model.DecodeTemplateInput) int
 		SaveDevice            func(childComplexity int, input model.DeviceInput) int
+		SaveMaterialVersion   func(childComplexity int, input model.MaterialVersionInput) int
 		SavePoints            func(childComplexity int, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) int
 		ToggleBlockImports    func(childComplexity int, ids []int, block bool) int
 		UpdateMaterial        func(childComplexity int, input model.MaterialUpdateInput) int
@@ -227,6 +228,7 @@ type MutationResolver interface {
 	DeleteMaterial(ctx context.Context, id int) (model.ResponseStatus, error)
 	UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error)
 	MaterialFetch(ctx context.Context, id int) (model.ResponseStatus, error)
+	SaveMaterialVersion(ctx context.Context, input model.MaterialVersionInput) (model.ResponseStatus, error)
 	SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*model.DecodeTemplate, error)
 	DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, error)
 	ChangeDefaultTemplate(ctx context.Context, id int, isDefault bool) (model.ResponseStatus, error)
@@ -833,6 +835,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SaveDevice(childComplexity, args["input"].(model.DeviceInput)), true
 
+	case "Mutation.saveMaterialVersion":
+		if e.complexity.Mutation.SaveMaterialVersion == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveMaterialVersion_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SaveMaterialVersion(childComplexity, args["input"].(model.MaterialVersionInput)), true
+
 	case "Mutation.savePoints":
 		if e.complexity.Mutation.SavePoints == nil {
 			break
@@ -1367,7 +1381,13 @@ input MaterialUpdateInput {
     projectRemark: String
 }
 
-`, BuiltIn: false},
+input MaterialVersionInput {
+    id: Int
+    version: String!
+    description: String
+    materialID: Int!
+    active: Boolean!
+}`, BuiltIn: false},
 	&ast.Source{Name: "schema/point.graphql", Input: `type Point {
     id: Int!
     name: String!
@@ -1398,6 +1418,8 @@ input PointCreateInput {
     updateMaterial(input: MaterialUpdateInput!): Material!
     "拉取数据"
     materialFetch(id: Int!): ResponseStatus!
+    "保存料号版本"
+    saveMaterialVersion(input: MaterialVersionInput!): ResponseStatus!
 
     # 解析模板
     "保存解析模板"
@@ -1665,6 +1687,20 @@ func (ec *executionContext) field_Mutation_saveDevice_args(ctx context.Context, 
 	var arg0 model.DeviceInput
 	if tmp, ok := rawArgs["input"]; ok {
 		arg0, err = ec.unmarshalNDeviceInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐDeviceInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_saveMaterialVersion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MaterialVersionInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNMaterialVersionInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersionInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4227,6 +4263,47 @@ func (ec *executionContext) _Mutation_materialFetch(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().MaterialFetch(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ResponseStatus)
+	fc.Result = res
+	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_saveMaterialVersion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_saveMaterialVersion_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SaveMaterialVersion(rctx, args["input"].(model.MaterialVersionInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7076,6 +7153,48 @@ func (ec *executionContext) unmarshalInputMaterialUpdateInput(ctx context.Contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputMaterialVersionInput(ctx context.Context, obj interface{}) (model.MaterialVersionInput, error) {
+	var it model.MaterialVersionInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.ID, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "version":
+			var err error
+			it.Version, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "materialID":
+			var err error
+			it.MaterialID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "active":
+			var err error
+			it.Active, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputPointCreateInput(ctx context.Context, obj interface{}) (model.PointCreateInput, error) {
 	var it model.PointCreateInput
 	var asMap = obj.(map[string]interface{})
@@ -7798,6 +7917,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "materialFetch":
 			out.Values[i] = ec._Mutation_materialFetch(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "saveMaterialVersion":
+			out.Values[i] = ec._Mutation_saveMaterialVersion(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -8838,6 +8962,10 @@ func (ec *executionContext) unmarshalNMaterialCreateInput2githubᚗcomᚋSasukeB
 
 func (ec *executionContext) unmarshalNMaterialUpdateInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialUpdateInput(ctx context.Context, v interface{}) (model.MaterialUpdateInput, error) {
 	return ec.unmarshalInputMaterialUpdateInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNMaterialVersionInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersionInput(ctx context.Context, v interface{}) (model.MaterialVersionInput, error) {
+	return ec.unmarshalInputMaterialVersionInput(ctx, v)
 }
 
 func (ec *executionContext) marshalNMaterialWrap2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialWrap(ctx context.Context, sel ast.SelectionSet, v model.MaterialWrap) graphql.Marshaler {

@@ -12,6 +12,8 @@ type Mutation {
     updateMaterial(input: MaterialUpdateInput!): Material!
     "拉取数据"
     materialFetch(id: Int!): ResponseStatus!
+    "保存料号版本"
+    saveMaterialVersion(input: MaterialVersionInput!): ResponseStatus!
 
     # 解析模板
     "保存解析模板"

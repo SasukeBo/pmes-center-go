@@ -36,9 +36,23 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 		tx.Rollback()
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material")
 	}
+
+	var materialVersion = orm.MaterialVersion{
+		Version:     "latest",
+		Description: "初始化版本",
+		MaterialID:  material.ID,
+		UserID:      user.ID,
+		Active:      true,
+	}
+	if err := tx.Create(&materialVersion).Error; err != nil {
+		tx.Rollback()
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material")
+	}
+
 	decodeTemplate := orm.DecodeTemplate{
 		Name:                 "默认模板",
 		MaterialID:           material.ID,
+		MaterialVersionID:    materialVersion.ID,
 		UserID:               user.ID,
 		Description:          "创建料号时自动生成的默认解析模板",
 		DataRowIndex:         15,
@@ -55,11 +69,12 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 	pointStartIndex := parseIndexFromColumnCode(configer.GetString("default_point_begin_index"))
 	for i, pointInput := range input.Points {
 		point := orm.Point{
-			Name:       pointInput.Name,
-			MaterialID: material.ID,
-			UpperLimit: pointInput.UpperLimit,
-			LowerLimit: pointInput.LowerLimit,
-			Nominal:    pointInput.Nominal,
+			Name:              pointInput.Name,
+			MaterialID:        material.ID,
+			MaterialVersionID: materialVersion.ID,
+			UpperLimit:        pointInput.UpperLimit,
+			LowerLimit:        pointInput.LowerLimit,
+			Nominal:           pointInput.Nominal,
 		}
 		if err := tx.Create(&point).Error; err != nil {
 			tx.Rollback()
@@ -80,11 +95,6 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 	if err := copier.Copy(&out, &material); err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "material")
 	}
-
-	// 解析FTP服务器指定料号路径下的所有未解析文件
-	//if err := FetchMaterialData(&material); err != nil {
-	//	return &out, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateSuccessButFetchFailed, err)
-	//}
 
 	return &out, nil
 }
@@ -204,6 +214,11 @@ func UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*mode
 }
 
 func Material(ctx context.Context, id int) (*model.Material, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
 	var material orm.Material
 	if err := material.Get(uint(id)); err != nil {
 		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
@@ -218,6 +233,11 @@ func Material(ctx context.Context, id int) (*model.Material, error) {
 }
 
 func MaterialFetch(ctx context.Context, id int) (model.ResponseStatus, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
 	var material orm.Material
 	if err := material.Get(uint(id)); err != nil {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
@@ -226,6 +246,43 @@ func MaterialFetch(ctx context.Context, id int) (model.ResponseStatus, error) {
 	// 解析FTP服务器指定料号路径下的所有未解析文件
 	if err := FetchMaterialData(&material); err != nil {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeMaterialDataFetchFailed, err)
+	}
+
+	return model.ResponseStatusOk, nil
+}
+
+func SaveMaterialVersion(ctx context.Context, input model.MaterialVersionInput) (model.ResponseStatus, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	var version orm.MaterialVersion
+	var description string
+	if input.Description != nil {
+		description = *input.Description
+	}
+	if input.ID != nil {
+		if err := version.Get(uint(*input.ID)); err != nil {
+			return model.ResponseStatusError, errormap.SendGQLError(ctx, err.GetCode(), err, "material_version")
+		}
+		version.Version = input.Version
+		if description != "" {
+			version.Description = description
+		}
+		version.Active = input.Active
+	} else {
+		version = orm.MaterialVersion{
+			Version:     input.Version,
+			Description: description,
+			MaterialID:  uint(input.MaterialID),
+			Active:      input.Active,
+			UserID:      user.ID,
+		}
+	}
+
+	if err := orm.Save(&version).Error; err != nil {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "material_version")
 	}
 
 	return model.ResponseStatusOk, nil
