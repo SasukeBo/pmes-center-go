@@ -336,7 +336,7 @@ func GroupAnalyzePoint(ctx context.Context, analyzeInput model.GraphInput) (*mod
 
 	// join device
 	if joinDevice {
-		query = query.Joins("JOIN devices ON device_id = devices.id")
+		query = query.Joins("JOIN devices ON products.device_id = devices.id")
 	}
 
 	// assemble selects

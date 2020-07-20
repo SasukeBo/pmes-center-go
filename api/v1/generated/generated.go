@@ -118,8 +118,9 @@ type ComplexityRoot struct {
 	}
 
 	ProductAttribute struct {
-		Label func(childComplexity int) int
-		Name  func(childComplexity int) int
+		Label  func(childComplexity int) int
+		Prefix func(childComplexity int) int
+		Token  func(childComplexity int) int
 	}
 
 	Query struct {
@@ -490,12 +491,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProductAttribute.Label(childComplexity), true
 
-	case "ProductAttribute.name":
-		if e.complexity.ProductAttribute.Name == nil {
+	case "ProductAttribute.prefix":
+		if e.complexity.ProductAttribute.Prefix == nil {
 			break
 		}
 
-		return e.complexity.ProductAttribute.Name(childComplexity), true
+		return e.complexity.ProductAttribute.Prefix(childComplexity), true
+
+	case "ProductAttribute.token":
+		if e.complexity.ProductAttribute.Token == nil {
+			break
+		}
+
+		return e.complexity.ProductAttribute.Token(childComplexity), true
 
 	case "Query.analyzeDevice":
 		if e.complexity.Query.AnalyzeDevice == nil {
@@ -832,8 +840,9 @@ enum YAxis {
 }
 
 type ProductAttribute {
+    prefix: String!
     label: String!
-    name: String!
+    token: String!
 }
 `, BuiltIn: false},
 	&ast.Source{Name: "schema/point.graphql", Input: `type PointListWithYieldResponse {
@@ -2705,6 +2714,40 @@ func (ec *executionContext) _PointYield_total(ctx context.Context, field graphql
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _ProductAttribute_prefix(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttribute) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProductAttribute",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Prefix, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _ProductAttribute_label(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttribute) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2739,7 +2782,7 @@ func (ec *executionContext) _ProductAttribute_label(ctx context.Context, field g
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ProductAttribute_name(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttribute) (ret graphql.Marshaler) {
+func (ec *executionContext) _ProductAttribute_token(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttribute) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2756,7 +2799,7 @@ func (ec *executionContext) _ProductAttribute_name(ctx context.Context, field gr
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
+		return obj.Token, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5270,13 +5313,18 @@ func (ec *executionContext) _ProductAttribute(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ProductAttribute")
+		case "prefix":
+			out.Values[i] = ec._ProductAttribute_prefix(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "label":
 			out.Values[i] = ec._ProductAttribute_label(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "name":
-			out.Values[i] = ec._ProductAttribute_name(ctx, field, obj)
+		case "token":
+			out.Values[i] = ec._ProductAttribute_token(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

@@ -45,7 +45,8 @@ func newXLSXReader(material *orm.Material, device *orm.Device, template *orm.Dec
 }
 
 func (xr *XLSXReader) ReadFile(file *orm.File) error {
-	content, err := ioutil.ReadFile(file.Path)
+	baseDir := configer.GetString("file_cache_path")
+	content, err := ioutil.ReadFile(filepath.Join(baseDir, file.Path))
 	if err != nil {
 		return fmt.Errorf("读取文件失败：%v", err)
 	}
@@ -158,13 +159,8 @@ func (xr *XLSXReader) setData(content []byte) error {
 	return nil
 }
 
-type fetchItem struct {
-	Device   orm.Device
-	FileName string
-}
-
-// FetchMaterialData 判断是否需要从FTP拉取数据
-// 给定料号，对比数据库中已拉取文件路径，得出是否有需要拉取的文件路径
+// FetchMaterialData
+// 给定料号，拉取Ftp服务器料号数据
 func FetchMaterialData(material *orm.Material) error {
 	template, err := material.GetDefaultTemplate()
 	if err != nil {
@@ -485,7 +481,7 @@ func AutoFetch() {
 	fetch()
 	for {
 		select {
-		case <-time.After(12 * time.Hour):
+		case <-time.After(1 * time.Hour):
 			fetch()
 		}
 	}
@@ -500,7 +496,7 @@ func fetch() {
 
 	for _, m := range materials {
 		// TODO: add log
-		log.Info("[autoFetch] fetch file(%s) data", m.Name)
+		log.Info("[autoFetch] fetch data for %s", m.Name)
 
 		go func() {
 			err := FetchMaterialData(&m)

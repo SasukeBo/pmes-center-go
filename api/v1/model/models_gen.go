@@ -81,8 +81,9 @@ type PointYield struct {
 }
 
 type ProductAttribute struct {
-	Label string `json:"label"`
-	Name  string `json:"name"`
+	Prefix string `json:"prefix"`
+	Label  string `json:"label"`
+	Token  string `json:"token"`
 }
 
 type Search struct {

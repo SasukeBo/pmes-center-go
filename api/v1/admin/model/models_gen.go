@@ -102,17 +102,19 @@ type PointCreateInput struct {
 }
 
 type ProductColumn struct {
-	Label string            `json:"label"`
-	Name  string            `json:"name"`
-	Index string            `json:"index"`
-	Type  ProductColumnType `json:"type"`
+	Prefix string            `json:"prefix"`
+	Label  string            `json:"label"`
+	Token  string            `json:"token"`
+	Index  string            `json:"index"`
+	Type   ProductColumnType `json:"type"`
 }
 
 type ProductColumnInput struct {
-	Name  string            `json:"name"`
-	Label string            `json:"label"`
-	Index string            `json:"index"`
-	Type  ProductColumnType `json:"type"`
+	Prefix string            `json:"prefix"`
+	Token  string            `json:"token"`
+	Label  string            `json:"label"`
+	Index  string            `json:"index"`
+	Type   ProductColumnType `json:"type"`
 }
 
 type SettingInput struct {

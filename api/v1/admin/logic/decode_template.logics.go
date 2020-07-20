@@ -63,7 +63,7 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*
 			continue
 		}
 		column.Index = parseIndexFromColumnCode(iColumn.Index)
-		productColumns[iColumn.Name] = column
+		productColumns[iColumn.Token] = column
 	}
 	template.ProductColumns = productColumns
 	pointColumns := make(types.Map)
@@ -141,7 +141,7 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 	var oProductColumns []*model.ProductColumn
 	iProductColumns := template.ProductColumns
 
-	for name, iColumn := range iProductColumns {
+	for token, iColumn := range iProductColumns {
 		column, ok := iColumn.(map[string]interface{})
 		if !ok {
 			log.Warnln("type assert interface{} to map[string]interface{} failed")
@@ -149,7 +149,7 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 		}
 
 		var oColumn model.ProductColumn
-		oColumn.Name = name
+		oColumn.Token = token
 		if label, ok := column["Label"].(string); ok {
 			oColumn.Label = label
 		}
@@ -160,6 +160,10 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 
 		if cType, ok := column["Type"].(string); ok {
 			oColumn.Type = model.ProductColumnType(cType)
+		}
+
+		if prefix, ok := column["Prefix"].(string); ok {
+			oColumn.Prefix = prefix
 		}
 
 		oProductColumns = append(oProductColumns, &oColumn)
@@ -285,18 +289,24 @@ func genDefaultProductColumns(template *orm.DecodeTemplate) error {
 	}
 
 	headers := strings.Split(config.Value, ";")
-	for i, header := range headers {
+	fmt.Println("[headers]", headers)
+	for _, header := range headers {
 		vs := strings.Split(header, ":")
-		if len(vs) < 3 {
+		if len(vs) < 4 {
 			continue
 		}
 
+		token := vs[1]
+		prefix := strings.ToUpper(token[:1])
 		var column = orm.Column{
-			Index: parseIndexFromColumnCode(vs[0]),
-			Label: vs[1],
-			Type:  vs[2],
+			Index:  parseIndexFromColumnCode(vs[0]),
+			Token:  token,
+			Label:  vs[2],
+			Type:   vs[3],
+			Prefix: prefix,
 		}
-		productColumns[fmt.Sprintf("attr_%v", i)] = column
+
+		productColumns[token] = column
 	}
 
 	template.ProductColumns = productColumns
