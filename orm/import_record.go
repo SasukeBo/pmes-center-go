@@ -2,8 +2,11 @@ package orm
 
 import (
 	"fmt"
+	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
+	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
+	"time"
 )
 
 // 导入记录，用于记录用户从后台手动为设备导入的数据文件。
@@ -12,8 +15,9 @@ import (
 type ImportStatus string
 
 const (
-	ImportRecordTypeSystem = "SYSTEM"
-	ImportRecordTypeUser   = "USER"
+	ImportRecordTypeSystem   = "SYSTEM"
+	ImportRecordTypeRealtime = "REALTIME"
+	ImportRecordTypeUser     = "USER"
 
 	ImportStatusLoading   ImportStatus = "Loading"
 	ImportStatusImporting ImportStatus = "Importing"
@@ -50,6 +54,12 @@ func (i *ImportRecord) Get(id uint) *errormap.Error {
 	return nil
 }
 
+func (i *ImportRecord) genKey(id uint) string {
+	var tStr = time.Now().String()
+	tStr = tStr[:10]
+	return fmt.Sprintf("device_realtime_key_%v_%s", id, tStr)
+}
+
 func (i *ImportRecord) Finish(yield float64) error {
 	i.Status = ImportStatusFinished
 	i.Yield = yield
@@ -71,4 +81,30 @@ func (i *ImportRecord) Revert() error {
 func (i *ImportRecord) Load() error {
 	i.Status = ImportStatusLoading
 	return Save(i).Error
+}
+
+// 获取实时设备的导入记录
+func (i *ImportRecord) DeviceRealtimeRecord(device *Device) error {
+	cacheKey := i.genKey(device.ID)
+	cacheValue := cache.Get(cacheKey)
+	if cacheValue != nil {
+		record, ok := cacheValue.(ImportRecord)
+		if ok {
+			if err := copier.Copy(i, &record); err == nil {
+				return nil
+			}
+		}
+	}
+	// 否则新建一个
+	i.MaterialID = device.MaterialID
+	i.Status = ImportStatusFinished
+	i.DeviceID = device.ID
+	i.Path = "realtime"
+	i.ImportType = ImportRecordTypeRealtime
+	if err := Create(i).Error; err != nil {
+		return err
+	}
+
+	_ = cache.Set(cacheKey, *i)
+	return nil
 }
