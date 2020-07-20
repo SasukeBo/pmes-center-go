@@ -132,10 +132,5 @@ func init() {
 		setupPointsImportTemplate()
 	}
 	setupDefaultConfig() // Test env need system config
-
-	if env == "prod" {
-		DB.LogMode(false)
-	} else {
-		DB.LogMode(true)
-	}
+	DB.LogMode(true)
 }
