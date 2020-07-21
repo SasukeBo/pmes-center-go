@@ -7,6 +7,7 @@ import (
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
+	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/jinzhu/copier"
 )
 
@@ -60,4 +61,24 @@ func Users(ctx context.Context) ([]*model.User, error) {
 	}
 
 	return outs, nil
+}
+
+func AddUser(ctx context.Context, input model.AddUserInput) (model.ResponseStatus, error) {
+	user := api.CurrentUser(ctx)
+	if user == nil {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeUnauthenticated, errormap.NewOrigin("user not found in cache"))
+	}
+
+	var newUser = orm.User{
+		Name:     input.Name,
+		IsAdmin:  input.IsAdmin,
+		Account:  input.Account,
+		Password: util.Encrypt(input.Password),
+	}
+
+	if err := orm.Create(&newUser).Error; err != nil {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "user")
+	}
+
+	return model.ResponseStatusOk, nil
 }

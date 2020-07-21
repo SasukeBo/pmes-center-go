@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
@@ -66,6 +65,10 @@ func (r *mutationResolver) ToggleBlockImports(ctx context.Context, ids []int, bl
 
 func (r *mutationResolver) ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) (model.ResponseStatus, error) {
 	return logic.ImportData(ctx, materialID, deviceID, decodeTemplateID, fileTokens)
+}
+
+func (r *mutationResolver) AddUser(ctx context.Context, input model.AddUserInput) (model.ResponseStatus, error) {
+	return logic.AddUser(ctx, input)
 }
 
 // Mutation returns generated.MutationResolver implementation.

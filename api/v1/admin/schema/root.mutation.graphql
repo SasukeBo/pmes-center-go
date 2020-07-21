@@ -40,4 +40,8 @@ type Mutation {
     toggleBlockImports(ids: [Int!]!, block: Boolean!): ResponseStatus!
     "导入数据"
     importData(materialID: Int!, deviceID: Int!, decodeTemplateID: Int!, fileTokens: [String!]!): ResponseStatus!
+
+    # 用户
+    "新增用户"
+    addUser(input: AddUserInput!): ResponseStatus!
 }
