@@ -162,6 +162,11 @@ func DeleteMaterial(ctx context.Context, id int) (model.ResponseStatus, error) {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "material_import_records")
 	}
 
+	if err := tx.Delete(orm.Product{}, "material_id = ?", material.ID).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "products")
+	}
+
 	if err := tx.Delete(orm.DecodeTemplate{}, "material_id = ?", material.ID).Error; err != nil {
 		tx.Rollback()
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "material_decode_templates")
