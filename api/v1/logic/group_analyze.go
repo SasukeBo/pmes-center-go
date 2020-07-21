@@ -178,8 +178,8 @@ func sortResult(result *echartsResult, isAsc bool) {
 }
 
 func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, sort string) (*model.EchartsResult, error) {
-	totalAmount, _ := calAmountAnalysisResult(results, limit, "")
-	yieldAmount, _ := calAmountAnalysisResult(qualifiedResults, limit, "")
+	totalAmount, _ := calAmountAnalysisResult(results, nil, "")
+	yieldAmount, _ := calAmountAnalysisResult(qualifiedResults, nil, "")
 
 	for i, item := range totalAmount.XAxisData {
 		var index = findIndex(yieldAmount.XAxisData, item)
@@ -198,8 +198,20 @@ func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, so
 		}
 	}
 
+	// sort
 	if _, ok := totalAmount.SeriesData["data"]; ok {
 		sortResult(totalAmount, sort == "ASC")
+	}
+
+	// limit
+	if limit != nil && *limit < len(totalAmount.XAxisData) {
+		totalAmount.XAxisData = totalAmount.XAxisData[:*limit]
+		for k, v := range totalAmount.SeriesData {
+			totalAmount.SeriesData[k] = v[:*limit]
+		}
+		for k, v := range totalAmount.SeriesAmountData {
+			totalAmount.SeriesAmountData[k] = v[:*limit]
+		}
 	}
 
 	return convertToEchartsResult(totalAmount), nil
@@ -249,12 +261,6 @@ func calAmountAnalysisResult(scanResults []analysis, limit *int, sort string) (*
 		}
 	}
 
-	if limit != nil {
-		if *limit < len(xAxisData) {
-			xAxisData = xAxisData[:*limit]
-		}
-	}
-
 	var seriesData = make(map[string][]float64)
 	for _, item := range xAxisData {
 		for k, seriesMap := range seriesMapData {
@@ -290,8 +296,20 @@ func calAmountAnalysisResult(scanResults []analysis, limit *int, sort string) (*
 		SeriesAmountData: seriesAmountData,
 	}
 
+	// sort
 	if _, ok := result.SeriesData["data"]; ok && sort != "" {
 		sortResult(&result, sort == "ASC")
+	}
+
+	// limit
+	if limit != nil && *limit < len(result.XAxisData) {
+		result.XAxisData = result.XAxisData[:*limit]
+		for k, v := range result.SeriesData {
+			result.SeriesData[k] = v[:*limit]
+		}
+		for k, v := range result.SeriesAmountData {
+			result.SeriesAmountData[k] = v[:*limit]
+		}
 	}
 
 	return &result, nil
