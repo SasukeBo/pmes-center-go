@@ -102,6 +102,7 @@ type Search struct {
 type User struct {
 	ID      int    `json:"id"`
 	Account string `json:"account"`
+	Name    string `json:"name"`
 	IsAdmin bool   `json:"isAdmin"`
 	UUID    string `json:"uuid"`
 }

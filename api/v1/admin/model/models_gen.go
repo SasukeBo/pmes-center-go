@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+type AddUserInput struct {
+	Name     string `json:"name"`
+	Account  string `json:"account"`
+	Password string `json:"password"`
+	IsAdmin  bool   `json:"isAdmin"`
+}
+
 type DecodeTemplateInput struct {
 	ID                   *int                   `json:"id"`
 	Name                 string                 `json:"name"`
@@ -133,6 +140,7 @@ type SystemConfig struct {
 type User struct {
 	ID      int    `json:"id"`
 	Account string `json:"account"`
+	Name    string `json:"name"`
 	IsAdmin bool   `json:"isAdmin"`
 	UUID    string `json:"uuid"`
 }
