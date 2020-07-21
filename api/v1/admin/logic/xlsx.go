@@ -104,7 +104,7 @@ func (xr *XLSXReader) ReadFTP(path string) error {
 	}
 	var file = &orm.File{
 		Name:        filepath.Base(path),
-		Path:        relevantPath,
+		Path:        filepath.Join(relevantPath, token.String()),
 		Token:       token.String(),
 		Size:        uint(len(content)),
 		ContentType: orm.XlsxContentType,
