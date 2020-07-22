@@ -10,10 +10,6 @@ import (
 // 检测点位
 // 产品的检测点位
 
-func init() {
-	DB.Model(&Point{}).AddUniqueIndex("unique_idx_point_name_material_id_version", "material_id", "material_version_id", "name")
-}
-
 // Point 点位
 type Point struct {
 	ID                uint   `gorm:"primary_key;column:id"`

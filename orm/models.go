@@ -78,6 +78,7 @@ func setupRootUser() {
 func setupIndex() {
 	DB.Model(&Material{}).AddUniqueIndex("unique_idx_material_deleted_at_name", "deleted_at", "name")
 	DB.Model(&MaterialVersion{}).AddUniqueIndex("unique_idx_material_version_version_material_id", "deleted_at", "material_id", "version")
+	DB.Model(&Point{}).AddUniqueIndex("unique_idx_point_name_material_id_version", "material_id", "material_version_id", "name")
 }
 
 func init() {
@@ -132,7 +133,7 @@ func init() {
 		setupRootUser()
 		setupPointsImportTemplate()
 	}
-	setupIndex()
 	setupDefaultConfig() // Test env need system config
 	DB.LogMode(true)
+	setupIndex()
 }

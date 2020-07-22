@@ -321,8 +321,24 @@ func store(xr *XLSXReader) {
 
 	var time1 = time.Now()
 
+	var versions []orm.MaterialVersion
+	if err := orm.Model(&orm.MaterialVersion{}).Where("material_id = ? AND active = true", xr.Material.ID).Find(&versions).Error; err != nil {
+		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, err)
+		return
+	}
+	if len(versions) == 0 {
+		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, nil)
+		return
+	}
+	if len(versions) > 1 {
+		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotUnique, nil)
+		return
+	}
+
 	var points []orm.Point
-	if err := orm.DB.Model(&orm.Point{}).Where("material_id = ?", xr.Material.ID).Find(&points).Error; err != nil {
+	if err := orm.DB.Model(&orm.Point{}).Where(
+		"material_id = ? AND material_version_id = ?", xr.Material.ID, versions[0].ID,
+	).Find(&points).Error; err != nil {
 		_ = xr.Record.Failed(errormap.ErrorCodeImportGetPointsFailed, err)
 		return
 	}
@@ -420,7 +436,7 @@ func store(xr *XLSXReader) {
 	_ = xr.Record.Finish(yield)
 
 	var time2 = time.Now()
-	fmt.Printf("___________________________ process duration is %v\n", time2.Sub(time1))
+	fmt.Printf("___________________________ process file [%s] duration is %v\n", xr.Record.FileName, time2.Sub(time1))
 }
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, record *orm.ImportRecord) {
