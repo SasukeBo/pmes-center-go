@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+type AddUserInput struct {
+	Name     string `json:"name"`
+	Account  string `json:"account"`
+	Password string `json:"password"`
+	IsAdmin  bool   `json:"isAdmin"`
+}
+
 type DecodeTemplateInput struct {
 	ID                   *int                   `json:"id"`
 	Name                 string                 `json:"name"`
@@ -61,6 +68,7 @@ type ImportStatusResponse struct {
 type Material struct {
 	ID            int       `json:"id"`
 	Name          string    `json:"name"`
+	YieldScore    float64   `json:"yieldScore"`
 	CustomerCode  string    `json:"customerCode"`
 	ProjectRemark string    `json:"projectRemark"`
 	CreatedAt     time.Time `json:"createdAt"`
@@ -69,15 +77,17 @@ type Material struct {
 
 type MaterialCreateInput struct {
 	Name          string              `json:"name"`
+	YieldScore    *float64            `json:"yieldScore"`
 	CustomerCode  *string             `json:"customerCode"`
 	ProjectRemark *string             `json:"projectRemark"`
 	Points        []*PointCreateInput `json:"points"`
 }
 
 type MaterialUpdateInput struct {
-	ID            int     `json:"id"`
-	CustomerCode  *string `json:"customerCode"`
-	ProjectRemark *string `json:"projectRemark"`
+	ID            int      `json:"id"`
+	YieldScore    *float64 `json:"yieldScore"`
+	CustomerCode  *string  `json:"customerCode"`
+	ProjectRemark *string  `json:"projectRemark"`
 }
 
 type MaterialVersionInput struct {
@@ -141,6 +151,7 @@ type SystemConfig struct {
 type User struct {
 	ID      int    `json:"id"`
 	Account string `json:"account"`
+	Name    string `json:"name"`
 	IsAdmin bool   `json:"isAdmin"`
 	UUID    string `json:"uuid"`
 }

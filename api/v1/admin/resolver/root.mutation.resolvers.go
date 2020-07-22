@@ -72,6 +72,10 @@ func (r *mutationResolver) ImportData(ctx context.Context, materialID int, devic
 	return logic.ImportData(ctx, materialID, deviceID, decodeTemplateID, fileTokens)
 }
 
+func (r *mutationResolver) AddUser(ctx context.Context, input model.AddUserInput) (model.ResponseStatus, error) {
+	return logic.AddUser(ctx, input)
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 

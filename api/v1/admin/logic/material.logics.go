@@ -32,6 +32,9 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 	if input.ProjectRemark != nil {
 		material.ProjectRemark = *input.ProjectRemark
 	}
+	if input.YieldScore != nil {
+		material.YieldScore = *input.YieldScore
+	}
 	if err := tx.Create(&material).Error; err != nil {
 		tx.Rollback()
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material")
@@ -172,6 +175,11 @@ func DeleteMaterial(ctx context.Context, id int) (model.ResponseStatus, error) {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "material_import_records")
 	}
 
+	if err := tx.Delete(orm.Product{}, "material_id = ?", material.ID).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "products")
+	}
+
 	if err := tx.Delete(orm.DecodeTemplate{}, "material_id = ?", material.ID).Error; err != nil {
 		tx.Rollback()
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "material_decode_templates")
@@ -202,6 +210,9 @@ func UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*mode
 	}
 	if input.CustomerCode != nil {
 		material.CustomerCode = *input.CustomerCode
+	}
+	if input.YieldScore != nil {
+		material.YieldScore = *input.YieldScore
 	}
 	if err := orm.Save(&material).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "material")

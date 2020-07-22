@@ -1,6 +1,7 @@
 type Material {
     id: Int!
     name: String!
+    yieldScore: Float!
     customerCode: String!
     projectRemark: String!
     ok: Int!

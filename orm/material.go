@@ -8,7 +8,8 @@ import (
 // Material 材料
 type Material struct {
 	gorm.Model
-	Name          string `gorm:"not null"`
+	Name          string  `gorm:"not null"`
+	YieldScore    float64 // 良率百分比目标线
 	CustomerCode  string
 	ProjectRemark string
 }

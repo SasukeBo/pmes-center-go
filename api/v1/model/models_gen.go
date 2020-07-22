@@ -36,12 +36,13 @@ type GraphInput struct {
 }
 
 type Material struct {
-	ID            int    `json:"id"`
-	Name          string `json:"name"`
-	CustomerCode  string `json:"customerCode"`
-	ProjectRemark string `json:"projectRemark"`
-	Ok            int    `json:"ok"`
-	Ng            int    `json:"ng"`
+	ID            int     `json:"id"`
+	Name          string  `json:"name"`
+	YieldScore    float64 `json:"yieldScore"`
+	CustomerCode  string  `json:"customerCode"`
+	ProjectRemark string  `json:"projectRemark"`
+	Ok            int     `json:"ok"`
+	Ng            int     `json:"ng"`
 }
 
 type MaterialResult struct {
@@ -102,6 +103,7 @@ type Search struct {
 type User struct {
 	ID      int    `json:"id"`
 	Account string `json:"account"`
+	Name    string `json:"name"`
 	IsAdmin bool   `json:"isAdmin"`
 	UUID    string `json:"uuid"`
 }

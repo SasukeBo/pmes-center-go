@@ -1,6 +1,14 @@
 type User {
     id: Int!
     account: String!
+    name: String!
     isAdmin: Boolean!
     uuid: String!
+}
+
+input AddUserInput {
+    name: String!
+    account: String!
+    password: String!
+    isAdmin: Boolean!
 }
