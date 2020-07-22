@@ -35,7 +35,3 @@ func (m *Material) GetDefaultTemplate() (*DecodeTemplate, error) {
 	err := DB.Model(&template).Where("material_id = ? AND `decode_templates`.`default` = ?", m.ID, true).First(&template).Error
 	return &template, err
 }
-
-func init() {
-	DB.Model(&Material{}).AddUniqueIndex("unique_idx_material_deleted_at_name", "deleted_at", "name")
-}

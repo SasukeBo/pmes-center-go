@@ -23,38 +23,7 @@ func TestMaterial(t *testing.T) {
 				"name":          "1828",
 				"customerCode":  "613-12760",
 				"projectRemark": "D53 PRL TOP",
-				"points": []test.Object{
-					{
-						"name":       "FAI3_G7",
-						"upperLimit": 5.36,
-						"nominal":    5.31,
-						"lowerLimit": 5.26,
-					},
-					{
-						"name":       "FAI3_G8",
-						"upperLimit": 5.36,
-						"nominal":    5.31,
-						"lowerLimit": 5.26,
-					},
-					{
-						"name":       "FAI4_G1",
-						"upperLimit": 4.28,
-						"nominal":    4.23,
-						"lowerLimit": 4.18,
-					},
-					{
-						"name":       "FAI4_G2",
-						"upperLimit": 4.28,
-						"nominal":    4.23,
-						"lowerLimit": 4.18,
-					},
-					{
-						"name":       "FAI4_G3",
-						"upperLimit": 4.28,
-						"nominal":    4.23,
-						"lowerLimit": 4.18,
-					},
-				},
+				"points":        inputPoints,
 			},
 		}).GQLObject().Path("$.data.response")
 		// wait for worker
@@ -123,4 +92,37 @@ func TestMaterial(t *testing.T) {
 		ret.Value("customerCode").Equal("changed customer code")
 		ret.Value("createdAt").NotNull()
 	})
+}
+
+var inputPoints = []test.Object{
+	{
+		"name":       "FAI3_G7",
+		"upperLimit": 5.36,
+		"nominal":    5.31,
+		"lowerLimit": 5.26,
+	},
+	{
+		"name":       "FAI3_G8",
+		"upperLimit": 5.36,
+		"nominal":    5.31,
+		"lowerLimit": 5.26,
+	},
+	{
+		"name":       "FAI4_G1",
+		"upperLimit": 4.28,
+		"nominal":    4.23,
+		"lowerLimit": 4.18,
+	},
+	{
+		"name":       "FAI4_G2",
+		"upperLimit": 4.28,
+		"nominal":    4.23,
+		"lowerLimit": 4.18,
+	},
+	{
+		"name":       "FAI4_G3",
+		"upperLimit": 4.28,
+		"nominal":    4.23,
+		"lowerLimit": 4.18,
+	},
 }

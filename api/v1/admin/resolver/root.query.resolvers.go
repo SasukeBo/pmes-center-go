@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
@@ -25,6 +24,10 @@ func (r *queryResolver) Materials(ctx context.Context, pattern *string, page int
 
 func (r *queryResolver) Material(ctx context.Context, id int) (*model.Material, error) {
 	return logic.Material(ctx, id)
+}
+
+func (r *queryResolver) MaterialVersions(ctx context.Context, id int) ([]*model.MaterialVersion, error) {
+	return logic.MaterialVersions(ctx, id)
 }
 
 func (r *queryResolver) ListMaterialPoints(ctx context.Context, materialID int) ([]*model.Point, error) {

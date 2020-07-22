@@ -91,11 +91,19 @@ type MaterialUpdateInput struct {
 }
 
 type MaterialVersionInput struct {
-	ID          *int    `json:"id"`
-	Version     string  `json:"version"`
+	MaterialID  int                  `json:"materialID"`
+	Version     string               `json:"version"`
+	Description *string              `json:"description"`
+	Active      *bool                `json:"active"`
+	Points      []*PointCreateInput  `json:"points"`
+	Template    *DecodeTemplateInput `json:"template"`
+}
+
+type MaterialVersionUpdateInput struct {
+	ID          int     `json:"id"`
+	Version     *string `json:"version"`
 	Description *string `json:"description"`
-	MaterialID  int     `json:"materialID"`
-	Active      bool    `json:"active"`
+	Active      *bool   `json:"active"`
 }
 
 type MaterialWrap struct {

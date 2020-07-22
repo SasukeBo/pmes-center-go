@@ -22,7 +22,3 @@ func (mv *MaterialVersion) Get(id uint) *errormap.Error {
 
 	return nil
 }
-
-func init() {
-	DB.Model(&MaterialVersion{}).AddUniqueIndex("unique_idx_material_version_version_material_id", "deleted_at", "material_id", "version")
-}

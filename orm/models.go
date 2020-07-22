@@ -75,6 +75,11 @@ func setupRootUser() {
 	}
 }
 
+func setupIndex() {
+	DB.Model(&Material{}).AddUniqueIndex("unique_idx_material_deleted_at_name", "deleted_at", "name")
+	DB.Model(&MaterialVersion{}).AddUniqueIndex("unique_idx_material_version_version_material_id", "deleted_at", "material_id", "version")
+}
+
 func init() {
 	var err error
 	var uri = createUriWithDBName("mysql")
@@ -108,6 +113,7 @@ func init() {
 		&Device{},
 		&ImportRecord{},
 		&Material{},
+		&MaterialVersion{},
 		&Point{},
 		&Product{},
 		&SystemConfig{},
@@ -126,6 +132,7 @@ func init() {
 		setupRootUser()
 		setupPointsImportTemplate()
 	}
+	setupIndex()
 	setupDefaultConfig() // Test env need system config
 	DB.LogMode(true)
 }

@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
@@ -28,8 +27,16 @@ func (r *mutationResolver) MaterialFetch(ctx context.Context, id int) (model.Res
 	return logic.MaterialFetch(ctx, id)
 }
 
-func (r *mutationResolver) SaveMaterialVersion(ctx context.Context, input model.MaterialVersionInput) (model.ResponseStatus, error) {
-	return logic.SaveMaterialVersion(ctx, input)
+func (r *mutationResolver) CreateMaterialVersion(ctx context.Context, input model.MaterialVersionInput) (model.ResponseStatus, error) {
+	return logic.CreateMaterialVersion(ctx, input)
+}
+
+func (r *mutationResolver) DeleteMaterialVersion(ctx context.Context, id int) (model.ResponseStatus, error) {
+	return logic.DeleteMaterialVersion(ctx, id)
+}
+
+func (r *mutationResolver) UpdateMaterialVersion(ctx context.Context, id int, input model.MaterialVersionUpdateInput) (model.ResponseStatus, error) {
+	return logic.UpdateMaterialVersion(ctx, id, input)
 }
 
 func (r *mutationResolver) SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*model.DecodeTemplate, error) {

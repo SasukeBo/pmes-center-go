@@ -27,11 +27,3 @@ input MaterialUpdateInput {
     customerCode: String
     projectRemark: String
 }
-
-input MaterialVersionInput {
-    id: Int
-    version: String!
-    description: String
-    materialID: Int!
-    active: Boolean!
-}

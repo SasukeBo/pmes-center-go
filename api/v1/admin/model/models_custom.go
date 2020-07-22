@@ -2,6 +2,14 @@ package model
 
 import "time"
 
+type MaterialVersion struct {
+	ID          int    `json:"id"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+	MaterialID  uint   `json:"material"`
+	UserID      uint   `json:"user"`
+}
+
 type ImportRecord struct {
 	ID                 int                    `json:"id"`
 	FileID             *uint                  `json:"fileID"`

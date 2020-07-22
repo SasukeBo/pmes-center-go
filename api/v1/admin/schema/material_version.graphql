@@ -1,0 +1,22 @@
+type MaterialVersion {
+    id: Int!
+    version: String!
+    description: String!
+    material: Material!
+    user: User!
+}
+
+input MaterialVersionInput {
+    materialID: Int!
+    version: String!
+    description: String
+    active: Boolean
+    points: [PointCreateInput]!
+    template: DecodeTemplateInput!
+}
+
+input MaterialVersionUpdateInput {
+    version: String
+    description: String
+    active: Boolean
+}

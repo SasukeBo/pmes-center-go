@@ -62,3 +62,5 @@ models:
     model: github.com/SasukeBo/pmes-data-center/api/v1/admin/model.Device
   File:
     model: github.com/SasukeBo/pmes-data-center/api/v1/admin/model.File
+  MaterialVersion:
+    model: github.com/SasukeBo/pmes-data-center/api/v1/admin/model.MaterialVersion

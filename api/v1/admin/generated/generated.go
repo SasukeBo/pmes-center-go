@@ -40,6 +40,7 @@ type ResolverRoot interface {
 	Device() DeviceResolver
 	File() FileResolver
 	ImportRecord() ImportRecordResolver
+	MaterialVersion() MaterialVersionResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 }
@@ -133,6 +134,14 @@ type ComplexityRoot struct {
 		YieldScore    func(childComplexity int) int
 	}
 
+	MaterialVersion struct {
+		Description func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Material    func(childComplexity int) int
+		User        func(childComplexity int) int
+		Version     func(childComplexity int) int
+	}
+
 	MaterialWrap struct {
 		Materials func(childComplexity int) int
 		Total     func(childComplexity int) int
@@ -142,19 +151,21 @@ type ComplexityRoot struct {
 		AddMaterial           func(childComplexity int, input model.MaterialCreateInput) int
 		AddUser               func(childComplexity int, input model.AddUserInput) int
 		ChangeDefaultTemplate func(childComplexity int, id int, isDefault bool) int
+		CreateMaterialVersion func(childComplexity int, input model.MaterialVersionInput) int
 		DeleteDecodeTemplate  func(childComplexity int, id int) int
 		DeleteDevice          func(childComplexity int, id int) int
 		DeleteMaterial        func(childComplexity int, id int) int
+		DeleteMaterialVersion func(childComplexity int, id int) int
 		ImportData            func(childComplexity int, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) int
 		MaterialFetch         func(childComplexity int, id int) int
 		ParseImportPoints     func(childComplexity int, file graphql.Upload) int
 		RevertImports         func(childComplexity int, ids []int) int
 		SaveDecodeTemplate    func(childComplexity int, input model.DecodeTemplateInput) int
 		SaveDevice            func(childComplexity int, input model.DeviceInput) int
-		SaveMaterialVersion   func(childComplexity int, input model.MaterialVersionInput) int
 		SavePoints            func(childComplexity int, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) int
 		ToggleBlockImports    func(childComplexity int, ids []int, block bool) int
 		UpdateMaterial        func(childComplexity int, input model.MaterialUpdateInput) int
+		UpdateMaterialVersion func(childComplexity int, id int, input model.MaterialVersionUpdateInput) int
 	}
 
 	Point struct {
@@ -182,6 +193,7 @@ type ComplexityRoot struct {
 		ListDevices        func(childComplexity int, pattern *string, materialID *int, page int, limit int) int
 		ListMaterialPoints func(childComplexity int, materialID int) int
 		Material           func(childComplexity int, id int) int
+		MaterialVersions   func(childComplexity int, id int) int
 		Materials          func(childComplexity int, pattern *string, page int, limit int) int
 		MyImportRecords    func(childComplexity int, page int, limit int) int
 		Users              func(childComplexity int) int
@@ -226,12 +238,18 @@ type ImportRecordResolver interface {
 
 	DecodeTemplate(ctx context.Context, obj *model.ImportRecord) (*model.DecodeTemplate, error)
 }
+type MaterialVersionResolver interface {
+	Material(ctx context.Context, obj *model.MaterialVersion) (*model.Material, error)
+	User(ctx context.Context, obj *model.MaterialVersion) (*model.User, error)
+}
 type MutationResolver interface {
 	AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error)
 	DeleteMaterial(ctx context.Context, id int) (model.ResponseStatus, error)
 	UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*model.Material, error)
 	MaterialFetch(ctx context.Context, id int) (model.ResponseStatus, error)
-	SaveMaterialVersion(ctx context.Context, input model.MaterialVersionInput) (model.ResponseStatus, error)
+	CreateMaterialVersion(ctx context.Context, input model.MaterialVersionInput) (model.ResponseStatus, error)
+	DeleteMaterialVersion(ctx context.Context, id int) (model.ResponseStatus, error)
+	UpdateMaterialVersion(ctx context.Context, id int, input model.MaterialVersionUpdateInput) (model.ResponseStatus, error)
 	SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*model.DecodeTemplate, error)
 	DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, error)
 	ChangeDefaultTemplate(ctx context.Context, id int, isDefault bool) (model.ResponseStatus, error)
@@ -249,6 +267,7 @@ type QueryResolver interface {
 	Users(ctx context.Context) ([]*model.User, error)
 	Materials(ctx context.Context, pattern *string, page int, limit int) (*model.MaterialWrap, error)
 	Material(ctx context.Context, id int) (*model.Material, error)
+	MaterialVersions(ctx context.Context, id int) ([]*model.MaterialVersion, error)
 	ListMaterialPoints(ctx context.Context, materialID int) ([]*model.Point, error)
 	ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error)
 	MyImportRecords(ctx context.Context, page int, limit int) (*model.ImportRecordsWrap, error)
@@ -700,6 +719,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Material.YieldScore(childComplexity), true
 
+	case "MaterialVersion.description":
+		if e.complexity.MaterialVersion.Description == nil {
+			break
+		}
+
+		return e.complexity.MaterialVersion.Description(childComplexity), true
+
+	case "MaterialVersion.id":
+		if e.complexity.MaterialVersion.ID == nil {
+			break
+		}
+
+		return e.complexity.MaterialVersion.ID(childComplexity), true
+
+	case "MaterialVersion.material":
+		if e.complexity.MaterialVersion.Material == nil {
+			break
+		}
+
+		return e.complexity.MaterialVersion.Material(childComplexity), true
+
+	case "MaterialVersion.user":
+		if e.complexity.MaterialVersion.User == nil {
+			break
+		}
+
+		return e.complexity.MaterialVersion.User(childComplexity), true
+
+	case "MaterialVersion.version":
+		if e.complexity.MaterialVersion.Version == nil {
+			break
+		}
+
+		return e.complexity.MaterialVersion.Version(childComplexity), true
+
 	case "MaterialWrap.materials":
 		if e.complexity.MaterialWrap.Materials == nil {
 			break
@@ -750,6 +804,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ChangeDefaultTemplate(childComplexity, args["id"].(int), args["isDefault"].(bool)), true
 
+	case "Mutation.createMaterialVersion":
+		if e.complexity.Mutation.CreateMaterialVersion == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createMaterialVersion_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateMaterialVersion(childComplexity, args["input"].(model.MaterialVersionInput)), true
+
 	case "Mutation.deleteDecodeTemplate":
 		if e.complexity.Mutation.DeleteDecodeTemplate == nil {
 			break
@@ -785,6 +851,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteMaterial(childComplexity, args["id"].(int)), true
+
+	case "Mutation.deleteMaterialVersion":
+		if e.complexity.Mutation.DeleteMaterialVersion == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteMaterialVersion_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteMaterialVersion(childComplexity, args["id"].(int)), true
 
 	case "Mutation.importData":
 		if e.complexity.Mutation.ImportData == nil {
@@ -858,18 +936,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SaveDevice(childComplexity, args["input"].(model.DeviceInput)), true
 
-	case "Mutation.saveMaterialVersion":
-		if e.complexity.Mutation.SaveMaterialVersion == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_saveMaterialVersion_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SaveMaterialVersion(childComplexity, args["input"].(model.MaterialVersionInput)), true
-
 	case "Mutation.savePoints":
 		if e.complexity.Mutation.SavePoints == nil {
 			break
@@ -905,6 +971,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateMaterial(childComplexity, args["input"].(model.MaterialUpdateInput)), true
+
+	case "Mutation.updateMaterialVersion":
+		if e.complexity.Mutation.UpdateMaterialVersion == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateMaterialVersion_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateMaterialVersion(childComplexity, args["id"].(int), args["input"].(model.MaterialVersionUpdateInput)), true
 
 	case "Point.id":
 		if e.complexity.Point.ID == nil {
@@ -1066,6 +1144,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Material(childComplexity, args["id"].(int)), true
+
+	case "Query.materialVersions":
+		if e.complexity.Query.MaterialVersions == nil {
+			break
+		}
+
+		args, err := ec.field_Query_materialVersions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MaterialVersions(childComplexity, args["id"].(int)), true
 
 	case "Query.materials":
 		if e.complexity.Query.Materials == nil {
@@ -1413,14 +1503,31 @@ input MaterialUpdateInput {
     customerCode: String
     projectRemark: String
 }
+`, BuiltIn: false},
+	&ast.Source{Name: "schema/material_version.graphql", Input: `type MaterialVersion {
+    id: Int!
+    version: String!
+    description: String!
+    material: Material!
+    user: User!
+}
 
 input MaterialVersionInput {
-    id: Int
+    materialID: Int!
     version: String!
     description: String
-    materialID: Int!
-    active: Boolean!
-}`, BuiltIn: false},
+    active: Boolean
+    points: [PointCreateInput]!
+    template: DecodeTemplateInput!
+}
+
+input MaterialVersionUpdateInput {
+    id: Int!
+    version: String
+    description: String
+    active: Boolean
+}
+`, BuiltIn: false},
 	&ast.Source{Name: "schema/point.graphql", Input: `type Point {
     id: Int!
     name: String!
@@ -1451,8 +1558,12 @@ input PointCreateInput {
     updateMaterial(input: MaterialUpdateInput!): Material!
     "拉取数据"
     materialFetch(id: Int!): ResponseStatus!
-    "保存料号版本"
-    saveMaterialVersion(input: MaterialVersionInput!): ResponseStatus!
+    "新建料号版本"
+    createMaterialVersion(input: MaterialVersionInput!): ResponseStatus!
+    "删除料号版本"
+    deleteMaterialVersion(id: Int!): ResponseStatus!
+    "更新料号版本"
+    updateMaterialVersion(id: Int!, input: MaterialVersionUpdateInput!): ResponseStatus!
 
     # 解析模板
     "保存解析模板"
@@ -1499,6 +1610,8 @@ input PointCreateInput {
     materials(pattern: String, page: Int!, limit: Int!): MaterialWrap!
     "ID获取料号"
     material(id: Int!): Material!
+    "获取料号版本列表"
+    materialVersions(id: Int!): [MaterialVersion]!
 
     # 点位（检测项）
     "获取料号的点位列表"
@@ -1603,6 +1716,20 @@ func (ec *executionContext) field_Mutation_changeDefaultTemplate_args(ctx contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createMaterialVersion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.MaterialVersionInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNMaterialVersionInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersionInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteDecodeTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1618,6 +1745,20 @@ func (ec *executionContext) field_Mutation_deleteDecodeTemplate_args(ctx context
 }
 
 func (ec *executionContext) field_Mutation_deleteDevice_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteMaterialVersion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
@@ -1753,20 +1894,6 @@ func (ec *executionContext) field_Mutation_saveDevice_args(ctx context.Context, 
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_saveMaterialVersion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.MaterialVersionInput
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNMaterialVersionInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersionInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_savePoints_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1816,6 +1943,28 @@ func (ec *executionContext) field_Mutation_toggleBlockImports_args(ctx context.C
 		}
 	}
 	args["block"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateMaterialVersion_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 model.MaterialVersionUpdateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg1, err = ec.unmarshalNMaterialVersionUpdateInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersionUpdateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
 	return args, nil
 }
 
@@ -1984,6 +2133,20 @@ func (ec *executionContext) field_Query_listMaterialPoints_args(ctx context.Cont
 		}
 	}
 	args["materialID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_materialVersions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -4142,6 +4305,176 @@ func (ec *executionContext) _Material_updatedAt(ctx context.Context, field graph
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _MaterialVersion_id(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialVersion",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MaterialVersion_version(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialVersion",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MaterialVersion_description(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialVersion",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MaterialVersion_material(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialVersion",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MaterialVersion().Material(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Material)
+	fc.Result = res
+	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterial(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MaterialVersion_user(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialVersion",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.MaterialVersion().User(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _MaterialWrap_total(ctx context.Context, field graphql.CollectedField, obj *model.MaterialWrap) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4371,7 +4704,7 @@ func (ec *executionContext) _Mutation_materialFetch(ctx context.Context, field g
 	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_saveMaterialVersion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_createMaterialVersion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -4387,7 +4720,7 @@ func (ec *executionContext) _Mutation_saveMaterialVersion(ctx context.Context, f
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_saveMaterialVersion_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_createMaterialVersion_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4395,7 +4728,89 @@ func (ec *executionContext) _Mutation_saveMaterialVersion(ctx context.Context, f
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SaveMaterialVersion(rctx, args["input"].(model.MaterialVersionInput))
+		return ec.resolvers.Mutation().CreateMaterialVersion(rctx, args["input"].(model.MaterialVersionInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ResponseStatus)
+	fc.Result = res
+	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteMaterialVersion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteMaterialVersion_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteMaterialVersion(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ResponseStatus)
+	fc.Result = res
+	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_updateMaterialVersion(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_updateMaterialVersion_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateMaterialVersion(rctx, args["id"].(int), args["input"].(model.MaterialVersionUpdateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5351,6 +5766,47 @@ func (ec *executionContext) _Query_material(ctx context.Context, field graphql.C
 	res := resTmp.(*model.Material)
 	fc.Result = res
 	return ec.marshalNMaterial2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterial(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_materialVersions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_materialVersions_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MaterialVersions(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MaterialVersion)
+	fc.Result = res
+	return ec.marshalNMaterialVersion2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersion(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_listMaterialPoints(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7374,9 +7830,9 @@ func (ec *executionContext) unmarshalInputMaterialVersionInput(ctx context.Conte
 
 	for k, v := range asMap {
 		switch k {
-		case "id":
+		case "materialID":
 			var err error
-			it.ID, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.MaterialID, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7392,15 +7848,57 @@ func (ec *executionContext) unmarshalInputMaterialVersionInput(ctx context.Conte
 			if err != nil {
 				return it, err
 			}
-		case "materialID":
+		case "active":
 			var err error
-			it.MaterialID, err = ec.unmarshalNInt2int(ctx, v)
+			it.Active, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "points":
+			var err error
+			it.Points, err = ec.unmarshalNPointCreateInput2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐPointCreateInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "template":
+			var err error
+			it.Template, err = ec.unmarshalNDecodeTemplateInput2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐDecodeTemplateInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputMaterialVersionUpdateInput(ctx context.Context, obj interface{}) (model.MaterialVersionUpdateInput, error) {
+	var it model.MaterialVersionUpdateInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.ID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "version":
+			var err error
+			it.Version, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "active":
 			var err error
-			it.Active, err = ec.unmarshalNBoolean2bool(ctx, v)
+			it.Active, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8076,6 +8574,71 @@ func (ec *executionContext) _Material(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var materialVersionImplementors = []string{"MaterialVersion"}
+
+func (ec *executionContext) _MaterialVersion(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialVersion) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialVersionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialVersion")
+		case "id":
+			out.Values[i] = ec._MaterialVersion_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "version":
+			out.Values[i] = ec._MaterialVersion_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "description":
+			out.Values[i] = ec._MaterialVersion_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "material":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MaterialVersion_material(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "user":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._MaterialVersion_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var materialWrapImplementors = []string{"MaterialWrap"}
 
 func (ec *executionContext) _MaterialWrap(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialWrap) graphql.Marshaler {
@@ -8140,8 +8703,18 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "saveMaterialVersion":
-			out.Values[i] = ec._Mutation_saveMaterialVersion(ctx, field)
+		case "createMaterialVersion":
+			out.Values[i] = ec._Mutation_createMaterialVersion(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteMaterialVersion":
+			out.Values[i] = ec._Mutation_deleteMaterialVersion(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "updateMaterialVersion":
+			out.Values[i] = ec._Mutation_updateMaterialVersion(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -8371,6 +8944,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_material(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "materialVersions":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_materialVersions(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -8883,6 +9470,14 @@ func (ec *executionContext) unmarshalNDecodeTemplateInput2githubᚗcomᚋSasukeB
 	return ec.unmarshalInputDecodeTemplateInput(ctx, v)
 }
 
+func (ec *executionContext) unmarshalNDecodeTemplateInput2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐDecodeTemplateInput(ctx context.Context, v interface{}) (*model.DecodeTemplateInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNDecodeTemplateInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐDecodeTemplateInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalNDevice2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐDevice(ctx context.Context, sel ast.SelectionSet, v model.Device) graphql.Marshaler {
 	return ec._Device(ctx, sel, &v)
 }
@@ -9198,8 +9793,49 @@ func (ec *executionContext) unmarshalNMaterialUpdateInput2githubᚗcomᚋSasukeB
 	return ec.unmarshalInputMaterialUpdateInput(ctx, v)
 }
 
+func (ec *executionContext) marshalNMaterialVersion2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersion(ctx context.Context, sel ast.SelectionSet, v []*model.MaterialVersion) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOMaterialVersion2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersion(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) unmarshalNMaterialVersionInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersionInput(ctx context.Context, v interface{}) (model.MaterialVersionInput, error) {
 	return ec.unmarshalInputMaterialVersionInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNMaterialVersionUpdateInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersionUpdateInput(ctx context.Context, v interface{}) (model.MaterialVersionUpdateInput, error) {
+	return ec.unmarshalInputMaterialVersionUpdateInput(ctx, v)
 }
 
 func (ec *executionContext) marshalNMaterialWrap2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialWrap(ctx context.Context, sel ast.SelectionSet, v model.MaterialWrap) graphql.Marshaler {
@@ -9925,6 +10561,17 @@ func (ec *executionContext) marshalOMaterial2ᚖgithubᚗcomᚋSasukeBoᚋpmes�
 		return graphql.Null
 	}
 	return ec._Material(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOMaterialVersion2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersion(ctx context.Context, sel ast.SelectionSet, v model.MaterialVersion) graphql.Marshaler {
+	return ec._MaterialVersion(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOMaterialVersion2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersion(ctx context.Context, sel ast.SelectionSet, v *model.MaterialVersion) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MaterialVersion(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPoint2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐPoint(ctx context.Context, sel ast.SelectionSet, v model.Point) graphql.Marshaler {

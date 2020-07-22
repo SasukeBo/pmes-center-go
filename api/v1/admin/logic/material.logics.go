@@ -12,19 +12,26 @@ import (
 	"github.com/jinzhu/copier"
 )
 
+// AddMaterial 创建料号
+// 创建料号执行以下操作：
+// - 创建料号记录
+// - 创建料号版本记录
+// - 为料号版本创建解析模板
+// - 为料号版本创建检测尺寸
 func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.Material, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
-	tx := orm.DB.Begin()
+	tx := orm.Begin()
+	// 创建料号
 	var material orm.Material
 	tx.Model(&material).Where("name = ?", input.Name).First(&material)
 	if material.ID != 0 {
+		tx.Rollback()
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeMaterialAlreadyExists, nil)
 	}
-
 	material.Name = input.Name
 	if input.CustomerCode != nil {
 		material.CustomerCode = *input.CustomerCode
@@ -40,8 +47,9 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material")
 	}
 
+	// 创建料号版本
 	var materialVersion = orm.MaterialVersion{
-		Version:     "latest",
+		Version:     "Init Version",
 		Description: "初始化版本",
 		MaterialID:  material.ID,
 		UserID:      user.ID,
@@ -52,6 +60,7 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material")
 	}
 
+	// 为版本创建默认解析模板
 	decodeTemplate := orm.DecodeTemplate{
 		Name:                 "默认模板",
 		MaterialID:           material.ID,
@@ -257,43 +266,6 @@ func MaterialFetch(ctx context.Context, id int) (model.ResponseStatus, error) {
 	// 解析FTP服务器指定料号路径下的所有未解析文件
 	if err := FetchMaterialData(&material); err != nil {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeMaterialDataFetchFailed, err)
-	}
-
-	return model.ResponseStatusOk, nil
-}
-
-func SaveMaterialVersion(ctx context.Context, input model.MaterialVersionInput) (model.ResponseStatus, error) {
-	user := api.CurrentUser(ctx)
-	if !user.IsAdmin {
-		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
-	}
-
-	var version orm.MaterialVersion
-	var description string
-	if input.Description != nil {
-		description = *input.Description
-	}
-	if input.ID != nil {
-		if err := version.Get(uint(*input.ID)); err != nil {
-			return model.ResponseStatusError, errormap.SendGQLError(ctx, err.GetCode(), err, "material_version")
-		}
-		version.Version = input.Version
-		if description != "" {
-			version.Description = description
-		}
-		version.Active = input.Active
-	} else {
-		version = orm.MaterialVersion{
-			Version:     input.Version,
-			Description: description,
-			MaterialID:  uint(input.MaterialID),
-			Active:      input.Active,
-			UserID:      user.ID,
-		}
-	}
-
-	if err := orm.Save(&version).Error; err != nil {
-		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "material_version")
 	}
 
 	return model.ResponseStatusOk, nil
