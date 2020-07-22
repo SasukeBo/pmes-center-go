@@ -68,6 +68,7 @@ type ImportStatusResponse struct {
 type Material struct {
 	ID            int       `json:"id"`
 	Name          string    `json:"name"`
+	YieldScore    float64   `json:"yieldScore"`
 	CustomerCode  string    `json:"customerCode"`
 	ProjectRemark string    `json:"projectRemark"`
 	CreatedAt     time.Time `json:"createdAt"`
@@ -76,15 +77,17 @@ type Material struct {
 
 type MaterialCreateInput struct {
 	Name          string              `json:"name"`
+	YieldScore    *float64            `json:"yieldScore"`
 	CustomerCode  *string             `json:"customerCode"`
 	ProjectRemark *string             `json:"projectRemark"`
 	Points        []*PointCreateInput `json:"points"`
 }
 
 type MaterialUpdateInput struct {
-	ID            int     `json:"id"`
-	CustomerCode  *string `json:"customerCode"`
-	ProjectRemark *string `json:"projectRemark"`
+	ID            int      `json:"id"`
+	YieldScore    *float64 `json:"yieldScore"`
+	CustomerCode  *string  `json:"customerCode"`
+	ProjectRemark *string  `json:"projectRemark"`
 }
 
 type MaterialWrap struct {

@@ -70,6 +70,7 @@ type ComplexityRoot struct {
 		Ng            func(childComplexity int) int
 		Ok            func(childComplexity int) int
 		ProjectRemark func(childComplexity int) int
+		YieldScore    func(childComplexity int) int
 	}
 
 	MaterialResult struct {
@@ -295,6 +296,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Material.ProjectRemark(childComplexity), true
+
+	case "Material.yieldScore":
+		if e.complexity.Material.YieldScore == nil {
+			break
+		}
+
+		return e.complexity.Material.YieldScore(childComplexity), true
 
 	case "MaterialResult.material":
 		if e.complexity.MaterialResult.Material == nil {
@@ -798,6 +806,7 @@ type DeviceResult {
 	&ast.Source{Name: "schema/material.graphql", Input: `type Material {
     id: Int!
     name: String!
+    yieldScore: Float!
     customerCode: String!
     projectRemark: String!
     ok: Int!
@@ -1667,6 +1676,40 @@ func (ec *executionContext) _Material_name(ctx context.Context, field graphql.Co
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Material_yieldScore(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Material",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.YieldScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Material_customerCode(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
@@ -5035,6 +5078,11 @@ func (ec *executionContext) _Material(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "name":
 			out.Values[i] = ec._Material_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "yieldScore":
+			out.Values[i] = ec._Material_yieldScore(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

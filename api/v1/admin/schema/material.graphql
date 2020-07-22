@@ -1,6 +1,7 @@
 type Material {
     id: Int!
     name: String!
+    yieldScore: Float!
     customerCode: String!
     projectRemark: String!
     createdAt: Time!
@@ -14,6 +15,7 @@ type MaterialWrap {
 
 input MaterialCreateInput {
     name: String!
+    yieldScore: Float
     customerCode: String
     projectRemark: String
     points: [PointCreateInput]!
@@ -21,6 +23,7 @@ input MaterialCreateInput {
 
 input MaterialUpdateInput {
     id: Int!
+    yieldScore: Float
     customerCode: String
     projectRemark: String
 }

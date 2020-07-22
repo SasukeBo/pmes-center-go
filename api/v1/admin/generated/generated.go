@@ -130,6 +130,7 @@ type ComplexityRoot struct {
 		Name          func(childComplexity int) int
 		ProjectRemark func(childComplexity int) int
 		UpdatedAt     func(childComplexity int) int
+		YieldScore    func(childComplexity int) int
 	}
 
 	MaterialWrap struct {
@@ -689,6 +690,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Material.UpdatedAt(childComplexity), true
+
+	case "Material.yieldScore":
+		if e.complexity.Material.YieldScore == nil {
+			break
+		}
+
+		return e.complexity.Material.YieldScore(childComplexity), true
 
 	case "MaterialWrap.materials":
 		if e.complexity.MaterialWrap.Materials == nil {
@@ -1365,6 +1373,7 @@ input ImportRecordSearch {
 	&ast.Source{Name: "schema/material.graphql", Input: `type Material {
     id: Int!
     name: String!
+    yieldScore: Float!
     customerCode: String!
     projectRemark: String!
     createdAt: Time!
@@ -1378,6 +1387,7 @@ type MaterialWrap {
 
 input MaterialCreateInput {
     name: String!
+    yieldScore: Float
     customerCode: String
     projectRemark: String
     points: [PointCreateInput]!
@@ -1385,6 +1395,7 @@ input MaterialCreateInput {
 
 input MaterialUpdateInput {
     id: Int!
+    yieldScore: Float
     customerCode: String
     projectRemark: String
 }
@@ -3923,6 +3934,40 @@ func (ec *executionContext) _Material_name(ctx context.Context, field graphql.Co
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Material_yieldScore(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Material",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.YieldScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Material_customerCode(ctx context.Context, field graphql.CollectedField, obj *model.Material) (ret graphql.Marshaler) {
@@ -7180,6 +7225,12 @@ func (ec *executionContext) unmarshalInputMaterialCreateInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "yieldScore":
+			var err error
+			it.YieldScore, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "customerCode":
 			var err error
 			it.CustomerCode, err = ec.unmarshalOString2ᚖstring(ctx, v)
@@ -7213,6 +7264,12 @@ func (ec *executionContext) unmarshalInputMaterialUpdateInput(ctx context.Contex
 		case "id":
 			var err error
 			it.ID, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "yieldScore":
+			var err error
+			it.YieldScore, err = ec.unmarshalOFloat2ᚖfloat64(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7861,6 +7918,11 @@ func (ec *executionContext) _Material(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "name":
 			out.Values[i] = ec._Material_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "yieldScore":
+			out.Values[i] = ec._Material_yieldScore(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -9603,6 +9665,29 @@ func (ec *executionContext) marshalOFile2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdat
 		return graphql.Null
 	}
 	return ec._File(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	return graphql.UnmarshalFloat(v)
+}
+
+func (ec *executionContext) marshalOFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	return graphql.MarshalFloat(v)
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOFloat2float64(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOFloat2float64(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalOImportRecord2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportRecord(ctx context.Context, sel ast.SelectionSet, v model.ImportRecord) graphql.Marshaler {

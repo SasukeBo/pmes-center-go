@@ -32,6 +32,9 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 	if input.ProjectRemark != nil {
 		material.ProjectRemark = *input.ProjectRemark
 	}
+	if input.YieldScore != nil {
+		material.YieldScore = *input.YieldScore
+	}
 	if err := tx.Create(&material).Error; err != nil {
 		tx.Rollback()
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material")
@@ -80,11 +83,6 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 	if err := copier.Copy(&out, &material); err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "material")
 	}
-
-	// 解析FTP服务器指定料号路径下的所有未解析文件
-	//if err := FetchMaterialData(&material); err != nil {
-	//	return &out, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateSuccessButFetchFailed, err)
-	//}
 
 	return &out, nil
 }
@@ -197,6 +195,9 @@ func UpdateMaterial(ctx context.Context, input model.MaterialUpdateInput) (*mode
 	}
 	if input.CustomerCode != nil {
 		material.CustomerCode = *input.CustomerCode
+	}
+	if input.YieldScore != nil {
+		material.YieldScore = *input.YieldScore
 	}
 	if err := orm.Save(&material).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "material")
