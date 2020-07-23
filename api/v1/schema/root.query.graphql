@@ -12,6 +12,8 @@ type Query {
     groupAnalyzeMaterial(analyzeInput: GraphInput!): EchartsResult!
     "获取产品属性列表"
     productAttributes(materialID: Int!): [ProductAttribute]!
+    "获取料号版本"
+    materialVersions(id: Int!, search: String, limit: Int): [MaterialVersion]!
 
     # 设备
     "ID查询设备"

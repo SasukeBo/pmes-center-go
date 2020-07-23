@@ -335,9 +335,10 @@ func store(xr *XLSXReader) {
 		return
 	}
 
+	var currentVersion = versions[0]
 	var points []orm.Point
 	if err := orm.DB.Model(&orm.Point{}).Where(
-		"material_id = ? AND material_version_id = ?", xr.Material.ID, versions[0].ID,
+		"material_id = ? AND material_version_id = ?", xr.Material.ID, currentVersion.ID,
 	).Find(&points).Error; err != nil {
 		_ = xr.Record.Failed(errormap.ErrorCodeImportGetPointsFailed, err)
 		return
@@ -367,9 +368,7 @@ func store(xr *XLSXReader) {
 					now := time.Now()
 					t = &now
 				}
-
 				attribute[name] = *t
-
 			case orm.ProductColumnTypeFloat:
 				fv, err := strconv.ParseFloat(value, 64)
 				if err != nil {
@@ -426,7 +425,9 @@ func store(xr *XLSXReader) {
 	}
 
 	execInsert(productValueExpands, productValueCount, insertProductsTpl, productValueFieldTpl, xr.Record)
-	// 记录单次导入良率
+
+	/*			记录单次导入良率
+	---------------------------------------------------------------------------------------------------------------- */
 	var yield float64
 	if total := len(xr.DataSet); total == 0 {
 		yield = 0
@@ -434,6 +435,12 @@ func store(xr *XLSXReader) {
 		yield = float64(importOK) / float64(total)
 	}
 	_ = xr.Record.Finish(yield)
+
+	/*			记录当前版本的总量与良率
+	---------------------------------------------------------------------------------------------------------------- */
+	if err := currentVersion.UpdateWithRecord(xr.Record); err != nil {
+		log.Error("[store] currentVersion update with record failed: %v", err)
+	}
 
 	var time2 = time.Now()
 	fmt.Printf("___________________________ process file [%s] duration is %v\n", xr.Record.FileName, time2.Sub(time1))

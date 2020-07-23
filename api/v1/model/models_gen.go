@@ -51,6 +51,14 @@ type MaterialResult struct {
 	Ng       int       `json:"ng"`
 }
 
+type MaterialVersion struct {
+	ID          int     `json:"id"`
+	Version     string  `json:"version"`
+	Total       int     `json:"total"`
+	Yield       float64 `json:"yield"`
+	Description string  `json:"description"`
+}
+
 type MaterialsWrap struct {
 	Total     int         `json:"total"`
 	Materials []*Material `json:"materials"`

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
+	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
 	"time"
@@ -42,6 +43,7 @@ type ImportRecord struct {
 	UserID             uint
 	ImportType         string  `gorm:"not null;default:'SYSTEM'"` // 导入方式，默认为系统
 	DecodeTemplateID   uint    `gorm:"not null"`                  // 文件解析模板ID
+	MaterialVersionID  uint    `gorm:"not null;default: 0"`       // 料号版本信息
 	Blocked            bool    `gorm:"default:false"`             // 屏蔽导入的数据
 	Yield              float64 // 单次导入记录的良率
 }
@@ -54,10 +56,8 @@ func (i *ImportRecord) Get(id uint) *errormap.Error {
 	return nil
 }
 
-func (i *ImportRecord) genKey(id uint) string {
-	var tStr = time.Now().String()
-	tStr = tStr[:10]
-	return fmt.Sprintf("device_realtime_key_%v_%s", id, tStr)
+func (i *ImportRecord) genKey(deviceID uint) string {
+	return fmt.Sprintf("device_realtime_key_%v_%s", deviceID, util.NowDateStr())
 }
 
 func (i *ImportRecord) Finish(yield float64) error {
@@ -84,8 +84,14 @@ func (i *ImportRecord) Load() error {
 }
 
 // 获取实时设备的导入记录
+// 生成以当前时间日期为结尾的key，通过key缓存获取数据
+// 当缓存中没有该日期的实时导入记录时，从数据库获取
+// 当数据库中没有该日期的实时导入记录时，创建新纪录
 func (i *ImportRecord) DeviceRealtimeRecord(device *Device) error {
+	// 生成key
 	cacheKey := i.genKey(device.ID)
+
+	// 获取缓存
 	cacheValue := cache.Get(cacheKey)
 	if cacheValue != nil {
 		record, ok := cacheValue.(ImportRecord)
@@ -95,9 +101,37 @@ func (i *ImportRecord) DeviceRealtimeRecord(device *Device) error {
 			}
 		}
 	}
-	// 否则新建一个
+
+	var query = "device_id = ? AND import_type = ? AND DATE(created_at) = DATE(?) AND import_records.status = ?"
+
+	// 查询数据库 [当前设备的 实时导入的 当前日期的 正在导入的] 导入记录
+	var record ImportRecord
+	if err := Model(&ImportRecord{}).Where(
+		query, device.ID, ImportRecordTypeRealtime, time.Now(), ImportStatusImporting,
+	).Find(&record).Error; err == nil {
+		if err := copier.Copy(i, &record); err == nil {
+			return nil
+		}
+	}
+
+	// 更新当前版本的总数及良率统计
+	{
+		var lastRealtimeRecord ImportRecord
+		if err := Model(&ImportRecord{}).Where(
+			query, device.ID, ImportRecordTypeRealtime, time.Now().AddDate(0, 0, -1), ImportStatusImporting,
+		).Find(&lastRealtimeRecord).Error; err == nil {
+			var version MaterialVersion
+			if err := version.Get(lastRealtimeRecord.MaterialVersionID); err == nil {
+				_ = version.UpdateWithRecord(&lastRealtimeRecord)
+			}
+			lastRealtimeRecord.Status = ImportStatusFinished
+			_ = Save(&lastRealtimeRecord)
+		}
+	}
+
+	// 创建新记录
 	i.MaterialID = device.MaterialID
-	i.Status = ImportStatusFinished
+	i.Status = ImportStatusImporting
 	i.DeviceID = device.ID
 	i.Path = "realtime"
 	i.ImportType = ImportRecordTypeRealtime

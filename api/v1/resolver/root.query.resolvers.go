@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/SasukeBo/pmes-data-center/api/v1/generated"
@@ -34,6 +35,10 @@ func (r *queryResolver) GroupAnalyzeMaterial(ctx context.Context, analyzeInput m
 
 func (r *queryResolver) ProductAttributes(ctx context.Context, materialID int) ([]*model.ProductAttribute, error) {
 	return logic.ProductAttributes(ctx, materialID)
+}
+
+func (r *queryResolver) MaterialVersions(ctx context.Context, id int, search *string, limit *int) ([]*model.MaterialVersion, error) {
+	return logic.MaterialVersions(ctx, id, search, limit)
 }
 
 func (r *queryResolver) Device(ctx context.Context, id int) (*model.Device, error) {

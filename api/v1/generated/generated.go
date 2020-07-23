@@ -79,6 +79,14 @@ type ComplexityRoot struct {
 		Ok       func(childComplexity int) int
 	}
 
+	MaterialVersion struct {
+		Description func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Total       func(childComplexity int) int
+		Version     func(childComplexity int) int
+		Yield       func(childComplexity int) int
+	}
+
 	MaterialsWrap struct {
 		Materials func(childComplexity int) int
 		Total     func(childComplexity int) int
@@ -134,6 +142,7 @@ type ComplexityRoot struct {
 		GroupAnalyzeMaterial   func(childComplexity int, analyzeInput model.GraphInput) int
 		GroupAnalyzePoint      func(childComplexity int, analyzeInput model.GraphInput) int
 		Material               func(childComplexity int, id int) int
+		MaterialVersions       func(childComplexity int, id int, search *string, limit *int) int
 		MaterialYieldTop       func(childComplexity int, duration []*time.Time, limit int) int
 		Materials              func(childComplexity int, search *string, page int, limit int) int
 		Point                  func(childComplexity int, id int) int
@@ -165,6 +174,7 @@ type QueryResolver interface {
 	AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error)
 	GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GraphInput) (*model.EchartsResult, error)
 	ProductAttributes(ctx context.Context, materialID int) ([]*model.ProductAttribute, error)
+	MaterialVersions(ctx context.Context, id int, search *string, limit *int) ([]*model.MaterialVersion, error)
 	Device(ctx context.Context, id int) (*model.Device, error)
 	Devices(ctx context.Context, materialID int) ([]*model.Device, error)
 	AnalyzeDevices(ctx context.Context, materialID int) ([]*model.DeviceResult, error)
@@ -324,6 +334,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MaterialResult.Ok(childComplexity), true
+
+	case "MaterialVersion.description":
+		if e.complexity.MaterialVersion.Description == nil {
+			break
+		}
+
+		return e.complexity.MaterialVersion.Description(childComplexity), true
+
+	case "MaterialVersion.id":
+		if e.complexity.MaterialVersion.ID == nil {
+			break
+		}
+
+		return e.complexity.MaterialVersion.ID(childComplexity), true
+
+	case "MaterialVersion.total":
+		if e.complexity.MaterialVersion.Total == nil {
+			break
+		}
+
+		return e.complexity.MaterialVersion.Total(childComplexity), true
+
+	case "MaterialVersion.version":
+		if e.complexity.MaterialVersion.Version == nil {
+			break
+		}
+
+		return e.complexity.MaterialVersion.Version(childComplexity), true
+
+	case "MaterialVersion.yield":
+		if e.complexity.MaterialVersion.Yield == nil {
+			break
+		}
+
+		return e.complexity.MaterialVersion.Yield(childComplexity), true
 
 	case "MaterialsWrap.materials":
 		if e.complexity.MaterialsWrap.Materials == nil {
@@ -622,6 +667,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Material(childComplexity, args["id"].(int)), true
 
+	case "Query.materialVersions":
+		if e.complexity.Query.MaterialVersions == nil {
+			break
+		}
+
+		args, err := ec.field_Query_materialVersions_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MaterialVersions(childComplexity, args["id"].(int), args["search"].(*string), args["limit"].(*int)), true
+
 	case "Query.materialYieldTop":
 		if e.complexity.Query.MaterialYieldTop == nil {
 			break
@@ -862,6 +919,14 @@ type ProductAttribute {
     token: String!
 }
 `, BuiltIn: false},
+	&ast.Source{Name: "schema/material_version.graphql", Input: `type MaterialVersion {
+    id: Int!
+    version: String!
+    total: Int!
+    yield: Float!
+    description: String!
+}
+`, BuiltIn: false},
 	&ast.Source{Name: "schema/point.graphql", Input: `type PointListWithYieldResponse {
     total: Int!
     list: [PointYield]!
@@ -910,6 +975,8 @@ type PointResult {
     groupAnalyzeMaterial(analyzeInput: GraphInput!): EchartsResult!
     "获取产品属性列表"
     productAttributes(materialID: Int!): [ProductAttribute]!
+    "获取料号版本"
+    materialVersions(id: Int!, search: String, limit: Int): [MaterialVersion]!
 
     # 设备
     "ID查询设备"
@@ -1097,6 +1164,36 @@ func (ec *executionContext) field_Query_groupAnalyzePoint_args(ctx context.Conte
 		}
 	}
 	args["analyzeInput"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_materialVersions_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["search"]; ok {
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["search"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg2
 	return args, nil
 }
 
@@ -1948,6 +2045,176 @@ func (ec *executionContext) _MaterialResult_ng(ctx context.Context, field graphq
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MaterialVersion_id(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialVersion",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MaterialVersion_version(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialVersion",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MaterialVersion_total(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialVersion",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MaterialVersion_yield(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialVersion",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Yield, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _MaterialVersion_description(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "MaterialVersion",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MaterialsWrap_total(ctx context.Context, field graphql.CollectedField, obj *model.MaterialsWrap) (ret graphql.Marshaler) {
@@ -3112,6 +3379,47 @@ func (ec *executionContext) _Query_productAttributes(ctx context.Context, field 
 	res := resTmp.([]*model.ProductAttribute)
 	fc.Result = res
 	return ec.marshalNProductAttribute2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_materialVersions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_materialVersions_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MaterialVersions(rctx, args["id"].(int), args["search"].(*string), args["limit"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MaterialVersion)
+	fc.Result = res
+	return ec.marshalNMaterialVersion2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialVersion(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_device(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5154,6 +5462,53 @@ func (ec *executionContext) _MaterialResult(ctx context.Context, sel ast.Selecti
 	return out
 }
 
+var materialVersionImplementors = []string{"MaterialVersion"}
+
+func (ec *executionContext) _MaterialVersion(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialVersion) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, materialVersionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MaterialVersion")
+		case "id":
+			out.Values[i] = ec._MaterialVersion_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "version":
+			out.Values[i] = ec._MaterialVersion_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "total":
+			out.Values[i] = ec._MaterialVersion_total(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "yield":
+			out.Values[i] = ec._MaterialVersion_yield(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			out.Values[i] = ec._MaterialVersion_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var materialsWrapImplementors = []string{"MaterialsWrap"}
 
 func (ec *executionContext) _MaterialsWrap(ctx context.Context, sel ast.SelectionSet, obj *model.MaterialsWrap) graphql.Marshaler {
@@ -5524,6 +5879,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_productAttributes(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "materialVersions":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_materialVersions(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -6235,6 +6604,43 @@ func (ec *executionContext) marshalNMaterialResult2ᚖgithubᚗcomᚋSasukeBoᚋ
 	return ec._MaterialResult(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMaterialVersion2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialVersion(ctx context.Context, sel ast.SelectionSet, v []*model.MaterialVersion) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOMaterialVersion2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialVersion(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalNMaterialsWrap2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialsWrap(ctx context.Context, sel ast.SelectionSet, v model.MaterialsWrap) graphql.Marshaler {
 	return ec._MaterialsWrap(ctx, sel, &v)
 }
@@ -6812,6 +7218,17 @@ func (ec *executionContext) marshalOMap2map(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 	return graphql.MarshalMap(v)
+}
+
+func (ec *executionContext) marshalOMaterialVersion2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialVersion(ctx context.Context, sel ast.SelectionSet, v model.MaterialVersion) graphql.Marshaler {
+	return ec._MaterialVersion(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOMaterialVersion2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialVersion(ctx context.Context, sel ast.SelectionSet, v *model.MaterialVersion) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._MaterialVersion(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOPointYield2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointYield(ctx context.Context, sel ast.SelectionSet, v model.PointYield) graphql.Marshaler {
