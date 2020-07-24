@@ -88,11 +88,38 @@ func DeleteMaterialVersion(ctx context.Context, id int) (model.ResponseStatus, e
 	if err := version.Get(uint(id)); err != nil {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material_version")
 	}
-
-	if err := orm.Delete(&version).Error; err != nil {
-		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "material_version")
+	if version.Active {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeActiveVersionCanNotDelete, nil)
 	}
 
+	tx := orm.Begin()
+	// 删除版本
+	if err := tx.Delete(&version).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "material_version")
+	}
+	// 删除模板
+	if err := tx.Where("material_version_id = ?", version.ID).Delete(&orm.DecodeTemplate{}).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "decode_template")
+	}
+	// 删除点位
+	if err := tx.Where("material_version_id = ?", version.ID).Delete(&orm.Point{}).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "point")
+	}
+	// 删除导入记录
+	if err := tx.Where("material_version_id = ?", version.ID).Delete(&orm.ImportRecord{}).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "import_record")
+	}
+	// 删除数据
+	if err := tx.Where("material_version_id = ?", version.ID).Delete(&orm.Product{}).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "products")
+	}
+
+	tx.Commit()
 	return model.ResponseStatusOk, nil
 }
 

@@ -83,8 +83,12 @@ func RevertImports(ctx context.Context, ids []int) (model.ResponseStatus, error)
 			return "", errormap.SendGQLError(ctx, errormap.ErrorCodeRevertImportFailed, err)
 		}
 
-		err := tx.Model(&orm.ImportRecord{}).Where("id = ?", id).Update("status", orm.ImportStatusReverted).Error
-		if err != nil {
+		var record orm.ImportRecord
+		if err := record.Get(uint(id)); err != nil {
+			tx.Rollback()
+			return model.ResponseStatusError, errormap.SendGQLError(ctx, err.GetCode(), err, "import_record")
+		}
+		if err := record.Revert(); err != nil {
 			tx.Rollback()
 			return "", errormap.SendGQLError(ctx, errormap.ErrorCodeRevertImportFailed, err)
 		}

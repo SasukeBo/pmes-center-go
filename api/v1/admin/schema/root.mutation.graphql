@@ -26,8 +26,6 @@ type Mutation {
     # 解析模板
     "保存解析模板"
     saveDecodeTemplate(input: DecodeTemplateInput!): ResponseStatus!
-    "删除解析模板"
-    deleteDecodeTemplate(id: Int!): ResponseStatus!
 
     # 检测项
     "解析导入的检测项，非创建"

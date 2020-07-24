@@ -75,6 +75,14 @@ func (i *ImportRecord) Failed(errorCode string, origin interface{}) error {
 
 func (i *ImportRecord) Revert() error {
 	i.Status = ImportStatusReverted
+	var version MaterialVersion
+	if err := version.Get(i.MaterialVersionID); err != nil {
+		return err
+	}
+
+	if err := version.UpdateWithRecord(i); err != nil {
+		return err
+	}
 	return Save(i).Error
 }
 

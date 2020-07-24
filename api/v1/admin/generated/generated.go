@@ -153,7 +153,6 @@ type ComplexityRoot struct {
 		AddUser                     func(childComplexity int, input model.AddUserInput) int
 		ChangeMaterialVersionActive func(childComplexity int, id int, active bool) int
 		CreateMaterialVersion       func(childComplexity int, input model.MaterialVersionInput) int
-		DeleteDecodeTemplate        func(childComplexity int, id int) int
 		DeleteDevice                func(childComplexity int, id int) int
 		DeleteMaterial              func(childComplexity int, id int) int
 		DeleteMaterialVersion       func(childComplexity int, id int) int
@@ -256,7 +255,6 @@ type MutationResolver interface {
 	UpdateMaterialVersion(ctx context.Context, id int, input model.MaterialVersionUpdateInput) (model.ResponseStatus, error)
 	ChangeMaterialVersionActive(ctx context.Context, id int, active bool) (model.ResponseStatus, error)
 	SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error)
-	DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, error)
 	ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error)
 	SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error)
 	SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, error)
@@ -827,18 +825,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateMaterialVersion(childComplexity, args["input"].(model.MaterialVersionInput)), true
-
-	case "Mutation.deleteDecodeTemplate":
-		if e.complexity.Mutation.DeleteDecodeTemplate == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteDecodeTemplate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteDecodeTemplate(childComplexity, args["id"].(int)), true
 
 	case "Mutation.deleteDevice":
 		if e.complexity.Mutation.DeleteDevice == nil {
@@ -1605,8 +1591,6 @@ input PointCreateInput {
     # 解析模板
     "保存解析模板"
     saveDecodeTemplate(input: DecodeTemplateInput!): ResponseStatus!
-    "删除解析模板"
-    deleteDecodeTemplate(id: Int!): ResponseStatus!
 
     # 检测项
     "解析导入的检测项，非创建"
@@ -1764,20 +1748,6 @@ func (ec *executionContext) field_Mutation_createMaterialVersion_args(ctx contex
 		}
 	}
 	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_deleteDecodeTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
 	return args, nil
 }
 
@@ -4964,47 +4934,6 @@ func (ec *executionContext) _Mutation_saveDecodeTemplate(ctx context.Context, fi
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().SaveDecodeTemplate(rctx, args["input"].(model.DecodeTemplateInput))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.ResponseStatus)
-	fc.Result = res
-	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_deleteDecodeTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteDecodeTemplate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteDecodeTemplate(rctx, args["id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8873,11 +8802,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "saveDecodeTemplate":
 			out.Values[i] = ec._Mutation_saveDecodeTemplate(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "deleteDecodeTemplate":
-			out.Values[i] = ec._Mutation_deleteDecodeTemplate(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

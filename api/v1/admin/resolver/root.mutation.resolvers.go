@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
@@ -47,10 +48,6 @@ func (r *mutationResolver) SaveDecodeTemplate(ctx context.Context, input model.D
 	return logic.SaveDecodeTemplate(ctx, input)
 }
 
-func (r *mutationResolver) DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, error) {
-	return logic.DeleteDecodeTemplate(ctx, id)
-}
-
 func (r *mutationResolver) ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error) {
 	return logic.ParseImportPoints(ctx, file)
 }
@@ -87,13 +84,3 @@ func (r *mutationResolver) AddUser(ctx context.Context, input model.AddUserInput
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 type mutationResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *mutationResolver) ChangeDefaultTemplate(ctx context.Context, id int, isDefault bool) (model.ResponseStatus, error) {
-	return logic.ChangeDefaultTemplate(ctx, id, isDefault)
-}
