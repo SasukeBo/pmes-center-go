@@ -28,7 +28,7 @@ type ImportRecord struct {
 	FileSize           int                    `json:"fileSize"`
 	UserID             uint                   `json:"userID"`
 	ImportType         ImportRecordImportType `json:"importType"`
-	DecodeTemplateID   uint                   `json:"decodeTemplateID"`
+	MaterialVersionID  uint                   `json:"materialVersionID"`
 	Blocked            bool                   `json:"blocked"`
 	Yield              float64                `json:"yield"`
 	CreatedAt          time.Time              `json:"createdAt"`

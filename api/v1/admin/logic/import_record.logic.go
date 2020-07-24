@@ -11,13 +11,13 @@ import (
 	"github.com/jinzhu/copier"
 )
 
-func ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error) {
+func ImportRecords(ctx context.Context, materialVersionID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
-	query := orm.Model(&orm.ImportRecord{}).Where("material_id = ?", materialID)
+	query := orm.Model(&orm.ImportRecord{}).Where("material_version_id = ?", materialVersionID)
 	if deviceID != nil {
 		query = query.Where("device_id = ?", *deviceID)
 	}
@@ -94,7 +94,7 @@ func RevertImports(ctx context.Context, ids []int) (model.ResponseStatus, error)
 	return model.ResponseStatusOk, nil
 }
 
-func ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) (model.ResponseStatus, error) {
+func ImportData(ctx context.Context, materialID int, deviceID int, fileTokens []string) (model.ResponseStatus, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return "", errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
@@ -110,12 +110,7 @@ func ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplat
 		return "", errormap.SendGQLError(ctx, err.GetCode(), err, "device")
 	}
 
-	var template orm.DecodeTemplate
-	if err := template.Get(uint(decodeTemplateID)); err != nil {
-		return "", errormap.SendGQLError(ctx, err.GetCode(), err, "decode_template")
-	}
-
-	if err := FetchFileData(*user, material, device, template, fileTokens); err != nil {
+	if err := FetchFileData(*user, material, device, fileTokens); err != nil {
 		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeImportFailedWithPanic, err)
 	}
 

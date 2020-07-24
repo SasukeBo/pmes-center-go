@@ -30,18 +30,19 @@ func (mv *MaterialVersion) UpdateWithRecord(record *ImportRecord) error {
 	if mv == nil {
 		return errors.New("cannot update <nil> version")
 	}
+
 	currentTotal := mv.Amount
-	currentTotal = currentTotal + record.RowFinishedCount
-	mv.Amount = currentTotal
+	total := currentTotal + record.RowFinishedCount
+	mv.Amount = total
 
 	importOK := int(float64(record.RowFinishedCount) * record.Yield)
 	currentOK := int(float64(currentTotal) * mv.Yield)
 	currentOK = currentOK + importOK
 
-	if currentTotal == 0 {
+	if total == 0 {
 		mv.Yield = 0
 	} else {
-		mv.Yield = float64(currentOK) / float64(currentTotal)
+		mv.Yield = float64(currentOK) / float64(total)
 	}
 	return Save(mv).Error
 }

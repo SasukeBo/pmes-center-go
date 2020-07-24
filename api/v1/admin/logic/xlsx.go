@@ -162,7 +162,7 @@ func (xr *XLSXReader) setData(content []byte) error {
 // FetchMaterialData
 // 给定料号，拉取Ftp服务器料号数据
 func FetchMaterialData(material *orm.Material) error {
-	template, err := material.GetDefaultTemplate()
+	template, err := material.GetCurrentVersionTemplate()
 	if err != nil {
 		return errormap.NewOrigin("get default decode template for material(id = %v) failed: %v", material.ID, err)
 	}
@@ -211,7 +211,7 @@ func fetchMaterialData(material orm.Material, paths []string, dt *orm.DecodeTemp
 }
 
 // 直接根据数据库file记录获取数据
-func FetchFileData(user orm.User, material orm.Material, device orm.Device, template orm.DecodeTemplate, tokens []string) error {
+func FetchFileData(user orm.User, material orm.Material, device orm.Device, tokens []string) error {
 	var err error
 	defer func() {
 		errMessage := recover()
@@ -221,24 +221,29 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 		}
 	}()
 
+	template, err := material.GetCurrentVersionTemplate()
+	if err != nil {
+		return err
+	}
+
 	for _, token := range tokens {
 		var file orm.File
 		if err := file.GetByToken(token); err != nil {
 			log.Error("[FetchFileData] Get file with token=%s failed: %v", token, err)
 			return err
 		}
-		xr := newXLSXReader(&material, &device, &template)
+		xr := newXLSXReader(&material, &device, template)
 		importRecord := &orm.ImportRecord{
-			FileID:           file.ID,
-			FileName:         file.Name,
-			Path:             file.Path,
-			MaterialID:       material.ID,
-			DeviceID:         device.ID,
-			Status:           orm.ImportStatusLoading,
-			ImportType:       orm.ImportRecordTypeUser,
-			UserID:           user.ID,
-			DecodeTemplateID: template.ID,
-			FileSize:         xr.Size,
+			FileID:            file.ID,
+			FileName:          file.Name,
+			Path:              file.Path,
+			MaterialID:        material.ID,
+			DeviceID:          device.ID,
+			Status:            orm.ImportStatusLoading,
+			ImportType:        orm.ImportRecordTypeUser,
+			UserID:            user.ID,
+			MaterialVersionID: template.MaterialVersionID,
+			FileSize:          xr.Size,
 		}
 		if err := orm.Create(importRecord).Error; err != nil {
 			// TODO: add log

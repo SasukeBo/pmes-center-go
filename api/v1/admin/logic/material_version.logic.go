@@ -48,6 +48,7 @@ func CreateMaterialVersion(ctx context.Context, input model.MaterialVersionInput
 			UpperLimit:        pointInput.UpperLimit,
 			LowerLimit:        pointInput.LowerLimit,
 			Nominal:           pointInput.Nominal,
+			Index:             parseIndexFromColumnCode(pointInput.Index),
 		}
 		if err := tx.Create(&point).Error; err != nil {
 			tx.Rollback()
@@ -68,11 +69,6 @@ func CreateMaterialVersion(ctx context.Context, input model.MaterialVersionInput
 		tx.Rollback()
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material_default_decode_template")
 	}
-	if err := tx.Create(&decodeTemplate).Error; err != nil {
-		tx.Rollback()
-		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material_default_decode_template")
-	}
-
 	if err := tx.Create(&decodeTemplate).Error; err != nil {
 		tx.Rollback()
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material_decode_template")
@@ -165,4 +161,34 @@ func LoadMaterialVersion(ctx context.Context, id uint) *model.MaterialVersion {
 	}
 
 	return &out
+}
+
+func ChangeMaterialVersionActive(ctx context.Context, id int, active bool) (model.ResponseStatus, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	var version orm.MaterialVersion
+	if err := version.Get(uint(id)); err != nil {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, err.GetCode(), err, "material_version")
+	}
+
+	tx := orm.Begin()
+	err := tx.Model(&orm.MaterialVersion{}).Where(
+		"material_id = ? AND active = ? AND id != ?", version.MaterialID, true, version.ID,
+	).Update("active", false).Error
+	if err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "material_version")
+	}
+
+	version.Active = true
+	if err := tx.Save(&version).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "material_version")
+	}
+	tx.Commit()
+
+	return model.ResponseStatusOk, nil
 }

@@ -35,8 +35,8 @@ func (r *queryResolver) ListMaterialPoints(ctx context.Context, materialVersionI
 	return logic.ListMaterialPoints(ctx, materialVersionID)
 }
 
-func (r *queryResolver) ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error) {
-	return logic.ImportRecords(ctx, materialID, deviceID, page, limit, search)
+func (r *queryResolver) ImportRecords(ctx context.Context, materialVersionID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error) {
+	return logic.ImportRecords(ctx, materialVersionID, deviceID, page, limit, search)
 }
 
 func (r *queryResolver) MyImportRecords(ctx context.Context, page int, limit int) (*model.ImportRecordsWrap, error) {

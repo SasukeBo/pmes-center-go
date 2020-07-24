@@ -12,7 +12,7 @@ type ImportRecord {
     fileSize: Int!
     user: User
     importType: ImportRecordImportType!
-    decodeTemplate: DecodeTemplate
+    materialVersion: MaterialVersion
     createdAt: Time!
     blocked: Boolean!
     yield: Float!

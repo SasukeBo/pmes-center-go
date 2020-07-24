@@ -91,7 +91,6 @@ type ComplexityRoot struct {
 	ImportRecord struct {
 		Blocked            func(childComplexity int) int
 		CreatedAt          func(childComplexity int) int
-		DecodeTemplate     func(childComplexity int) int
 		Device             func(childComplexity int) int
 		ErrorMessage       func(childComplexity int) int
 		File               func(childComplexity int) int
@@ -100,6 +99,7 @@ type ComplexityRoot struct {
 		ID                 func(childComplexity int) int
 		ImportType         func(childComplexity int) int
 		Material           func(childComplexity int) int
+		MaterialVersion    func(childComplexity int) int
 		OriginErrorMessage func(childComplexity int) int
 		RowCount           func(childComplexity int) int
 		RowFinishedCount   func(childComplexity int) int
@@ -149,24 +149,24 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddMaterial           func(childComplexity int, input model.MaterialCreateInput) int
-		AddUser               func(childComplexity int, input model.AddUserInput) int
-		ChangeDefaultTemplate func(childComplexity int, id int, isDefault bool) int
-		CreateMaterialVersion func(childComplexity int, input model.MaterialVersionInput) int
-		DeleteDecodeTemplate  func(childComplexity int, id int) int
-		DeleteDevice          func(childComplexity int, id int) int
-		DeleteMaterial        func(childComplexity int, id int) int
-		DeleteMaterialVersion func(childComplexity int, id int) int
-		ImportData            func(childComplexity int, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) int
-		MaterialFetch         func(childComplexity int, id int) int
-		ParseImportPoints     func(childComplexity int, file graphql.Upload) int
-		RevertImports         func(childComplexity int, ids []int) int
-		SaveDecodeTemplate    func(childComplexity int, input model.DecodeTemplateInput) int
-		SaveDevice            func(childComplexity int, input model.DeviceInput) int
-		SavePoints            func(childComplexity int, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) int
-		ToggleBlockImports    func(childComplexity int, ids []int, block bool) int
-		UpdateMaterial        func(childComplexity int, input model.MaterialUpdateInput) int
-		UpdateMaterialVersion func(childComplexity int, id int, input model.MaterialVersionUpdateInput) int
+		AddMaterial                 func(childComplexity int, input model.MaterialCreateInput) int
+		AddUser                     func(childComplexity int, input model.AddUserInput) int
+		ChangeMaterialVersionActive func(childComplexity int, id int, active bool) int
+		CreateMaterialVersion       func(childComplexity int, input model.MaterialVersionInput) int
+		DeleteDecodeTemplate        func(childComplexity int, id int) int
+		DeleteDevice                func(childComplexity int, id int) int
+		DeleteMaterial              func(childComplexity int, id int) int
+		DeleteMaterialVersion       func(childComplexity int, id int) int
+		ImportData                  func(childComplexity int, materialID int, deviceID int, fileTokens []string) int
+		MaterialFetch               func(childComplexity int, id int) int
+		ParseImportPoints           func(childComplexity int, file graphql.Upload) int
+		RevertImports               func(childComplexity int, ids []int) int
+		SaveDecodeTemplate          func(childComplexity int, input model.DecodeTemplateInput) int
+		SaveDevice                  func(childComplexity int, input model.DeviceInput) int
+		SavePoints                  func(childComplexity int, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) int
+		ToggleBlockImports          func(childComplexity int, ids []int, block bool) int
+		UpdateMaterial              func(childComplexity int, input model.MaterialUpdateInput) int
+		UpdateMaterialVersion       func(childComplexity int, id int, input model.MaterialVersionUpdateInput) int
 	}
 
 	Point struct {
@@ -190,7 +190,7 @@ type ComplexityRoot struct {
 		CurrentUser                 func(childComplexity int) int
 		DecodeTemplateWithVersionID func(childComplexity int, id int) int
 		Device                      func(childComplexity int, id int) int
-		ImportRecords               func(childComplexity int, materialID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) int
+		ImportRecords               func(childComplexity int, materialVersionID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) int
 		ImportStatus                func(childComplexity int, id int) int
 		ListDecodeTemplate          func(childComplexity int, materialID int) int
 		ListDevices                 func(childComplexity int, pattern *string, materialID *int, page int, limit int) int
@@ -240,7 +240,7 @@ type ImportRecordResolver interface {
 
 	User(ctx context.Context, obj *model.ImportRecord) (*model.User, error)
 
-	DecodeTemplate(ctx context.Context, obj *model.ImportRecord) (*model.DecodeTemplate, error)
+	MaterialVersion(ctx context.Context, obj *model.ImportRecord) (*model.MaterialVersion, error)
 }
 type MaterialVersionResolver interface {
 	Material(ctx context.Context, obj *model.MaterialVersion) (*model.Material, error)
@@ -254,16 +254,16 @@ type MutationResolver interface {
 	CreateMaterialVersion(ctx context.Context, input model.MaterialVersionInput) (model.ResponseStatus, error)
 	DeleteMaterialVersion(ctx context.Context, id int) (model.ResponseStatus, error)
 	UpdateMaterialVersion(ctx context.Context, id int, input model.MaterialVersionUpdateInput) (model.ResponseStatus, error)
+	ChangeMaterialVersionActive(ctx context.Context, id int, active bool) (model.ResponseStatus, error)
 	SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error)
 	DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, error)
-	ChangeDefaultTemplate(ctx context.Context, id int, isDefault bool) (model.ResponseStatus, error)
 	ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error)
 	SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error)
 	SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, error)
 	DeleteDevice(ctx context.Context, id int) (model.ResponseStatus, error)
 	RevertImports(ctx context.Context, ids []int) (model.ResponseStatus, error)
 	ToggleBlockImports(ctx context.Context, ids []int, block bool) (model.ResponseStatus, error)
-	ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) (model.ResponseStatus, error)
+	ImportData(ctx context.Context, materialID int, deviceID int, fileTokens []string) (model.ResponseStatus, error)
 	AddUser(ctx context.Context, input model.AddUserInput) (model.ResponseStatus, error)
 }
 type QueryResolver interface {
@@ -273,7 +273,7 @@ type QueryResolver interface {
 	Material(ctx context.Context, id int) (*model.Material, error)
 	MaterialVersions(ctx context.Context, id int) ([]*model.MaterialVersion, error)
 	ListMaterialPoints(ctx context.Context, materialVersionID int) ([]*model.Point, error)
-	ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error)
+	ImportRecords(ctx context.Context, materialVersionID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error)
 	MyImportRecords(ctx context.Context, page int, limit int) (*model.ImportRecordsWrap, error)
 	ImportStatus(ctx context.Context, id int) (*model.ImportStatusResponse, error)
 	ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error)
@@ -500,13 +500,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ImportRecord.CreatedAt(childComplexity), true
 
-	case "ImportRecord.decodeTemplate":
-		if e.complexity.ImportRecord.DecodeTemplate == nil {
-			break
-		}
-
-		return e.complexity.ImportRecord.DecodeTemplate(childComplexity), true
-
 	case "ImportRecord.device":
 		if e.complexity.ImportRecord.Device == nil {
 			break
@@ -562,6 +555,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ImportRecord.Material(childComplexity), true
+
+	case "ImportRecord.materialVersion":
+		if e.complexity.ImportRecord.MaterialVersion == nil {
+			break
+		}
+
+		return e.complexity.ImportRecord.MaterialVersion(childComplexity), true
 
 	case "ImportRecord.originErrorMessage":
 		if e.complexity.ImportRecord.OriginErrorMessage == nil {
@@ -804,17 +804,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.AddUser(childComplexity, args["input"].(model.AddUserInput)), true
 
-	case "Mutation.changeDefaultTemplate":
-		if e.complexity.Mutation.ChangeDefaultTemplate == nil {
+	case "Mutation.changeMaterialVersionActive":
+		if e.complexity.Mutation.ChangeMaterialVersionActive == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_changeDefaultTemplate_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_changeMaterialVersionActive_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ChangeDefaultTemplate(childComplexity, args["id"].(int), args["isDefault"].(bool)), true
+		return e.complexity.Mutation.ChangeMaterialVersionActive(childComplexity, args["id"].(int), args["active"].(bool)), true
 
 	case "Mutation.createMaterialVersion":
 		if e.complexity.Mutation.CreateMaterialVersion == nil {
@@ -886,7 +886,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ImportData(childComplexity, args["materialID"].(int), args["deviceID"].(int), args["decodeTemplateID"].(int), args["fileTokens"].([]string)), true
+		return e.complexity.Mutation.ImportData(childComplexity, args["materialID"].(int), args["deviceID"].(int), args["fileTokens"].([]string)), true
 
 	case "Mutation.materialFetch":
 		if e.complexity.Mutation.MaterialFetch == nil {
@@ -1114,7 +1114,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ImportRecords(childComplexity, args["materialID"].(int), args["deviceID"].(*int), args["page"].(int), args["limit"].(int), args["search"].(model.ImportRecordSearch)), true
+		return e.complexity.Query.ImportRecords(childComplexity, args["materialVersionID"].(int), args["deviceID"].(*int), args["page"].(int), args["limit"].(int), args["search"].(model.ImportRecordSearch)), true
 
 	case "Query.importStatus":
 		if e.complexity.Query.ImportStatus == nil {
@@ -1464,7 +1464,7 @@ type DeviceWrap {
     fileSize: Int!
     user: User
     importType: ImportRecordImportType!
-    decodeTemplate: DecodeTemplate
+    materialVersion: MaterialVersion
     createdAt: Time!
     blocked: Boolean!
     yield: Float!
@@ -1591,20 +1591,22 @@ input PointCreateInput {
     updateMaterial(input: MaterialUpdateInput!): Material!
     "拉取数据"
     materialFetch(id: Int!): ResponseStatus!
+
+    # 料号版本
     "新建料号版本"
     createMaterialVersion(input: MaterialVersionInput!): ResponseStatus!
     "删除料号版本"
     deleteMaterialVersion(id: Int!): ResponseStatus!
     "更新料号版本"
     updateMaterialVersion(id: Int!, input: MaterialVersionUpdateInput!): ResponseStatus!
+    "变更当前料号版本"
+    changeMaterialVersionActive(id: Int!, active: Boolean!): ResponseStatus!
 
     # 解析模板
     "保存解析模板"
     saveDecodeTemplate(input: DecodeTemplateInput!): ResponseStatus!
     "删除解析模板"
     deleteDecodeTemplate(id: Int!): ResponseStatus!
-    "变更默认解析模板"
-    changeDefaultTemplate(id: Int!, isDefault: Boolean!): ResponseStatus!
 
     # 检测项
     "解析导入的检测项，非创建"
@@ -1624,7 +1626,7 @@ input PointCreateInput {
     "批量打开或关闭屏蔽导入"
     toggleBlockImports(ids: [Int!]!, block: Boolean!): ResponseStatus!
     "导入数据"
-    importData(materialID: Int!, deviceID: Int!, decodeTemplateID: Int!, fileTokens: [String!]!): ResponseStatus!
+    importData(materialID: Int!, deviceID: Int!, fileTokens: [String!]!): ResponseStatus!
 
     # 用户
     "新增用户"
@@ -1652,7 +1654,7 @@ input PointCreateInput {
 
     # 导入记录
     "获取导入记录"
-    importRecords(materialID: Int!, deviceID: Int, page: Int!, limit: Int!, search: ImportRecordSearch!): ImportRecordsWrap!
+    importRecords(materialVersionID: Int!, deviceID: Int, page: Int!, limit: Int!, search: ImportRecordSearch!): ImportRecordsWrap!
     "获取当前用户的导入记录"
     myImportRecords(page: Int!, limit: Int!): ImportRecordsWrap!
     "查询导入完成状态"
@@ -1729,7 +1731,7 @@ func (ec *executionContext) field_Mutation_addUser_args(ctx context.Context, raw
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_changeDefaultTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_changeMaterialVersionActive_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
@@ -1741,13 +1743,13 @@ func (ec *executionContext) field_Mutation_changeDefaultTemplate_args(ctx contex
 	}
 	args["id"] = arg0
 	var arg1 bool
-	if tmp, ok := rawArgs["isDefault"]; ok {
+	if tmp, ok := rawArgs["active"]; ok {
 		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["isDefault"] = arg1
+	args["active"] = arg1
 	return args, nil
 }
 
@@ -1840,22 +1842,14 @@ func (ec *executionContext) field_Mutation_importData_args(ctx context.Context, 
 		}
 	}
 	args["deviceID"] = arg1
-	var arg2 int
-	if tmp, ok := rawArgs["decodeTemplateID"]; ok {
-		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["decodeTemplateID"] = arg2
-	var arg3 []string
+	var arg2 []string
 	if tmp, ok := rawArgs["fileTokens"]; ok {
-		arg3, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+		arg2, err = ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["fileTokens"] = arg3
+	args["fileTokens"] = arg2
 	return args, nil
 }
 
@@ -2063,13 +2057,13 @@ func (ec *executionContext) field_Query_importRecords_args(ctx context.Context, 
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
-	if tmp, ok := rawArgs["materialID"]; ok {
+	if tmp, ok := rawArgs["materialVersionID"]; ok {
 		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["materialID"] = arg0
+	args["materialVersionID"] = arg0
 	var arg1 *int
 	if tmp, ok := rawArgs["deviceID"]; ok {
 		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
@@ -3637,7 +3631,7 @@ func (ec *executionContext) _ImportRecord_importType(ctx context.Context, field 
 	return ec.marshalNImportRecordImportType2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportRecordImportType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _ImportRecord_decodeTemplate(ctx context.Context, field graphql.CollectedField, obj *model.ImportRecord) (ret graphql.Marshaler) {
+func (ec *executionContext) _ImportRecord_materialVersion(ctx context.Context, field graphql.CollectedField, obj *model.ImportRecord) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3654,7 +3648,7 @@ func (ec *executionContext) _ImportRecord_decodeTemplate(ctx context.Context, fi
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.ImportRecord().DecodeTemplate(rctx, obj)
+		return ec.resolvers.ImportRecord().MaterialVersion(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3663,9 +3657,9 @@ func (ec *executionContext) _ImportRecord_decodeTemplate(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.DecodeTemplate)
+	res := resTmp.(*model.MaterialVersion)
 	fc.Result = res
-	return ec.marshalODecodeTemplate2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐDecodeTemplate(ctx, field.Selections, res)
+	return ec.marshalOMaterialVersion2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐMaterialVersion(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ImportRecord_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.ImportRecord) (ret graphql.Marshaler) {
@@ -4904,6 +4898,47 @@ func (ec *executionContext) _Mutation_updateMaterialVersion(ctx context.Context,
 	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_changeMaterialVersionActive(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_changeMaterialVersionActive_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().ChangeMaterialVersionActive(rctx, args["id"].(int), args["active"].(bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ResponseStatus)
+	fc.Result = res
+	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_saveDecodeTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4970,47 +5005,6 @@ func (ec *executionContext) _Mutation_deleteDecodeTemplate(ctx context.Context, 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().DeleteDecodeTemplate(rctx, args["id"].(int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.ResponseStatus)
-	fc.Result = res
-	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_changeDefaultTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Mutation",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_changeDefaultTemplate_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ChangeDefaultTemplate(rctx, args["id"].(int), args["isDefault"].(bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5297,7 +5291,7 @@ func (ec *executionContext) _Mutation_importData(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().ImportData(rctx, args["materialID"].(int), args["deviceID"].(int), args["decodeTemplateID"].(int), args["fileTokens"].([]string))
+		return ec.resolvers.Mutation().ImportData(rctx, args["materialID"].(int), args["deviceID"].(int), args["fileTokens"].([]string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5982,7 +5976,7 @@ func (ec *executionContext) _Query_importRecords(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ImportRecords(rctx, args["materialID"].(int), args["deviceID"].(*int), args["page"].(int), args["limit"].(int), args["search"].(model.ImportRecordSearch))
+		return ec.resolvers.Query().ImportRecords(rctx, args["materialVersionID"].(int), args["deviceID"].(*int), args["page"].(int), args["limit"].(int), args["search"].(model.ImportRecordSearch))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8535,7 +8529,7 @@ func (ec *executionContext) _ImportRecord(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "decodeTemplate":
+		case "materialVersion":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -8543,7 +8537,7 @@ func (ec *executionContext) _ImportRecord(ctx context.Context, sel ast.Selection
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._ImportRecord_decodeTemplate(ctx, field, obj)
+				res = ec._ImportRecord_materialVersion(ctx, field, obj)
 				return res
 			})
 		case "createdAt":
@@ -8872,6 +8866,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "changeMaterialVersionActive":
+			out.Values[i] = ec._Mutation_changeMaterialVersionActive(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "saveDecodeTemplate":
 			out.Values[i] = ec._Mutation_saveDecodeTemplate(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -8879,11 +8878,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "deleteDecodeTemplate":
 			out.Values[i] = ec._Mutation_deleteDecodeTemplate(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "changeDefaultTemplate":
-			out.Values[i] = ec._Mutation_changeDefaultTemplate(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
