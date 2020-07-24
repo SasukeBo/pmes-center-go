@@ -292,11 +292,5 @@ func DecodeTemplateWithVersionID(ctx context.Context, id int) (*model.DecodeTemp
 		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "decode_template")
 	}
 
-	var out model.DecodeTemplate
-	if err := copier.Copy(&out, &template); err != nil {
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "decode_template")
-	}
-	out.CreatedAtColumnIndex = parseColumnCodeFromIndex(template.CreatedAtColumnIndex)
-
-	return &out, nil
+	return convertDecodeTemplateOutput(&template)
 }
