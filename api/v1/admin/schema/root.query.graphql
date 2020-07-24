@@ -13,9 +13,9 @@ type Query {
     "获取料号版本列表"
     materialVersions(id: Int!): [MaterialVersion]!
 
-    # 点位（检测项）
-    "获取料号的点位列表"
-    listMaterialPoints(materialID: Int!): [Point!]
+    # 点位或尺寸（检测项）
+    "获取料号的检测项列表"
+    listMaterialPoints(materialVersionID: Int!): [Point!]
 
     # 导入记录
     "获取导入记录"
@@ -28,6 +28,8 @@ type Query {
     # 解析模板
     "解析模板列表"
     listDecodeTemplate(materialID: Int!): [DecodeTemplate]!
+    "根据MaterialVersionID获取解析模板"
+    decodeTemplateWithVersionID(id: Int!): DecodeTemplate!
 
     # 设备
     "设备列表"

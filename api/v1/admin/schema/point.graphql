@@ -4,6 +4,7 @@ type Point {
     upperLimit: Float!
     nominal: Float!
     lowerLimit: Float!
+    index: String!
 }
 
 input PointCreateInput {
@@ -12,4 +13,5 @@ input PointCreateInput {
     upperLimit: Float!
     nominal: Float!
     lowerLimit: Float!
+    index: String!
 }

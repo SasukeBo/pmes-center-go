@@ -5,18 +5,18 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 )
 
 func (r *materialVersionResolver) Material(ctx context.Context, obj *model.MaterialVersion) (*model.Material, error) {
-	panic(fmt.Errorf("not implemented"))
+	return logic.LoadMaterial(ctx, obj.MaterialID), nil
 }
 
 func (r *materialVersionResolver) User(ctx context.Context, obj *model.MaterialVersion) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return logic.LoadUser(ctx, obj.UserID), nil
 }
 
 // MaterialVersion returns generated.MaterialVersionResolver implementation.

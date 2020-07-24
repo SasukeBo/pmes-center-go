@@ -15,6 +15,10 @@ func (r *decodeTemplateResolver) Material(ctx context.Context, obj *model.Decode
 	return logic.LoadMaterial(ctx, obj.MaterialID), nil
 }
 
+func (r *decodeTemplateResolver) MaterialVersion(ctx context.Context, obj *model.DecodeTemplate) (*model.MaterialVersion, error) {
+	return logic.LoadMaterialVersion(ctx, obj.MaterialVersionID), nil
+}
+
 func (r *decodeTemplateResolver) User(ctx context.Context, obj *model.DecodeTemplate) (*model.User, error) {
 	return logic.LoadUser(ctx, obj.UserID), nil
 }

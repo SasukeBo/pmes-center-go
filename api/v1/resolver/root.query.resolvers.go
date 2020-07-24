@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/SasukeBo/pmes-data-center/api/v1/generated"

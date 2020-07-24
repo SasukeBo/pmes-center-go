@@ -388,11 +388,7 @@ func store(xr *XLSXReader) {
 
 		pointValues := make(types.Map)
 		for _, v := range points {
-			ii, ok := xr.DecodeTemplate.PointColumns[v.Name]
-			if !ok { // 模板中没有该名称点位的解析配置
-				continue
-			}
-			idx := int(ii.(float64)) - 1
+			idx := v.Index - 1
 			if idx >= len(row) {
 				message := fmt.Sprintf("point(%s) index(%d) out of range with data row length(%d)", v.Name, idx, len(row))
 				_ = xr.Record.Failed(errormap.ErrorCodeImportWithIllegalDecodeTemplate, message)

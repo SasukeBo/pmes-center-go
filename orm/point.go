@@ -16,6 +16,7 @@ type Point struct {
 	Name              string `gorm:"not null"`
 	MaterialID        uint   `gorm:"not null"`
 	MaterialVersionID uint   `gorm:"not null"`
+	Index             int    `gorm:"not null"`
 	UpperLimit        float64
 	LowerLimit        float64
 	Nominal           float64

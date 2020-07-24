@@ -7,7 +7,6 @@ import (
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
-	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"github.com/jinzhu/copier"
 )
 
@@ -56,42 +55,25 @@ func CreateMaterialVersion(ctx context.Context, input model.MaterialVersionInput
 		}
 	}
 
-	// 创建解析模板
-	var templateInput = input.Template
-	var template = orm.DecodeTemplate{
-		Name:                 templateInput.Name,
-		MaterialID:           uint(input.MaterialID),
+	// 为版本创建解析模板
+	decodeTemplate := orm.DecodeTemplate{
+		MaterialID:           version.MaterialID,
 		MaterialVersionID:    version.ID,
 		UserID:               user.ID,
-		DataRowIndex:         templateInput.DataRowIndex,
-		CreatedAtColumnIndex: parseIndexFromColumnCode(templateInput.CreatedAtColumnIndex),
-		Default:              true,
+		DataRowIndex:         15,
+		CreatedAtColumnIndex: 2,
+	}
+	err := genDefaultProductColumns(&decodeTemplate)
+	if err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material_default_decode_template")
+	}
+	if err := tx.Create(&decodeTemplate).Error; err != nil {
+		tx.Rollback()
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material_default_decode_template")
 	}
 
-	pointColumns := make(types.Map)
-	for k, v := range templateInput.PointColumns {
-		if code, ok := v.(string); ok {
-			pointColumns[k] = parseIndexFromColumnCode(code)
-		}
-	}
-	template.PointColumns = pointColumns
-
-	productColumns := make(types.Map)
-	for _, iColumn := range templateInput.ProductColumns {
-		var column orm.Column
-		if err := copier.Copy(&column, &iColumn); err != nil {
-			continue
-		}
-		column.Index = parseIndexFromColumnCode(iColumn.Index)
-		productColumns[iColumn.Token] = column
-	}
-	template.ProductColumns = productColumns
-
-	if templateInput.Description != nil {
-		template.Description = *templateInput.Description
-	}
-
-	if err := tx.Create(&template).Error; err != nil {
+	if err := tx.Create(&decodeTemplate).Error; err != nil {
 		tx.Rollback()
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material_decode_template")
 	}
@@ -169,4 +151,18 @@ func MaterialVersions(ctx context.Context, id int) ([]*model.MaterialVersion, er
 	}
 
 	return outs, nil
+}
+
+func LoadMaterialVersion(ctx context.Context, id uint) *model.MaterialVersion {
+	var version orm.MaterialVersion
+	if err := version.Get(id); err != nil {
+		return nil
+	}
+
+	var out model.MaterialVersion
+	if err := copier.Copy(&out, &version); err != nil {
+		return nil
+	}
+
+	return &out
 }

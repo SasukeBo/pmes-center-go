@@ -17,15 +17,11 @@ type AddUserInput struct {
 }
 
 type DecodeTemplateInput struct {
-	ID                   *int                   `json:"id"`
-	Name                 string                 `json:"name"`
-	MaterialID           int                    `json:"materialID"`
-	Description          *string                `json:"description"`
-	DataRowIndex         int                    `json:"dataRowIndex"`
-	CreatedAtColumnIndex string                 `json:"createdAtColumnIndex"`
-	ProductColumns       []*ProductColumnInput  `json:"productColumns"`
-	PointColumns         map[string]interface{} `json:"pointColumns"`
-	Default              bool                   `json:"default"`
+	ID                   *int                  `json:"id"`
+	DataRowIndex         int                   `json:"dataRowIndex"`
+	CreatedAtColumnIndex string                `json:"createdAtColumnIndex"`
+	ProductColumns       []*ProductColumnInput `json:"productColumns"`
+	PointColumns         []*PointColumnInput   `json:"pointColumns"`
 }
 
 type DeviceInput struct {
@@ -91,16 +87,14 @@ type MaterialUpdateInput struct {
 }
 
 type MaterialVersionInput struct {
-	MaterialID  int                  `json:"materialID"`
-	Version     string               `json:"version"`
-	Description *string              `json:"description"`
-	Active      *bool                `json:"active"`
-	Points      []*PointCreateInput  `json:"points"`
-	Template    *DecodeTemplateInput `json:"template"`
+	MaterialID  int                 `json:"materialID"`
+	Version     string              `json:"version"`
+	Description *string             `json:"description"`
+	Active      *bool               `json:"active"`
+	Points      []*PointCreateInput `json:"points"`
 }
 
 type MaterialVersionUpdateInput struct {
-	ID          int     `json:"id"`
 	Version     *string `json:"version"`
 	Description *string `json:"description"`
 	Active      *bool   `json:"active"`
@@ -117,6 +111,12 @@ type Point struct {
 	UpperLimit float64 `json:"upperLimit"`
 	Nominal    float64 `json:"nominal"`
 	LowerLimit float64 `json:"lowerLimit"`
+	Index      string  `json:"index"`
+}
+
+type PointColumnInput struct {
+	ID    int    `json:"id"`
+	Index string `json:"index"`
 }
 
 type PointCreateInput struct {
@@ -125,6 +125,7 @@ type PointCreateInput struct {
 	UpperLimit float64 `json:"upperLimit"`
 	Nominal    float64 `json:"nominal"`
 	LowerLimit float64 `json:"lowerLimit"`
+	Index      string  `json:"index"`
 }
 
 type ProductColumn struct {

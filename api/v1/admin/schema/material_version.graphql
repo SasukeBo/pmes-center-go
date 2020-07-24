@@ -4,6 +4,10 @@ type MaterialVersion {
     description: String!
     material: Material!
     user: User!
+    active: Boolean!
+    createdAt: Time!
+    amount: Int!
+    yield: Float!
 }
 
 input MaterialVersionInput {
@@ -12,7 +16,6 @@ input MaterialVersionInput {
     description: String
     active: Boolean
     points: [PointCreateInput]!
-    template: DecodeTemplateInput!
 }
 
 input MaterialVersionUpdateInput {

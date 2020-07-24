@@ -3,12 +3,10 @@ package logic
 import (
 	"context"
 	"fmt"
-	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/pmes-data-center/api"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
-	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"github.com/jinzhu/copier"
 )
 
@@ -60,26 +58,26 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material")
 	}
 
-	// 为版本创建默认解析模板
+	// 为版本创建解析模板
 	decodeTemplate := orm.DecodeTemplate{
-		Name:                 "默认模板",
 		MaterialID:           material.ID,
 		MaterialVersionID:    materialVersion.ID,
 		UserID:               user.ID,
-		Description:          "创建料号时自动生成的默认解析模板",
 		DataRowIndex:         15,
 		CreatedAtColumnIndex: 2,
-		Default:              true,
 	}
 	err := genDefaultProductColumns(&decodeTemplate)
 	if err != nil {
 		tx.Rollback()
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material_default_decode_template")
 	}
+	if err := tx.Create(&decodeTemplate).Error; err != nil {
+		tx.Rollback()
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material_default_decode_template")
+	}
 
-	pointColumns := make(types.Map)
-	pointStartIndex := parseIndexFromColumnCode(configer.GetString("default_point_begin_index"))
-	for i, pointInput := range input.Points {
+	// 创建检测点位
+	for _, pointInput := range input.Points {
 		point := orm.Point{
 			Name:              pointInput.Name,
 			MaterialID:        material.ID,
@@ -87,20 +85,13 @@ func AddMaterial(ctx context.Context, input model.MaterialCreateInput) (*model.M
 			UpperLimit:        pointInput.UpperLimit,
 			LowerLimit:        pointInput.LowerLimit,
 			Nominal:           pointInput.Nominal,
+			Index:             parseIndexFromColumnCode(pointInput.Index),
 		}
 		if err := tx.Create(&point).Error; err != nil {
 			tx.Rollback()
 			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "point")
 		}
-		pointColumns[point.Name] = i + pointStartIndex
 	}
-	decodeTemplate.PointColumns = pointColumns
-
-	if err := tx.Create(&decodeTemplate).Error; err != nil {
-		tx.Rollback()
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCreateObjectError, err, "material_default_decode_template")
-	}
-
 	tx.Commit()
 
 	var out model.Material

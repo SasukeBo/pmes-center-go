@@ -3,11 +3,15 @@ package model
 import "time"
 
 type MaterialVersion struct {
-	ID          int    `json:"id"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
-	MaterialID  uint   `json:"material"`
-	UserID      uint   `json:"user"`
+	ID          int       `json:"id"`
+	Version     string    `json:"version"`
+	Description string    `json:"description"`
+	MaterialID  uint      `json:"material"`
+	UserID      uint      `json:"user"`
+	Active      bool      `json:"active"`
+	Amount      int       `json:"amount"`
+	Yield       float64   `json:"yield"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 type ImportRecord struct {
@@ -31,18 +35,15 @@ type ImportRecord struct {
 }
 
 type DecodeTemplate struct {
-	ID                   int                    `json:"id"`
-	Name                 string                 `json:"name"`
-	MaterialID           uint                   `json:"materialID"`
-	UserID               uint                   `json:"userID"`
-	Description          string                 `json:"description"`
-	DataRowIndex         int                    `json:"dataRowIndex"`
-	CreatedAtColumnIndex string                 `json:"createdAtColumnIndex"`
-	ProductColumns       []*ProductColumn       `json:"productColumns"`
-	PointColumns         map[string]interface{} `json:"pointColumns"`
-	Default              bool                   `json:"default"`
-	CreatedAt            time.Time              `json:"createdAt"`
-	UpdatedAt            time.Time              `json:"updatedAt"`
+	ID                   int              `json:"id"`
+	MaterialID           uint             `json:"materialID"`
+	UserID               uint             `json:"userID"`
+	DataRowIndex         int              `json:"dataRowIndex"`
+	CreatedAtColumnIndex string           `json:"createdAtColumnIndex"`
+	ProductColumns       []*ProductColumn `json:"productColumns"`
+	MaterialVersionID    uint             `json:"materialVersionID"`
+	CreatedAt            time.Time        `json:"createdAt"`
+	UpdatedAt            time.Time        `json:"updatedAt"`
 }
 
 type Device struct {

@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
@@ -30,8 +31,8 @@ func (r *queryResolver) MaterialVersions(ctx context.Context, id int) ([]*model.
 	return logic.MaterialVersions(ctx, id)
 }
 
-func (r *queryResolver) ListMaterialPoints(ctx context.Context, materialID int) ([]*model.Point, error) {
-	return logic.ListMaterialPoints(ctx, materialID)
+func (r *queryResolver) ListMaterialPoints(ctx context.Context, materialVersionID int) ([]*model.Point, error) {
+	return logic.ListMaterialPoints(ctx, materialVersionID)
 }
 
 func (r *queryResolver) ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error) {
@@ -48,6 +49,10 @@ func (r *queryResolver) ImportStatus(ctx context.Context, id int) (*model.Import
 
 func (r *queryResolver) ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error) {
 	return logic.ListDecodeTemplate(ctx, materialID)
+}
+
+func (r *queryResolver) DecodeTemplateWithVersionID(ctx context.Context, id int) (*model.DecodeTemplate, error) {
+	return logic.DecodeTemplateWithVersionID(ctx, id)
 }
 
 func (r *queryResolver) ListDevices(ctx context.Context, pattern *string, materialID *int, page int, limit int) (*model.DeviceWrap, error) {
