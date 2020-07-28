@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api/v1/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
@@ -155,7 +154,7 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 	}, nil
 }
 
-func PointListWithYield(ctx context.Context, materialID int, versionID *int, limit int, page int) (*model.PointListWithYieldResponse, error) {
+func PointList(ctx context.Context, materialID int, versionID *int, search *string, limit int, page int) (*model.PointListWithYieldResponse, error) {
 	var version orm.MaterialVersion
 	if versionID != nil {
 		if err := version.Get(uint(*versionID)); err != nil {
@@ -169,6 +168,9 @@ func PointListWithYield(ctx context.Context, materialID int, versionID *int, lim
 	}
 
 	sql := orm.Model(&orm.Point{}).Where("material_id = ? AND material_version_id = ?", materialID, version.ID)
+	if search != nil {
+		sql = sql.Where("name like ?", fmt.Sprintf("%%%s%%", *search))
+	}
 
 	var total int
 	if err := sql.Count(&total).Error; err != nil {
@@ -180,53 +182,52 @@ func PointListWithYield(ctx context.Context, materialID int, versionID *int, lim
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "point")
 	}
 
-	var products []orm.Product
-	var now = time.Now()
-	now = now.AddDate(0, -1, 0)
-	query := orm.Model(&orm.Product{}).Where("products.material_id = ? AND products.created_at > ?", materialID, now)
-	query = query.Joins("JOIN import_records ON import_records.id = products.import_record_id")
-	query = query.Where("import_records.blocked = ? AND products.material_version_id = ?", false, version.ID)
-	if err := query.Find(&products).Error; err != nil {
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
-	}
+	//var products []orm.Product
+	//var now = time.Now()
+	//now = now.AddDate(0, -1, 0)
+	//query := orm.Model(&orm.Product{}).Where("products.material_id = ? AND products.created_at > ?", materialID, now)
+	//query = query.Joins("JOIN import_records ON import_records.id = products.import_record_id")
+	//query = query.Where("import_records.blocked = ? AND products.material_version_id = ?", false, version.ID)
+	//t := time.Now()
+	//t.AddDate(0, 0, -7)
+	//query = query.Where("products.created_at > ?", t)
+	//
+	//if err := query.Find(&products).Error; err != nil {
+	//	return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
+	//}
 
-	var sum = len(products)
-	var list []*model.PointYield
+	//var sum = len(products)
+	var outs []*model.Point
 	for _, p := range points {
-		var ok int
-		var total = sum
-		for _, product := range products {
-			v, exist := product.PointValues[p.Name]
-			if !exist {
-				total--
-				continue
-			}
-
-			pointValue, err := strconv.ParseFloat(fmt.Sprint(v), 64)
-			if err != nil {
-				log.Errorln(err)
-				total--
-				continue
-			}
-
-			if pointValue > p.LowerLimit && pointValue < p.UpperLimit {
-				ok++
-			}
-		}
+		//var ok int
+		//var total = sum
+		//for _, product := range products {
+		//	v, exist := product.PointValues[p.Name]
+		//	if !exist {
+		//		total--
+		//		continue
+		//	}
+		//
+		//	pointValue, err := strconv.ParseFloat(fmt.Sprint(v), 64)
+		//	if err != nil {
+		//		log.Errorln(err)
+		//		total--
+		//		continue
+		//	}
+		//
+		//	if pointValue > p.LowerLimit && pointValue < p.UpperLimit {
+		//		ok++
+		//	}
+		//}
 
 		var point model.Point
 		copier.Copy(&point, &p)
-
-		list = append(list, &model.PointYield{
-			Point: &point,
-			Ok:    ok,
-			Total: total,
-		})
+		outs = append(outs, &point)
 	}
 
 	return &model.PointListWithYieldResponse{
 		Total: total,
-		List:  list,
+		List:  outs,
 	}, nil
 }
 

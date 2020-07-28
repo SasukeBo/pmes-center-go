@@ -38,7 +38,7 @@ type Query {
     "尺寸不良率排行"
     sizeUnYieldTop(groupInput: GraphInput!, versionID: Int): EchartsResult!
     "获取检测尺寸良率"
-    pointListWithYield(materialID: Int!, versionID: Int, limit: Int!, page: Int!): PointListWithYieldResponse!
+    pointList(materialID: Int!, versionID: Int, search: String, limit: Int!, page: Int!): PointListWithYieldResponse!
     "尺寸正态分布"
     sizeNormalDistribution(id: Int!, duration: [Time]!, filters: Map!): PointResult!
     "分组分析尺寸，返回图表渲染所需的数据"

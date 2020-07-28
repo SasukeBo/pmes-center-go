@@ -65,8 +65,8 @@ type MaterialsWrap struct {
 }
 
 type PointListWithYieldResponse struct {
-	Total int           `json:"total"`
-	List  []*PointYield `json:"list"`
+	Total int      `json:"total"`
+	List  []*Point `json:"list"`
 }
 
 type PointResult struct {
@@ -81,12 +81,6 @@ type PointResult struct {
 	Min     float64                `json:"min"`
 	Dataset map[string]interface{} `json:"dataset"`
 	Point   *Point                 `json:"point"`
-}
-
-type PointYield struct {
-	Point *Point `json:"point"`
-	Ok    int    `json:"ok"`
-	Total int    `json:"total"`
 }
 
 type ProductAttribute struct {
