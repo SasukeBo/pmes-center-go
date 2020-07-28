@@ -26,6 +26,15 @@ func (mv *MaterialVersion) Get(id uint) *errormap.Error {
 	return nil
 }
 
+func (mv *MaterialVersion) GetTemplate() (*DecodeTemplate, error) {
+	var template DecodeTemplate
+	if err := Model(DecodeTemplate{}).Where("material_version_id = ?", mv.ID).Find(&template).Error; err != nil {
+		return nil, err
+	}
+
+	return &template, nil
+}
+
 func (mv *MaterialVersion) UpdateWithRecord(record *ImportRecord) error {
 	if mv == nil {
 		return errors.New("cannot update <nil> version")
