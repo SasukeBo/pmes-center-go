@@ -76,8 +76,8 @@ func (r *queryResolver) SizeUnYieldTop(ctx context.Context, groupInput model.Gra
 	return logic.SizeUnYieldTop(ctx, groupInput, versionID)
 }
 
-func (r *queryResolver) PointListWithYield(ctx context.Context, materialID int, versionID *int, limit int, page int) (*model.PointListWithYieldResponse, error) {
-	return logic.PointListWithYield(ctx, materialID, versionID, limit, page)
+func (r *queryResolver) PointList(ctx context.Context, materialID int, versionID *int, search *string, limit int, page int) (*model.PointListWithYieldResponse, error) {
+	return logic.PointList(ctx, materialID, versionID, search, limit, page)
 }
 
 func (r *queryResolver) SizeNormalDistribution(ctx context.Context, id int, duration []*time.Time, filters map[string]interface{}) (*model.PointResult, error) {

@@ -1,12 +1,6 @@
 type PointListWithYieldResponse {
     total: Int!
-    list: [PointYield]!
-}
-
-type PointYield {
-    point: Point!
-    ok: Int!
-    total: Int!
+    list: [Point]!
 }
 
 type Point {

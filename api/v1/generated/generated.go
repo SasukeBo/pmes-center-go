@@ -120,12 +120,6 @@ type ComplexityRoot struct {
 		Total   func(childComplexity int) int
 	}
 
-	PointYield struct {
-		Ok    func(childComplexity int) int
-		Point func(childComplexity int) int
-		Total func(childComplexity int) int
-	}
-
 	ProductAttribute struct {
 		Label  func(childComplexity int) int
 		Prefix func(childComplexity int) int
@@ -148,7 +142,7 @@ type ComplexityRoot struct {
 		MaterialYieldTop       func(childComplexity int, duration []*time.Time, limit int) int
 		Materials              func(childComplexity int, search *string, page int, limit int) int
 		Point                  func(childComplexity int, id int) int
-		PointListWithYield     func(childComplexity int, materialID int, versionID *int, limit int, page int) int
+		PointList              func(childComplexity int, materialID int, versionID *int, search *string, limit int, page int) int
 		ProductAttributes      func(childComplexity int, materialID int, versionID *int) int
 		SizeNormalDistribution func(childComplexity int, id int, duration []*time.Time, filters map[string]interface{}) int
 		SizeUnYieldTop         func(childComplexity int, groupInput model.GraphInput, versionID *int) int
@@ -186,7 +180,7 @@ type QueryResolver interface {
 	GroupAnalyzeDevice(ctx context.Context, analyzeInput model.GraphInput) (*model.EchartsResult, error)
 	Point(ctx context.Context, id int) (*model.Point, error)
 	SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID *int) (*model.EchartsResult, error)
-	PointListWithYield(ctx context.Context, materialID int, versionID *int, limit int, page int) (*model.PointListWithYieldResponse, error)
+	PointList(ctx context.Context, materialID int, versionID *int, search *string, limit int, page int) (*model.PointListWithYieldResponse, error)
 	SizeNormalDistribution(ctx context.Context, id int, duration []*time.Time, filters map[string]interface{}) (*model.PointResult, error)
 	GroupAnalyzePoint(ctx context.Context, analyzeInput model.GraphInput) (*model.EchartsResult, error)
 }
@@ -521,27 +515,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PointResult.Total(childComplexity), true
 
-	case "PointYield.ok":
-		if e.complexity.PointYield.Ok == nil {
-			break
-		}
-
-		return e.complexity.PointYield.Ok(childComplexity), true
-
-	case "PointYield.point":
-		if e.complexity.PointYield.Point == nil {
-			break
-		}
-
-		return e.complexity.PointYield.Point(childComplexity), true
-
-	case "PointYield.total":
-		if e.complexity.PointYield.Total == nil {
-			break
-		}
-
-		return e.complexity.PointYield.Total(childComplexity), true
-
 	case "ProductAttribute.label":
 		if e.complexity.ProductAttribute.Label == nil {
 			break
@@ -743,17 +716,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Point(childComplexity, args["id"].(int)), true
 
-	case "Query.pointListWithYield":
-		if e.complexity.Query.PointListWithYield == nil {
+	case "Query.pointList":
+		if e.complexity.Query.PointList == nil {
 			break
 		}
 
-		args, err := ec.field_Query_pointListWithYield_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_pointList_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.PointListWithYield(childComplexity, args["materialID"].(int), args["versionID"].(*int), args["limit"].(int), args["page"].(int)), true
+		return e.complexity.Query.PointList(childComplexity, args["materialID"].(int), args["versionID"].(*int), args["search"].(*string), args["limit"].(int), args["page"].(int)), true
 
 	case "Query.productAttributes":
 		if e.complexity.Query.ProductAttributes == nil {
@@ -957,13 +930,7 @@ type ProductAttribute {
 `, BuiltIn: false},
 	&ast.Source{Name: "schema/point.graphql", Input: `type PointListWithYieldResponse {
     total: Int!
-    list: [PointYield]!
-}
-
-type PointYield {
-    point: Point!
-    ok: Int!
-    total: Int!
+    list: [Point]!
 }
 
 type Point {
@@ -1029,7 +996,7 @@ type PointResult {
     "尺寸不良率排行"
     sizeUnYieldTop(groupInput: GraphInput!, versionID: Int): EchartsResult!
     "获取检测尺寸良率"
-    pointListWithYield(materialID: Int!, versionID: Int, limit: Int!, page: Int!): PointListWithYieldResponse!
+    pointList(materialID: Int!, versionID: Int, search: String, limit: Int!, page: Int!): PointListWithYieldResponse!
     "尺寸正态分布"
     sizeNormalDistribution(id: Int!, duration: [Time]!, filters: Map!): PointResult!
     "分组分析尺寸，返回图表渲染所需的数据"
@@ -1371,7 +1338,7 @@ func (ec *executionContext) field_Query_materials_args(ctx context.Context, rawA
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_pointListWithYield_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_pointList_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
@@ -1390,22 +1357,30 @@ func (ec *executionContext) field_Query_pointListWithYield_args(ctx context.Cont
 		}
 	}
 	args["versionID"] = arg1
-	var arg2 int
-	if tmp, ok := rawArgs["limit"]; ok {
-		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+	var arg2 *string
+	if tmp, ok := rawArgs["search"]; ok {
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["limit"] = arg2
+	args["search"] = arg2
 	var arg3 int
-	if tmp, ok := rawArgs["page"]; ok {
+	if tmp, ok := rawArgs["limit"]; ok {
 		arg3, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["page"] = arg3
+	args["limit"] = arg3
+	var arg4 int
+	if tmp, ok := rawArgs["page"]; ok {
+		arg4, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg4
 	return args, nil
 }
 
@@ -2684,9 +2659,9 @@ func (ec *executionContext) _PointListWithYieldResponse_list(ctx context.Context
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.PointYield)
+	res := resTmp.([]*model.Point)
 	fc.Result = res
-	return ec.marshalNPointYield2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointYield(ctx, field.Selections, res)
+	return ec.marshalNPoint2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PointResult_total(ctx context.Context, field graphql.CollectedField, obj *model.PointResult) (ret graphql.Marshaler) {
@@ -3061,108 +3036,6 @@ func (ec *executionContext) _PointResult_point(ctx context.Context, field graphq
 	res := resTmp.(*model.Point)
 	fc.Result = res
 	return ec.marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PointYield_point(ctx context.Context, field graphql.CollectedField, obj *model.PointYield) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PointYield",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Point, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Point)
-	fc.Result = res
-	return ec.marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PointYield_ok(ctx context.Context, field graphql.CollectedField, obj *model.PointYield) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PointYield",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Ok, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PointYield_total(ctx context.Context, field graphql.CollectedField, obj *model.PointYield) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "PointYield",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Total, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProductAttribute_prefix(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttribute) (ret graphql.Marshaler) {
@@ -3923,7 +3796,7 @@ func (ec *executionContext) _Query_sizeUnYieldTop(ctx context.Context, field gra
 	return ec.marshalNEchartsResult2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐEchartsResult(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_pointListWithYield(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_pointList(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3939,7 +3812,7 @@ func (ec *executionContext) _Query_pointListWithYield(ctx context.Context, field
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_pointListWithYield_args(ctx, rawArgs)
+	args, err := ec.field_Query_pointList_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -3947,7 +3820,7 @@ func (ec *executionContext) _Query_pointListWithYield(ctx context.Context, field
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().PointListWithYield(rctx, args["materialID"].(int), args["versionID"].(*int), args["limit"].(int), args["page"].(int))
+		return ec.resolvers.Query().PointList(rctx, args["materialID"].(int), args["versionID"].(*int), args["search"].(*string), args["limit"].(int), args["page"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5925,43 +5798,6 @@ func (ec *executionContext) _PointResult(ctx context.Context, sel ast.SelectionS
 	return out
 }
 
-var pointYieldImplementors = []string{"PointYield"}
-
-func (ec *executionContext) _PointYield(ctx context.Context, sel ast.SelectionSet, obj *model.PointYield) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, pointYieldImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PointYield")
-		case "point":
-			out.Values[i] = ec._PointYield_point(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "ok":
-			out.Values[i] = ec._PointYield_ok(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "total":
-			out.Values[i] = ec._PointYield_total(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var productAttributeImplementors = []string{"ProductAttribute"}
 
 func (ec *executionContext) _ProductAttribute(ctx context.Context, sel ast.SelectionSet, obj *model.ProductAttribute) graphql.Marshaler {
@@ -6238,7 +6074,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "pointListWithYield":
+		case "pointList":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -6246,7 +6082,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_pointListWithYield(ctx, field)
+				res = ec._Query_pointList(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -6901,6 +6737,43 @@ func (ec *executionContext) marshalNPoint2githubᚗcomᚋSasukeBoᚋpmesᚑdata�
 	return ec._Point(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNPoint2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx context.Context, sel ast.SelectionSet, v []*model.Point) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOPoint2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx context.Context, sel ast.SelectionSet, v *model.Point) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -6937,43 +6810,6 @@ func (ec *executionContext) marshalNPointResult2ᚖgithubᚗcomᚋSasukeBoᚋpme
 		return graphql.Null
 	}
 	return ec._PointResult(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNPointYield2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointYield(ctx context.Context, sel ast.SelectionSet, v []*model.PointYield) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOPointYield2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointYield(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
 }
 
 func (ec *executionContext) marshalNProductAttribute2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx context.Context, sel ast.SelectionSet, v []*model.ProductAttribute) graphql.Marshaler {
@@ -7473,15 +7309,15 @@ func (ec *executionContext) marshalOMaterialVersion2ᚖgithubᚗcomᚋSasukeBo�
 	return ec._MaterialVersion(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOPointYield2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointYield(ctx context.Context, sel ast.SelectionSet, v model.PointYield) graphql.Marshaler {
-	return ec._PointYield(ctx, sel, &v)
+func (ec *executionContext) marshalOPoint2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx context.Context, sel ast.SelectionSet, v model.Point) graphql.Marshaler {
+	return ec._Point(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOPointYield2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPointYield(ctx context.Context, sel ast.SelectionSet, v *model.PointYield) graphql.Marshaler {
+func (ec *executionContext) marshalOPoint2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx context.Context, sel ast.SelectionSet, v *model.Point) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._PointYield(ctx, sel, v)
+	return ec._Point(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOProductAttribute2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐProductAttribute(ctx context.Context, sel ast.SelectionSet, v model.ProductAttribute) graphql.Marshaler {
