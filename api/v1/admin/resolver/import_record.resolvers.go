@@ -41,8 +41,8 @@ func (r *importRecordResolver) User(ctx context.Context, obj *model.ImportRecord
 	return logic.LoadUser(ctx, obj.UserID), nil
 }
 
-func (r *importRecordResolver) DecodeTemplate(ctx context.Context, obj *model.ImportRecord) (*model.DecodeTemplate, error) {
-	return logic.LoadDecodeTemplate(ctx, obj.DecodeTemplateID), nil
+func (r *importRecordResolver) MaterialVersion(ctx context.Context, obj *model.ImportRecord) (*model.MaterialVersion, error) {
+	return logic.LoadMaterialVersion(ctx, obj.MaterialVersionID), nil
 }
 
 // ImportRecord returns generated.ImportRecordResolver implementation.

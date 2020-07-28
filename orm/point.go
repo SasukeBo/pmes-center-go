@@ -12,12 +12,14 @@ import (
 
 // Point 点位
 type Point struct {
-	ID         uint   `gorm:"primary_key;column:id"`
-	Name       string `gorm:"unique_index:uidx_name_material_id;not null"`
-	MaterialID uint   `gorm:"unique_index:uidx_name_material_id;not null"`
-	UpperLimit float64
-	LowerLimit float64
-	Nominal    float64
+	ID                uint   `gorm:"primary_key;column:id"`
+	Name              string `gorm:"not null"`
+	MaterialID        uint   `gorm:"not null"`
+	MaterialVersionID uint   `gorm:"not null"`
+	Index             int    `gorm:"not null"`
+	UpperLimit        float64
+	LowerLimit        float64
+	Nominal           float64
 }
 
 // NotValid 校验数据有效性

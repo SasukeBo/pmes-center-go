@@ -1,28 +1,26 @@
 type DecodeTemplate {
     id: Int!
-    name: String!
-    material: Material!
-    user: User!
-    description: String!
+    material: Material
+    materialVersion: MaterialVersion
+    user: User! # TODO: deprecated
     dataRowIndex: Int!
     createdAtColumnIndex: String!
     productColumns: [ProductColumn]!
-    pointColumns: Map!
-    default: Boolean!
     createdAt: Time!
     updatedAt: Time!
 }
 
 input DecodeTemplateInput {
     id: Int
-    name: String!
-    materialID: Int!
-    description: String
     dataRowIndex: Int!
     createdAtColumnIndex: String!
     productColumns: [ProductColumnInput]!
-    pointColumns: Map!
-    default: Boolean!
+    pointColumns: [PointColumnInput]!
+}
+
+input PointColumnInput {
+    id: Int!
+    index: String!
 }
 
 input ProductColumnInput {

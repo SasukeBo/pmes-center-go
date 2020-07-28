@@ -13,13 +13,19 @@ type Mutation {
     "拉取数据"
     materialFetch(id: Int!): ResponseStatus!
 
+    # 料号版本
+    "新建料号版本"
+    createMaterialVersion(input: MaterialVersionInput!): ResponseStatus!
+    "删除料号版本"
+    deleteMaterialVersion(id: Int!): ResponseStatus!
+    "更新料号版本"
+    updateMaterialVersion(id: Int!, input: MaterialVersionUpdateInput!): ResponseStatus!
+    "变更当前料号版本"
+    changeMaterialVersionActive(id: Int!, active: Boolean!): ResponseStatus!
+
     # 解析模板
     "保存解析模板"
-    saveDecodeTemplate(input: DecodeTemplateInput!): DecodeTemplate!
-    "删除解析模板"
-    deleteDecodeTemplate(id: Int!): ResponseStatus!
-    "变更默认解析模板"
-    changeDefaultTemplate(id: Int!, isDefault: Boolean!): ResponseStatus!
+    saveDecodeTemplate(input: DecodeTemplateInput!): ResponseStatus!
 
     # 检测项
     "解析导入的检测项，非创建"
@@ -39,7 +45,7 @@ type Mutation {
     "批量打开或关闭屏蔽导入"
     toggleBlockImports(ids: [Int!]!, block: Boolean!): ResponseStatus!
     "导入数据"
-    importData(materialID: Int!, deviceID: Int!, decodeTemplateID: Int!, fileTokens: [String!]!): ResponseStatus!
+    importData(materialID: Int!, deviceID: Int!, fileTokens: [String!]!): ResponseStatus!
 
     # 用户
     "新增用户"

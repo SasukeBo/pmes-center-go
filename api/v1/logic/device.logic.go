@@ -28,9 +28,20 @@ func Devices(ctx context.Context, materialID int) ([]*model.Device, error) {
 	return outs, nil
 }
 
-func AnalyzeDevices(ctx context.Context, materialID int) ([]*model.DeviceResult, error) {
-	var devices []orm.Device
+func AnalyzeDevices(ctx context.Context, materialID int, versionID *int) ([]*model.DeviceResult, error) {
+	var version orm.MaterialVersion
+	if versionID != nil {
+		if err := version.Get(uint(*versionID)); err != nil {
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material_version")
+		}
+	} else {
+		err := orm.Model(&orm.MaterialVersion{}).Where("material_id = ? AND active = ?", materialID, true).Find(&version).Error
+		if err != nil {
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material_version")
+		}
+	}
 
+	var devices []orm.Device
 	if err := orm.DB.Model(&orm.Device{}).Where("material_id = ?", materialID).Find(&devices).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "device")
 	}
@@ -45,7 +56,8 @@ func AnalyzeDevices(ctx context.Context, materialID int) ([]*model.DeviceResult,
 		}
 		query := orm.Model(&orm.Product{}).Select("COUNT(products.id), products.qualified")
 		query = query.Joins("JOIN import_records ON products.import_record_id = import_records.id")
-		query = query.Where("products.device_id = ?", d.ID).Where("import_records.blocked = ?", false)
+		query = query.Where("products.device_id = ? AND import_records.blocked = ?", d.ID, false)
+		query = query.Where("products.material_version_id = ?", version.ID)
 		rows, err := query.Group("products.qualified").Rows()
 		if err != nil {
 			outs = append(outs, &out)
@@ -115,7 +127,7 @@ func AnalyzeDevice(ctx context.Context, searchInput model.Search) (*model.Device
 }
 
 func GroupAnalyzeDevice(ctx context.Context, analyzeInput model.GraphInput) (*model.EchartsResult, error) {
-	return groupAnalyze(ctx, analyzeInput, "device")
+	return groupAnalyze(ctx, analyzeInput, "device", nil)
 }
 
 func Device(ctx context.Context, id int) (*model.Device, error) {

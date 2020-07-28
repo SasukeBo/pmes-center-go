@@ -36,18 +36,27 @@ type GraphInput struct {
 }
 
 type Material struct {
-	ID            int    `json:"id"`
-	Name          string `json:"name"`
-	CustomerCode  string `json:"customerCode"`
-	ProjectRemark string `json:"projectRemark"`
-	Ok            int    `json:"ok"`
-	Ng            int    `json:"ng"`
+	ID            int     `json:"id"`
+	Name          string  `json:"name"`
+	YieldScore    float64 `json:"yieldScore"`
+	CustomerCode  string  `json:"customerCode"`
+	ProjectRemark string  `json:"projectRemark"`
+	Ok            int     `json:"ok"`
+	Ng            int     `json:"ng"`
 }
 
 type MaterialResult struct {
 	Material *Material `json:"material"`
 	Ok       int       `json:"ok"`
 	Ng       int       `json:"ng"`
+}
+
+type MaterialVersion struct {
+	ID          int     `json:"id"`
+	Version     string  `json:"version"`
+	Total       int     `json:"total"`
+	Yield       float64 `json:"yield"`
+	Description string  `json:"description"`
 }
 
 type MaterialsWrap struct {

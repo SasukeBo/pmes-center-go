@@ -28,33 +28,22 @@ func LoadDecodeTemplate(ctx context.Context, templateID uint) *model.DecodeTempl
 	return &out
 }
 
-func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*model.DecodeTemplate, error) {
+func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	tx := orm.Begin()
 	var template orm.DecodeTemplate
 	if input.ID != nil {
 		if err := template.Get(uint(*input.ID)); err != nil {
-			return nil, errormap.SendGQLError(ctx, err.ErrorCode, err, "decode_template")
+			return model.ResponseStatusError, errormap.SendGQLError(ctx, err.ErrorCode, err, "decode_template")
 		}
 	}
 
-	template.Name = input.Name
-	if template.MaterialID == 0 { // 仅创建时赋值
-		template.MaterialID = uint(input.MaterialID)
-	}
-	if template.UserID == 0 { // 仅创建时赋值
-		template.UserID = user.ID
-	}
-	if input.Description != nil {
-		template.Description = *input.Description
-	}
 	template.DataRowIndex = input.DataRowIndex
 	template.CreatedAtColumnIndex = parseIndexFromColumnCode(input.CreatedAtColumnIndex)
-	log.Warn("parse createdAtColumnIndex from %v to %v", input.CreatedAtColumnIndex, template.CreatedAtColumnIndex)
 
 	productColumns := make(types.Map)
 	for _, iColumn := range input.ProductColumns {
@@ -66,45 +55,37 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*
 		productColumns[iColumn.Token] = column
 	}
 	template.ProductColumns = productColumns
-	pointColumns := make(types.Map)
 
-	for k, v := range input.PointColumns {
-		if code, ok := v.(string); ok {
-			pointColumns[k] = parseIndexFromColumnCode(code)
-		}
-	}
-
-	template.PointColumns = pointColumns
-	template.Default = input.Default
-	if template.Default {
-		if err := tx.Model(&orm.DecodeTemplate{}).Where("material_id = ? AND decode_templates.default = ?", input.MaterialID, true).Update("default", false).Error; err != nil {
+	fmt.Println("-------------------", input.PointColumns[0])
+	for _, v := range input.PointColumns {
+		var point orm.Point
+		if err := point.Get(uint(v.ID)); err != nil {
 			tx.Rollback()
-			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeDecodeTemplateSetDefaultFailed, err)
+			return model.ResponseStatusError, errormap.SendGQLError(ctx, err.GetCode(), err, "point")
+		}
+		point.Index = parseIndexFromColumnCode(v.Index)
+		if err := tx.Save(&point).Error; err != nil {
+			tx.Rollback()
+			return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "point")
 		}
 	}
 
 	if err := tx.Save(&template).Error; err != nil {
 		tx.Rollback()
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "decode_template")
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "decode_template")
 	}
 	var freshTemplate orm.DecodeTemplate
 	if err := tx.Model(&freshTemplate).Where("id = ?", template.ID).First(&freshTemplate).Error; err != nil {
 		tx.Rollback()
 		if err == gorm.ErrRecordNotFound {
-			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeObjectNotFound, err, "decode_template")
+			return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeObjectNotFound, err, "decode_template")
 		}
 
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "decode_template")
-	}
-
-	out, err := convertDecodeTemplateOutput(&freshTemplate)
-	if err != nil {
-		tx.Rollback()
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "decode_template")
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "decode_template")
 	}
 
 	tx.Commit()
-	return out, nil
+	return model.ResponseStatusOk, nil
 }
 
 func ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error) {
@@ -169,15 +150,6 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 		oProductColumns = append(oProductColumns, &oColumn)
 	}
 	out.ProductColumns = oProductColumns
-
-	oPointColumns := make(map[string]interface{})
-	for k, v := range template.PointColumns {
-		if idx, ok := v.(float64); ok {
-			oPointColumns[k] = parseColumnCodeFromIndex(int(idx))
-		}
-	}
-
-	out.PointColumns = oPointColumns
 	return &out, nil
 }
 
@@ -190,10 +162,6 @@ func DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, er
 	var template orm.DecodeTemplate
 	if err := template.Get(uint(id)); err != nil {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, err.ErrorCode, err, "decode_template")
-	}
-
-	if template.Default {
-		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeDecodeTemplateDefaultDeleteProtect, nil)
 	}
 
 	if err := orm.Delete(&template).Error; err != nil {
@@ -311,4 +279,18 @@ func genDefaultProductColumns(template *orm.DecodeTemplate) error {
 
 	template.ProductColumns = productColumns
 	return nil
+}
+
+func DecodeTemplateWithVersionID(ctx context.Context, id int) (*model.DecodeTemplate, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	var template orm.DecodeTemplate
+	if err := template.GetByVersionID(uint(id)); err != nil {
+		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "decode_template")
+	}
+
+	return convertDecodeTemplateOutput(&template)
 }

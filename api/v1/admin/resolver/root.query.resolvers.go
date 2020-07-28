@@ -27,12 +27,16 @@ func (r *queryResolver) Material(ctx context.Context, id int) (*model.Material, 
 	return logic.Material(ctx, id)
 }
 
-func (r *queryResolver) ListMaterialPoints(ctx context.Context, materialID int) ([]*model.Point, error) {
-	return logic.ListMaterialPoints(ctx, materialID)
+func (r *queryResolver) MaterialVersions(ctx context.Context, id int) ([]*model.MaterialVersion, error) {
+	return logic.MaterialVersions(ctx, id)
 }
 
-func (r *queryResolver) ImportRecords(ctx context.Context, materialID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error) {
-	return logic.ImportRecords(ctx, materialID, deviceID, page, limit, search)
+func (r *queryResolver) ListMaterialPoints(ctx context.Context, materialVersionID int) ([]*model.Point, error) {
+	return logic.ListMaterialPoints(ctx, materialVersionID)
+}
+
+func (r *queryResolver) ImportRecords(ctx context.Context, materialVersionID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error) {
+	return logic.ImportRecords(ctx, materialVersionID, deviceID, page, limit, search)
 }
 
 func (r *queryResolver) MyImportRecords(ctx context.Context, page int, limit int) (*model.ImportRecordsWrap, error) {
@@ -45,6 +49,10 @@ func (r *queryResolver) ImportStatus(ctx context.Context, id int) (*model.Import
 
 func (r *queryResolver) ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error) {
 	return logic.ListDecodeTemplate(ctx, materialID)
+}
+
+func (r *queryResolver) DecodeTemplateWithVersionID(ctx context.Context, id int) (*model.DecodeTemplate, error) {
+	return logic.DecodeTemplateWithVersionID(ctx, id)
 }
 
 func (r *queryResolver) ListDevices(ctx context.Context, pattern *string, materialID *int, page int, limit int) (*model.DeviceWrap, error) {

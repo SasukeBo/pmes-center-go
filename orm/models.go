@@ -75,8 +75,10 @@ func setupRootUser() {
 	}
 }
 
-func createIndex() {
-	DB.Model(&Material{}).AddUniqueIndex("uidx_deleted_at_material_name", "deleted_at", "name")
+func setupIndex() {
+	DB.Model(&Material{}).AddUniqueIndex("unique_idx_material_deleted_at_name", "deleted_at", "name")
+	DB.Model(&MaterialVersion{}).AddUniqueIndex("unique_idx_material_version_version_material_id", "deleted_at", "material_id", "version")
+	DB.Model(&Point{}).AddUniqueIndex("unique_idx_point_name_material_id_version", "material_id", "material_version_id", "name")
 }
 
 func init() {
@@ -112,6 +114,7 @@ func init() {
 		&Device{},
 		&ImportRecord{},
 		&Material{},
+		&MaterialVersion{},
 		&Point{},
 		&Product{},
 		&SystemConfig{},
@@ -123,7 +126,6 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
 	}
-	createIndex()
 
 	if env != "test" && env != "TEST" {
 		tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users", "files"}
@@ -133,4 +135,5 @@ func init() {
 	}
 	setupDefaultConfig() // Test env need system config
 	DB.LogMode(true)
+	setupIndex()
 }

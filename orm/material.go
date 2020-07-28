@@ -8,7 +8,8 @@ import (
 // Material 材料
 type Material struct {
 	gorm.Model
-	Name          string `gorm:"not null"`
+	Name          string  `gorm:"not null"`
+	YieldScore    float64 // 良率百分比目标线
 	CustomerCode  string
 	ProjectRemark string
 }
@@ -29,8 +30,25 @@ func (m *Material) Get(id uint) *errormap.Error {
 	return nil
 }
 
-func (m *Material) GetDefaultTemplate() (*DecodeTemplate, error) {
+func (m *Material) GetCurrentVersion() (*MaterialVersion, error) {
+	var version MaterialVersion
+	if err := Model(&MaterialVersion{}).Where("material_id = ? AND material_versions.active = true", m.ID).First(&version).Error; err != nil {
+		return nil, err
+	}
+
+	return &version, nil
+}
+
+func (m *Material) GetCurrentVersionTemplate() (*DecodeTemplate, error) {
+	version, err := m.GetCurrentVersion()
+	if err != nil {
+		return nil, err
+	}
+
 	var template DecodeTemplate
-	err := DB.Model(&template).Where("material_id = ? AND `decode_templates`.`default` = ?", m.ID, true).First(&template).Error
-	return &template, err
+	if err := template.GetByVersionID(version.ID); err != nil {
+		return nil, err
+	}
+
+	return &template, nil
 }

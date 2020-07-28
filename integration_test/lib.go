@@ -114,6 +114,7 @@ func tearDown() {
 		"devices",
 		"import_records",
 		"materials",
+		"material_versions",
 		"points",
 		"products",
 		"system_configs",

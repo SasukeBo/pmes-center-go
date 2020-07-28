@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
@@ -27,16 +28,24 @@ func (r *mutationResolver) MaterialFetch(ctx context.Context, id int) (model.Res
 	return logic.MaterialFetch(ctx, id)
 }
 
-func (r *mutationResolver) SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (*model.DecodeTemplate, error) {
+func (r *mutationResolver) CreateMaterialVersion(ctx context.Context, input model.MaterialVersionInput) (model.ResponseStatus, error) {
+	return logic.CreateMaterialVersion(ctx, input)
+}
+
+func (r *mutationResolver) DeleteMaterialVersion(ctx context.Context, id int) (model.ResponseStatus, error) {
+	return logic.DeleteMaterialVersion(ctx, id)
+}
+
+func (r *mutationResolver) UpdateMaterialVersion(ctx context.Context, id int, input model.MaterialVersionUpdateInput) (model.ResponseStatus, error) {
+	return logic.UpdateMaterialVersion(ctx, id, input)
+}
+
+func (r *mutationResolver) ChangeMaterialVersionActive(ctx context.Context, id int, active bool) (model.ResponseStatus, error) {
+	return logic.ChangeMaterialVersionActive(ctx, id, active)
+}
+
+func (r *mutationResolver) SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error) {
 	return logic.SaveDecodeTemplate(ctx, input)
-}
-
-func (r *mutationResolver) DeleteDecodeTemplate(ctx context.Context, id int) (model.ResponseStatus, error) {
-	return logic.DeleteDecodeTemplate(ctx, id)
-}
-
-func (r *mutationResolver) ChangeDefaultTemplate(ctx context.Context, id int, isDefault bool) (model.ResponseStatus, error) {
-	return logic.ChangeDefaultTemplate(ctx, id, isDefault)
 }
 
 func (r *mutationResolver) ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error) {
@@ -63,8 +72,8 @@ func (r *mutationResolver) ToggleBlockImports(ctx context.Context, ids []int, bl
 	return logic.ToggleBlockImports(ctx, ids, block)
 }
 
-func (r *mutationResolver) ImportData(ctx context.Context, materialID int, deviceID int, decodeTemplateID int, fileTokens []string) (model.ResponseStatus, error) {
-	return logic.ImportData(ctx, materialID, deviceID, decodeTemplateID, fileTokens)
+func (r *mutationResolver) ImportData(ctx context.Context, materialID int, deviceID int, fileTokens []string) (model.ResponseStatus, error) {
+	return logic.ImportData(ctx, materialID, deviceID, fileTokens)
 }
 
 func (r *mutationResolver) AddUser(ctx context.Context, input model.AddUserInput) (model.ResponseStatus, error) {
