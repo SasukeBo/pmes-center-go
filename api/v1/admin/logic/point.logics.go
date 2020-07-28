@@ -43,8 +43,12 @@ func ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point
 	var outs []*model.Point
 	for i := 1; i < len(dimRow.Cells); i++ {
 		var name string
-		var usl, lsl, nominal float64
 		name = dimRow.Cells[i].String()
+		if name == "" { // 过滤空单元格
+			continue
+		}
+
+		var usl, lsl, nominal float64
 		if usl, err = uslRow.Cells[i].Float(); err != nil {
 			usl = 0
 		}
@@ -59,6 +63,7 @@ func ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point
 			UpperLimit: usl,
 			LowerLimit: lsl,
 			Nominal:    nominal,
+			Index:      parseColumnCodeFromIndex(i + 1),
 		}
 		outs = append(outs, &out)
 	}
@@ -93,6 +98,7 @@ func SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCre
 		point.UpperLimit = saveItem.UpperLimit
 		point.LowerLimit = saveItem.LowerLimit
 		point.Nominal = saveItem.Nominal
+		point.Index = parseIndexFromColumnCode(saveItem.Index)
 		if err := tx.Save(&point).Error; err != nil {
 			tx.Rollback()
 			if strings.Contains(err.Error(), "Error 1062") {
@@ -106,14 +112,16 @@ func SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCre
 	return model.ResponseStatusOk, nil
 }
 
-func ListMaterialPoints(ctx context.Context, materialID int) ([]*model.Point, error) {
+func ListMaterialPoints(ctx context.Context, materialVersionID int) ([]*model.Point, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
 	var points []orm.Point
-	if err := orm.Model(&orm.Point{}).Where("material_id = ?", materialID).Find(&points).Error; err != nil {
+	query := orm.Model(&orm.Point{}).Where("material_version_id = ?", materialVersionID)
+	query = query.Order("points.index ASC")
+	if err := query.Find(&points).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material_points")
 	}
 
@@ -123,7 +131,7 @@ func ListMaterialPoints(ctx context.Context, materialID int) ([]*model.Point, er
 		if err := copier.Copy(&out, &point); err != nil {
 			continue
 		}
-
+		out.Index = parseColumnCodeFromIndex(point.Index)
 		outs = append(outs, &out)
 	}
 

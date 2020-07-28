@@ -39,3 +39,9 @@ func TestDevice_GetWithToken(t *testing.T) {
 	Exec("delete from materials where 1 = 1")
 	Exec("delete from devices where 1 = 1")
 }
+
+func TestImportRecord_genKey(t *testing.T) {
+	record := ImportRecord{}
+	key := record.genKey(1)
+	fmt.Println(key)
+}

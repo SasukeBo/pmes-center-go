@@ -1,0 +1,25 @@
+type MaterialVersion {
+    id: Int!
+    version: String!
+    description: String!
+    material: Material!
+    user: User!
+    active: Boolean!
+    createdAt: Time!
+    amount: Int!
+    yield: Float!
+}
+
+input MaterialVersionInput {
+    materialID: Int!
+    version: String!
+    description: String
+    active: Boolean
+    points: [PointCreateInput]!
+}
+
+input MaterialVersionUpdateInput {
+    version: String
+    description: String
+    active: Boolean
+}

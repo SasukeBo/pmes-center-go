@@ -9,6 +9,27 @@ import (
 	"testing"
 )
 
+var decodeTemplateInput = test.Object{
+	"name":                 "test decode template",
+	"materialID":           test.Data.Material.ID,
+	"description":          "test decode template description",
+	"dataRowIndex":         15,
+	"createdAtColumnIndex": "B",
+	"productColumns": []test.Object{
+		{"prefix": "a0", "token": "attr_0", "label": "No.", "index": "A", "type": "Integer"},
+		{"prefix": "a1", "token": "attr_1", "label": "日期", "index": "B", "type": "Datetime"},
+		{"prefix": "a2", "token": "attr_2", "label": "线体号", "index": "C", "type": "String"},
+		{"prefix": "a3", "token": "attr_3", "label": "精度", "index": "D", "type": "Float"},
+	},
+	"pointColumns": test.Object{
+		"FAI_G5": "E",
+		"FAI_G6": "F",
+		"FAI_G7": "G",
+		"FAI_G8": "ABC",
+	},
+	"default": true,
+}
+
 func TestDecodeTemplate(t *testing.T) {
 	tester := test.NewTester(t)
 	test.Login(test.AdminAccount, test.AdminPasswd, false)
@@ -16,26 +37,7 @@ func TestDecodeTemplate(t *testing.T) {
 	// Test create decode_template
 	t.Run("TEST_CREATE_DECODE_TEMPLATE", func(t *testing.T) {
 		ret := tester.API1Admin(saveDecodeTemplateGQL, test.Object{
-			"input": test.Object{
-				"name":                 "test decode template",
-				"materialID":           test.Data.Material.ID,
-				"description":          "test decode template description",
-				"dataRowIndex":         15,
-				"createdAtColumnIndex": "B",
-				"productColumns": []test.Object{
-					{"name": "attr_0", "label": "No.", "index": "A", "type": "Integer"},
-					{"name": "attr_1", "label": "日期", "index": "B", "type": "Datetime"},
-					{"name": "attr_2", "label": "线体号", "index": "C", "type": "String"},
-					{"name": "attr_3", "label": "精度", "index": "D", "type": "Float"},
-				},
-				"pointColumns": test.Object{
-					"FAI_G5": "E",
-					"FAI_G6": "F",
-					"FAI_G7": "G",
-					"FAI_G8": "ABC",
-				},
-				"default": true,
-			},
+			"input": decodeTemplateInput,
 		}).GQLObject().Path("$.data.response").Object()
 		productColumns := ret.Value("productColumns").Array()
 		productColumns.Length().Equal(4)

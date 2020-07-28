@@ -162,7 +162,7 @@ func (xr *XLSXReader) setData(content []byte) error {
 // FetchMaterialData
 // 给定料号，拉取Ftp服务器料号数据
 func FetchMaterialData(material *orm.Material) error {
-	template, err := material.GetDefaultTemplate()
+	template, err := material.GetCurrentVersionTemplate()
 	if err != nil {
 		return errormap.NewOrigin("get default decode template for material(id = %v) failed: %v", material.ID, err)
 	}
@@ -211,7 +211,7 @@ func fetchMaterialData(material orm.Material, paths []string, dt *orm.DecodeTemp
 }
 
 // 直接根据数据库file记录获取数据
-func FetchFileData(user orm.User, material orm.Material, device orm.Device, template orm.DecodeTemplate, tokens []string) error {
+func FetchFileData(user orm.User, material orm.Material, device orm.Device, tokens []string) error {
 	var err error
 	defer func() {
 		errMessage := recover()
@@ -221,24 +221,29 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, temp
 		}
 	}()
 
+	template, err := material.GetCurrentVersionTemplate()
+	if err != nil {
+		return err
+	}
+
 	for _, token := range tokens {
 		var file orm.File
 		if err := file.GetByToken(token); err != nil {
 			log.Error("[FetchFileData] Get file with token=%s failed: %v", token, err)
 			return err
 		}
-		xr := newXLSXReader(&material, &device, &template)
+		xr := newXLSXReader(&material, &device, template)
 		importRecord := &orm.ImportRecord{
-			FileID:           file.ID,
-			FileName:         file.Name,
-			Path:             file.Path,
-			MaterialID:       material.ID,
-			DeviceID:         device.ID,
-			Status:           orm.ImportStatusLoading,
-			ImportType:       orm.ImportRecordTypeUser,
-			UserID:           user.ID,
-			DecodeTemplateID: template.ID,
-			FileSize:         xr.Size,
+			FileID:            file.ID,
+			FileName:          file.Name,
+			Path:              file.Path,
+			MaterialID:        material.ID,
+			DeviceID:          device.ID,
+			Status:            orm.ImportStatusLoading,
+			ImportType:        orm.ImportRecordTypeUser,
+			UserID:            user.ID,
+			MaterialVersionID: template.MaterialVersionID,
+			FileSize:          xr.Size,
 		}
 		if err := orm.Create(importRecord).Error; err != nil {
 			// TODO: add log
@@ -321,8 +326,25 @@ func store(xr *XLSXReader) {
 
 	var time1 = time.Now()
 
+	var versions []orm.MaterialVersion
+	if err := orm.Model(&orm.MaterialVersion{}).Where("material_id = ? AND active = true", xr.Material.ID).Find(&versions).Error; err != nil {
+		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, err)
+		return
+	}
+	if len(versions) == 0 {
+		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, nil)
+		return
+	}
+	if len(versions) > 1 {
+		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotUnique, nil)
+		return
+	}
+
+	var currentVersion = versions[0]
 	var points []orm.Point
-	if err := orm.DB.Model(&orm.Point{}).Where("material_id = ?", xr.Material.ID).Find(&points).Error; err != nil {
+	if err := orm.DB.Model(&orm.Point{}).Where(
+		"material_id = ? AND material_version_id = ?", xr.Material.ID, currentVersion.ID,
+	).Find(&points).Error; err != nil {
 		_ = xr.Record.Failed(errormap.ErrorCodeImportGetPointsFailed, err)
 		return
 	}
@@ -351,9 +373,7 @@ func store(xr *XLSXReader) {
 					now := time.Now()
 					t = &now
 				}
-
 				attribute[name] = *t
-
 			case orm.ProductColumnTypeFloat:
 				fv, err := strconv.ParseFloat(value, 64)
 				if err != nil {
@@ -373,11 +393,7 @@ func store(xr *XLSXReader) {
 
 		pointValues := make(types.Map)
 		for _, v := range points {
-			ii, ok := xr.DecodeTemplate.PointColumns[v.Name]
-			if !ok { // 模板中没有该名称点位的解析配置
-				continue
-			}
-			idx := int(ii.(float64)) - 1
+			idx := v.Index - 1
 			if idx >= len(row) {
 				message := fmt.Sprintf("point(%s) index(%d) out of range with data row length(%d)", v.Name, idx, len(row))
 				_ = xr.Record.Failed(errormap.ErrorCodeImportWithIllegalDecodeTemplate, message)
@@ -410,7 +426,9 @@ func store(xr *XLSXReader) {
 	}
 
 	execInsert(productValueExpands, productValueCount, insertProductsTpl, productValueFieldTpl, xr.Record)
-	// 记录单次导入良率
+
+	/*			记录单次导入良率
+	---------------------------------------------------------------------------------------------------------------- */
 	var yield float64
 	if total := len(xr.DataSet); total == 0 {
 		yield = 0
@@ -419,8 +437,14 @@ func store(xr *XLSXReader) {
 	}
 	_ = xr.Record.Finish(yield)
 
+	/*			记录当前版本的总量与良率
+	---------------------------------------------------------------------------------------------------------------- */
+	if err := currentVersion.UpdateWithRecord(xr.Record); err != nil {
+		log.Error("[store] currentVersion update with record failed: %v", err)
+	}
+
 	var time2 = time.Now()
-	fmt.Printf("___________________________ process duration is %v\n", time2.Sub(time1))
+	fmt.Printf("___________________________ process file [%s] duration is %v\n", xr.Record.FileName, time2.Sub(time1))
 }
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, record *orm.ImportRecord) {

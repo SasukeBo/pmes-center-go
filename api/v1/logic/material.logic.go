@@ -37,7 +37,7 @@ func Materials(ctx context.Context, search *string, page int, limit int) (*model
 			continue
 		}
 
-		ok, ng := countProductQualifiedForMaterial(m.ID)
+		ok, ng := countProductQualifiedForMaterial(&m)
 		out.Ok = ok
 		out.Ng = ng
 		outs = append(outs, &out)
@@ -60,7 +60,7 @@ func Material(ctx context.Context, id int) (*model.Material, error) {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "material")
 	}
 
-	ok, ng := countProductQualifiedForMaterial(material.ID)
+	ok, ng := countProductQualifiedForMaterial(&material)
 	out.Ok = ok
 	out.Ng = ng
 
@@ -72,9 +72,16 @@ type qualifiedResult struct {
 	Total     int64
 }
 
-func countProductQualifiedForMaterial(id uint) (int, int) {
+func countProductQualifiedForMaterial(material *orm.Material) (int, int) {
+	currentVersion, err := material.GetCurrentVersion()
+	if err != nil {
+		return 0, 0
+	}
 	query := orm.Model(&orm.Product{}).Joins("JOIN import_records ON import_records.id = products.import_record_id")
-	query = query.Where("products.material_id = ? AND import_records.blocked = ?", id, false)
+	query = query.Where(
+		"products.material_id = ? AND import_records.blocked = ? AND products.material_version_id = ?",
+		material.ID, false, currentVersion.ID,
+	)
 	query = query.Select("products.qualified, COUNT(products.id) as total")
 	query = query.Group("products.qualified")
 	rows, err := query.Rows()
@@ -103,23 +110,36 @@ func countProductQualifiedForMaterial(id uint) (int, int) {
 	return ok, ng
 }
 
-func AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.MaterialResult, error) {
-	if searchInput.MaterialID == nil {
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeRequestInputMissingFieldError, nil, "id")
-	}
+func AnalyzeMaterial(ctx context.Context, id int, deviceID *int, versionID *int, duration []*time.Time) (*model.Material, error) {
 	var material orm.Material
-	if err := material.Get(uint(*searchInput.MaterialID)); err != nil {
+	if err := material.Get(uint(id)); err != nil {
 		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
+	}
+	var materialVersionID int
+	if versionID == nil {
+		version, err := material.GetCurrentVersion()
+		if err != nil {
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeActiveVersionNotFound, err)
+		}
+		materialVersionID = int(version.ID)
+	} else {
+		materialVersionID = *versionID
 	}
 
 	query := orm.Model(&orm.Product{}).Joins("JOIN import_records ON import_records.id = products.import_record_id")
-	query = query.Where("products.material_id = ? AND import_records.blocked = ?", material.ID, false)
+	query = query.Where(
+		"products.material_id = ? AND import_records.blocked = ? AND products.material_version_id = ?",
+		material.ID, false, materialVersionID,
+	)
 
-	if searchInput.BeginTime != nil {
-		query = query.Where("products.created_at > ?", *searchInput.BeginTime)
+	if len(duration) > 0 {
+		query = query.Where("products.created_at > ?", *duration[0])
 	}
-	if searchInput.EndTime != nil {
-		query = query.Where("products.created_at < ?", *searchInput.EndTime)
+	if len(duration) > 1 {
+		query = query.Where("products.created_at < ?", *duration[1])
+	}
+	if deviceID != nil {
+		query = query.Where("products.device_id = ?", *deviceID)
 	}
 
 	var ok int
@@ -131,17 +151,23 @@ func AnalyzeMaterial(ctx context.Context, searchInput model.Search) (*model.Mate
 	if err := copier.Copy(&out, &material); err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "material")
 	}
-	return &model.MaterialResult{
-		Material: &out,
-		Ok:       ok,
-		Ng:       ng,
-	}, nil
+
+	out.Ok = ok
+	out.Ng = ng
+	return &out, nil
 }
 
 func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error) {
+	// SELECT
 	query := orm.Model(&orm.Product{}).Select("materials.name AS name, COUNT(products.id) AS amount").Group("products.material_id")
-	query = query.Joins("JOIN materials ON products.material_id = materials.id JOIN import_records ON import_records.id = products.import_record_id")
-	query = query.Where("import_records.blocked = ?", false)
+	// JOIN
+	query = query.Joins(`
+	JOIN materials ON products.material_id = materials.id
+	JOIN import_records ON import_records.id = products.import_record_id
+	JOIN material_versions ON products.material_version_id = material_versions.id
+	`)
+	// WHERE
+	query = query.Where("import_records.blocked = ? AND material_versions.active = ? ", false, true)
 
 	if len(duration) > 0 {
 		t := duration[0]
@@ -225,16 +251,36 @@ func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*m
 	}, nil
 }
 
-func GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GraphInput) (*model.EchartsResult, error) {
-	return groupAnalyze(ctx, analyzeInput, "material")
+func GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GraphInput, versionID *int) (*model.EchartsResult, error) {
+	return groupAnalyze(ctx, analyzeInput, "material", versionID)
 }
 
-func ProductAttributes(ctx context.Context, materialID int) ([]*model.ProductAttribute, error) {
-	var template orm.DecodeTemplate
-	if err := template.GetMaterialDefault(uint(materialID)); err != nil {
-		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
+func ProductAttributes(ctx context.Context, materialID int, versionID *int) ([]*model.ProductAttribute, error) {
+	var version *orm.MaterialVersion
+	var err error
+
+	if versionID == nil {
+		var material orm.Material
+		if err := material.Get(uint(materialID)); err != nil {
+			return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
+		}
+
+		version, err = material.GetCurrentVersion()
+		if err != nil {
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeActiveVersionNotFound, err, "material_version")
+		}
+	} else {
+		var v orm.MaterialVersion
+		if err := orm.Model(&orm.MaterialVersion{}).Where("id = ?", *versionID).Find(&v).Error; err != nil {
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material_version")
+		}
+		version = &v
 	}
 
+	template, err := version.GetTemplate()
+	if err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material_decode_template")
+	}
 	var outs []*model.ProductAttribute
 	for _, v := range template.ProductColumns {
 		var out model.ProductAttribute

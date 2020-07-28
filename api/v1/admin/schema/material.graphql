@@ -27,4 +27,3 @@ input MaterialUpdateInput {
     customerCode: String
     projectRemark: String
 }
-

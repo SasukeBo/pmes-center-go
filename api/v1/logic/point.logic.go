@@ -30,10 +30,28 @@ func Point(ctx context.Context, id int) (*model.Point, error) {
 }
 
 // 尺寸不良率排行
-func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput) (*model.EchartsResult, error) {
+func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID *int) (*model.EchartsResult, error) {
+	var material orm.Material
+	if err := material.Get(uint(groupInput.TargetID)); err != nil {
+		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
+	}
+	var version orm.MaterialVersion
+	if versionID != nil {
+		if err := orm.Model(&orm.MaterialVersion{}).Where("id = ?", *versionID).Find(&version).Error; err != nil {
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material_version")
+		}
+	} else {
+		v, err := material.GetCurrentVersion()
+		if err != nil {
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeActiveVersionNotFound, err, "material_version")
+		}
+
+		version = *v
+	}
+
 	query := orm.DB.Model(&orm.Product{}).Where("products.material_id = ?", groupInput.TargetID)
 	query = query.Joins("JOIN import_records ON import_records.id = products.import_record_id")
-	query = query.Where("import_records.blocked = ?", false)
+	query = query.Where("import_records.blocked = ? AND products.material_version_id = ?", false, version.ID)
 
 	// filters
 	if groupInput.Filters != nil {
@@ -137,8 +155,20 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput) (*model.Ec
 	}, nil
 }
 
-func PointListWithYield(ctx context.Context, materialID int, limit int, page int) (*model.PointListWithYieldResponse, error) {
-	sql := orm.Model(&orm.Point{}).Where("material_id = ?", materialID)
+func PointListWithYield(ctx context.Context, materialID int, versionID *int, limit int, page int) (*model.PointListWithYieldResponse, error) {
+	var version orm.MaterialVersion
+	if versionID != nil {
+		if err := version.Get(uint(*versionID)); err != nil {
+			return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material_version")
+		}
+	} else {
+		err := orm.Model(&orm.MaterialVersion{}).Where("material_id = ? AND active = ?", materialID, true).Find(&version).Error
+		if err != nil {
+			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material_version")
+		}
+	}
+
+	sql := orm.Model(&orm.Point{}).Where("material_id = ? AND material_version_id = ?", materialID, version.ID)
 
 	var total int
 	if err := sql.Count(&total).Error; err != nil {
@@ -155,7 +185,7 @@ func PointListWithYield(ctx context.Context, materialID int, limit int, page int
 	now = now.AddDate(0, -1, 0)
 	query := orm.Model(&orm.Product{}).Where("products.material_id = ? AND products.created_at > ?", materialID, now)
 	query = query.Joins("JOIN import_records ON import_records.id = products.import_record_id")
-	query = query.Where("import_records.blocked = ?", false)
+	query = query.Where("import_records.blocked = ? AND products.material_version_id = ?", false, version.ID)
 	if err := query.Find(&products).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
 	}

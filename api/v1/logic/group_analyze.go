@@ -23,7 +23,7 @@ type echartsResult struct {
 	SeriesAmountData map[string][]float64
 }
 
-func groupAnalyze(ctx context.Context, params model.GraphInput, target string) (*model.EchartsResult, error) {
+func groupAnalyze(ctx context.Context, params model.GraphInput, target string, versionID *int) (*model.EchartsResult, error) {
 	query := orm.DB.Model(&orm.Product{})
 	switch target {
 	case "material":
@@ -38,6 +38,14 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string) (
 	// 连接 import_records
 	joins = append(joins, "JOIN import_records ON products.import_record_id = import_records.id")
 	query = query.Where("import_records.blocked = ?", false)
+
+	// 连接 material_version
+	if versionID != nil {
+		query = query.Where("products.material_version_id  = ?", *versionID)
+	} else {
+		joins = append(joins, "JOIN material_versions ON products.material_version_id = material_versions.id")
+		query = query.Where("material_versions.active  = ?", true)
+	}
 
 	// amount
 	selectQueries = append(selectQueries, "COUNT(products.id) as amount")

@@ -14,15 +14,12 @@ import (
 
 type DecodeTemplate struct {
 	gorm.Model
-	Name                 string `gorm:"not null"`
-	MaterialID           uint   `gorm:"not null"`
+	MaterialID           uint `gorm:"not null"`
+	MaterialVersionID    uint `gorm:"not null"` // 料号版本ID
 	UserID               uint
-	Description          string
 	DataRowIndex         int
 	CreatedAtColumnIndex int       `gorm:"not null"`
 	ProductColumns       types.Map `gorm:"type:JSON;not null"`
-	PointColumns         types.Map `gorm:"type:JSON;not null"`
-	Default              bool      `gorm:"default:false"` // 标识是否为默认模板
 }
 
 const decodeTemplateCacheKey = "cache_decode_template_%v_%v"
@@ -56,6 +53,15 @@ func (d *DecodeTemplate) Get(id uint) *errormap.Error {
 	return nil
 }
 
+func (d *DecodeTemplate) GetByVersionID(versionID uint) *errormap.Error {
+	if err := Model(d).Where("material_version_id = ?", versionID).First(d).Error; err != nil {
+		return handleError(err, "material_version_id", versionID)
+	}
+
+	return nil
+}
+
+// TODO: deprecated
 func (d *DecodeTemplate) GetMaterialDefault(materialID uint) *errormap.Error {
 	if err := Model(d).Where("material_id = ? AND decode_templates.default = 1", materialID).First(d).Error; err != nil {
 		return handleError(err, "material_id", materialID)
