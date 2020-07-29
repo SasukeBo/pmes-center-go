@@ -26,6 +26,14 @@ func (mv *MaterialVersion) Get(id uint) *errormap.Error {
 	return nil
 }
 
+func (mv *MaterialVersion) GetActiveWithMaterialID(id uint) *errormap.Error {
+	if err := DB.Model(mv).Where("active = true AND material_id = ?", id).First(mv).Error; err != nil {
+		return handleError(err, "material_id", id)
+	}
+
+	return nil
+}
+
 func (mv *MaterialVersion) GetTemplate() (*DecodeTemplate, error) {
 	var template DecodeTemplate
 	if err := Model(DecodeTemplate{}).Where("material_version_id = ?", mv.ID).Find(&template).Error; err != nil {

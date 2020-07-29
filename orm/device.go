@@ -7,6 +7,7 @@ package orm
 
 import (
 	"fmt"
+	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/google/uuid"
@@ -53,6 +54,7 @@ func (d *Device) AfterSave() error {
 	_ = cache.FlushCacheWithKey(fmt.Sprintf(deviceCacheKey, "token", d.UUID))
 	return nil
 }
+
 // 清除缓存
 
 /*	functions
@@ -64,6 +66,7 @@ func (d *Device) GetWithToken(token string) *errormap.Error {
 		device, ok := cacheValue.(Device)
 		if ok {
 			if err := copier.Copy(d, &device); err == nil {
+				log.Info("get device from cache")
 				return nil
 			}
 		}

@@ -95,7 +95,7 @@ func DeviceProduce() gin.HandlerFunc {
 		}
 
 		var record orm.ImportRecord
-		if err := record.DeviceRealtimeRecord(&device); err != nil {
+		if err := record.GetDeviceRealtimeRecord(&device); err != nil {
 			errormap.SendHttpError(c, errormap.ErrorCodeInternalError, err, "record")
 		}
 
@@ -133,18 +133,19 @@ func DeviceProduce() gin.HandlerFunc {
 		}
 
 		var product = orm.Product{
-			MaterialID:     device.MaterialID,
-			DeviceID:       device.ID,
-			Qualified:      qualified,
-			Attribute:      attribute,
-			PointValues:    pointValues,
-			ImportRecordID: record.ID,
+			MaterialID:        device.MaterialID,
+			DeviceID:          device.ID,
+			Qualified:         qualified,
+			Attribute:         attribute,
+			PointValues:       pointValues,
+			ImportRecordID:    record.ID,
+			MaterialVersionID: record.MaterialVersionID,
 		}
 		if err := orm.Create(&product).Error; err != nil {
 			errormap.SendHttpError(c, errormap.ErrorCodeCreateObjectError, err, "product")
 			return
 		}
-
+		record.Increase(1, 1, qualified)
 		c.JSON(http.StatusOK, "ok")
 	}
 }

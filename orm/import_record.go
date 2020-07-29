@@ -1,7 +1,9 @@
 package orm
 
 import (
+	"errors"
 	"fmt"
+	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/util"
@@ -91,50 +93,87 @@ func (i *ImportRecord) Load() error {
 	return Save(i).Error
 }
 
+func (i *ImportRecord) Increase(tc, fc int, qualified bool) error {
+	if i == nil {
+		return errors.New("cannot increase nil import record")
+	}
+	i.RowCount = i.RowCount + tc
+	ok := float64(i.RowFinishedCount) * i.Yield
+	i.RowFinishedCount = i.RowFinishedCount + fc
+	if qualified {
+		ok = ok + float64(fc)
+		i.Yield = ok / float64(i.RowFinishedCount)
+	}
+	cacheKey := i.genKey(i.DeviceID)
+	if err := cache.Set(cacheKey, *i); err != nil {
+		log.Error("cache import record failed: %v", err)
+	}
+
+	return Save(i).Error
+}
+
 // 获取实时设备的导入记录
 // 生成以当前时间日期为结尾的key，通过key缓存获取数据
 // 当缓存中没有该日期的实时导入记录时，从数据库获取
 // 当数据库中没有该日期的实时导入记录时，创建新纪录
-func (i *ImportRecord) DeviceRealtimeRecord(device *Device) error {
+func (i *ImportRecord) GetDeviceRealtimeRecord(device *Device) error {
 	// 生成key
 	cacheKey := i.genKey(device.ID)
+	log.Info("cacheKey is %s", cacheKey)
 
 	// 获取缓存
 	cacheValue := cache.Get(cacheKey)
 	if cacheValue != nil {
+		log.Info("cacheValue is not nil")
 		record, ok := cacheValue.(ImportRecord)
 		if ok {
 			if err := copier.Copy(i, &record); err == nil {
+				if err := cache.Set(cacheKey, *i); err != nil {
+					log.Error("cache import record failed: %v", err)
+				}
+				log.Info("find record in cache")
 				return nil
 			}
 		}
+		log.Info("cacheValue is not ImportRecord type")
 	}
 
+	// 查询数据库 [当前设备的 实时导入的 当前日期的 正在导入的] 导入记录
 	var query = "device_id = ? AND import_type = ? AND DATE(created_at) = DATE(?) AND import_records.status = ?"
 
-	// 查询数据库 [当前设备的 实时导入的 当前日期的 正在导入的] 导入记录
 	var record ImportRecord
 	if err := Model(&ImportRecord{}).Where(
 		query, device.ID, ImportRecordTypeRealtime, time.Now(), ImportStatusImporting,
 	).Find(&record).Error; err == nil {
 		if err := copier.Copy(i, &record); err == nil {
+			log.Info("find record in db")
+			if err := cache.Set(cacheKey, *i); err != nil {
+				log.Error("cache import record failed: %v", err)
+			}
 			return nil
 		}
 	}
 
-	// 更新当前版本的总数及良率统计
+	// 如果没有找到，更新当前版本的总数及良率统计
 	{
 		var lastRealtimeRecord ImportRecord
 		if err := Model(&ImportRecord{}).Where(
 			query, device.ID, ImportRecordTypeRealtime, time.Now().AddDate(0, 0, -1), ImportStatusImporting,
 		).Find(&lastRealtimeRecord).Error; err == nil {
+			lastRealtimeRecord.Status = ImportStatusFinished
+			_ = Save(&lastRealtimeRecord)
+
 			var version MaterialVersion
 			if err := version.Get(lastRealtimeRecord.MaterialVersionID); err == nil {
 				_ = version.UpdateWithRecord(&lastRealtimeRecord)
 			}
-			lastRealtimeRecord.Status = ImportStatusFinished
-			_ = Save(&lastRealtimeRecord)
 		}
+	}
+
+	// 获取料号的当前版本信息
+	var version MaterialVersion
+	if err := version.GetActiveWithMaterialID(device.MaterialID); err != nil {
+		return err
 	}
 
 	// 创建新记录
@@ -143,10 +182,13 @@ func (i *ImportRecord) DeviceRealtimeRecord(device *Device) error {
 	i.DeviceID = device.ID
 	i.Path = "realtime"
 	i.ImportType = ImportRecordTypeRealtime
+	i.MaterialVersionID = version.ID
 	if err := Create(i).Error; err != nil {
 		return err
 	}
 
-	_ = cache.Set(cacheKey, *i)
+	if err := cache.Set(cacheKey, *i); err != nil {
+		log.Error("cache import record failed: %v", err)
+	}
 	return nil
 }
