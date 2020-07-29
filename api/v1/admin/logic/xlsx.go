@@ -304,13 +304,14 @@ var (
 			qualified,
 			created_at,
 			attribute,
-			point_values
+			point_values,
+			material_version_id
 		)
 		VALUES
 		%s
 	`
-	productValueFieldTpl = `(?,?,?,?,?,?,?)`
-	productValueCount    = 7
+	productValueFieldTpl = `(?,?,?,?,?,?,?,?)`
+	productValueCount    = 8
 )
 
 // store xlsx data into db
@@ -419,6 +420,7 @@ func store(xr *XLSXReader) {
 			createdAt,
 			attribute,
 			pointValues,
+			currentVersion.ID,
 		)
 		if qualified {
 			importOK++
