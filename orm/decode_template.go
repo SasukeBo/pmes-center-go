@@ -18,7 +18,9 @@ type DecodeTemplate struct {
 	MaterialVersionID    uint `gorm:"not null"` // 料号版本ID
 	UserID               uint
 	DataRowIndex         int
-	CreatedAtColumnIndex int       `gorm:"not null"`
+	CreatedAtColumnIndex int       `gorm:"not null"` // 检测时间位置
+	BarCodeIndex         int       // 编码读取位置
+	BarCodeDecodeFuncID  int       `gorm:"column:bar_code_decode_func_id"` // 编码解析函数ID
 	ProductColumns       types.Map `gorm:"type:JSON;not null"`
 }
 
@@ -56,15 +58,6 @@ func (d *DecodeTemplate) Get(id uint) *errormap.Error {
 func (d *DecodeTemplate) GetByVersionID(versionID uint) *errormap.Error {
 	if err := Model(d).Where("material_version_id = ?", versionID).First(d).Error; err != nil {
 		return handleError(err, "material_version_id", versionID)
-	}
-
-	return nil
-}
-
-// TODO: deprecated
-func (d *DecodeTemplate) GetMaterialDefault(materialID uint) *errormap.Error {
-	if err := Model(d).Where("material_id = ? AND decode_templates.default = 1", materialID).First(d).Error; err != nil {
-		return handleError(err, "material_id", materialID)
 	}
 
 	return nil
