@@ -111,12 +111,6 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, v
 		t := params.Duration[1]
 		query = query.Where("products.created_at < ?", *t)
 	}
-	// order by xAxis
-	sort := "ASC"
-	if params.Sort != nil {
-		v := *params.Sort
-		sort = string(v)
-	}
 
 	rows, err := query.Rows()
 	if err != nil {
@@ -141,10 +135,10 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, v
 		}
 		qualifiedResults := scanRows(rows, params.GroupBy)
 
-		return calYieldAnalysisResult(results, qualifiedResults, params.Limit, sort)
+		return calYieldAnalysisResult(results, qualifiedResults, params.Limit, params.Sort)
 	}
 
-	eResult, err := calAmountAnalysisResult(results, params.Limit, sort)
+	eResult, err := calAmountAnalysisResult(results, params.Limit, params.Sort)
 	if err != nil {
 		return nil, err
 	}
@@ -185,9 +179,9 @@ func sortResult(result *echartsResult, isAsc bool) {
 	result.SeriesAmountData["data"] = seriesAmountData
 }
 
-func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, sort string) (*model.EchartsResult, error) {
-	totalAmount, _ := calAmountAnalysisResult(results, nil, "")
-	yieldAmount, _ := calAmountAnalysisResult(qualifiedResults, nil, "")
+func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, sort *model.Sort) (*model.EchartsResult, error) {
+	totalAmount, _ := calAmountAnalysisResult(results, nil, nil)
+	yieldAmount, _ := calAmountAnalysisResult(qualifiedResults, nil, nil)
 
 	for i, item := range totalAmount.XAxisData {
 		var index = findIndex(yieldAmount.XAxisData, item)
@@ -207,8 +201,9 @@ func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, so
 	}
 
 	// sort
-	if _, ok := totalAmount.SeriesData["data"]; ok {
-		sortResult(totalAmount, sort == "ASC")
+	if _, ok := totalAmount.SeriesData["data"]; ok && sort != nil {
+		s := *sort
+		sortResult(totalAmount, s.String() == "ASC")
 	}
 
 	// limit
@@ -250,7 +245,7 @@ func findIndex(list []string, find string) int {
 	return -1
 }
 
-func calAmountAnalysisResult(scanResults []analysis, limit *int, sort string) (*echartsResult, error) {
+func calAmountAnalysisResult(scanResults []analysis, limit *int, sort *model.Sort) (*echartsResult, error) {
 	var xAxisMapData = make(map[string]int)
 	var xAxisData []string
 	var seriesMapData = make(map[string]map[string]float64)
@@ -305,8 +300,9 @@ func calAmountAnalysisResult(scanResults []analysis, limit *int, sort string) (*
 	}
 
 	// sort
-	if _, ok := result.SeriesData["data"]; ok && sort != "" {
-		sortResult(&result, sort == "ASC")
+	if _, ok := result.SeriesData["data"]; ok && sort != nil {
+		s := *sort
+		sortResult(&result, s.String() == "ASC")
 	}
 
 	// limit
