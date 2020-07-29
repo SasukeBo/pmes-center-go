@@ -13,7 +13,8 @@ type Product struct {
 	MaterialID        uint      `gorm:"column:material_id;not null;index"`
 	DeviceID          uint      `gorm:"column:device_id;not null;index"`
 	Qualified         bool      `gorm:"column:qualified;default:false"`
-	CreatedAt         time.Time `gorm:"index"`
+	BarCode           string    `gorm:"column:bar_code;"`
+	CreatedAt         time.Time `gorm:"index"` // 检测时间
 	Attribute         types.Map `gorm:"type:JSON;not null"`
 	PointValues       types.Map `gorm:"type:JSON;not null"`
 }

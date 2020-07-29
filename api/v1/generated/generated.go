@@ -80,9 +80,9 @@ type ComplexityRoot struct {
 	}
 
 	MaterialVersion struct {
+		Amount      func(childComplexity int) int
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
-		Total       func(childComplexity int) int
 		Version     func(childComplexity int) int
 		Yield       func(childComplexity int) int
 	}
@@ -333,6 +333,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MaterialResult.Ok(childComplexity), true
 
+	case "MaterialVersion.amount":
+		if e.complexity.MaterialVersion.Amount == nil {
+			break
+		}
+
+		return e.complexity.MaterialVersion.Amount(childComplexity), true
+
 	case "MaterialVersion.description":
 		if e.complexity.MaterialVersion.Description == nil {
 			break
@@ -346,13 +353,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MaterialVersion.ID(childComplexity), true
-
-	case "MaterialVersion.total":
-		if e.complexity.MaterialVersion.Total == nil {
-			break
-		}
-
-		return e.complexity.MaterialVersion.Total(childComplexity), true
 
 	case "MaterialVersion.version":
 		if e.complexity.MaterialVersion.Version == nil {
@@ -923,7 +923,7 @@ type ProductAttribute {
 	&ast.Source{Name: "schema/material_version.graphql", Input: `type MaterialVersion {
     id: Int!
     version: String!
-    total: Int!
+    amount: Int!
     yield: Float!
     description: String!
 }
@@ -2222,7 +2222,7 @@ func (ec *executionContext) _MaterialVersion_version(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MaterialVersion_total(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
+func (ec *executionContext) _MaterialVersion_amount(ctx context.Context, field graphql.CollectedField, obj *model.MaterialVersion) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2239,7 +2239,7 @@ func (ec *executionContext) _MaterialVersion_total(ctx context.Context, field gr
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Total, nil
+		return obj.Amount, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5570,8 +5570,8 @@ func (ec *executionContext) _MaterialVersion(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "total":
-			out.Values[i] = ec._MaterialVersion_total(ctx, field, obj)
+		case "amount":
+			out.Values[i] = ec._MaterialVersion_amount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

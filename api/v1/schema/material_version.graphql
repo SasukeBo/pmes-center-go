@@ -1,7 +1,7 @@
 type MaterialVersion {
     id: Int!
     version: String!
-    total: Int!
+    amount: Int!
     yield: Float!
     description: String!
 }

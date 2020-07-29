@@ -133,7 +133,8 @@ func init() {
 		setupRootUser()
 		setupPointsImportTemplate()
 	}
-	setupDefaultConfig() // Test env need system config
+	setupDefaultConfig()      // Test env need system config
+	setupBarCodeDecodeFuncs() // 设置解码规则
 	DB.LogMode(true)
 	setupIndex()
 }

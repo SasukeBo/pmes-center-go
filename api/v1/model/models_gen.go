@@ -54,7 +54,7 @@ type MaterialResult struct {
 type MaterialVersion struct {
 	ID          int     `json:"id"`
 	Version     string  `json:"version"`
-	Total       int     `json:"total"`
+	Amount      int     `json:"amount"`
 	Yield       float64 `json:"yield"`
 	Description string  `json:"description"`
 }
