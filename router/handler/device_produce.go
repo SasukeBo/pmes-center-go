@@ -76,6 +76,7 @@ type response struct {
 	PointValues string `json:"point_values"`
 	Attributes  string `json:"attributes"`
 	Qualified   int    `json:"qualified"`
+	BarCode     string `json:"bar_code"`
 }
 
 func DeviceProduce() gin.HandlerFunc {
@@ -140,6 +141,7 @@ func DeviceProduce() gin.HandlerFunc {
 			PointValues:       pointValues,
 			ImportRecordID:    record.ID,
 			MaterialVersionID: record.MaterialVersionID,
+			BarCode:           form.BarCode,
 		}
 		if err := orm.Create(&product).Error; err != nil {
 			errormap.SendHttpError(c, errormap.ErrorCodeCreateObjectError, err, "product")
