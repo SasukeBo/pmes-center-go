@@ -110,6 +110,7 @@ func init() {
 	log.Warn("Current runtime environment is %s", env)
 
 	err = DB.AutoMigrate(
+		&BarCodeRule{},
 		&DecodeTemplate{},
 		&Device{},
 		&ImportRecord{},
@@ -126,15 +127,17 @@ func init() {
 	if err != nil {
 		panic(fmt.Errorf("migrate to db error: \n%v", err.Error()))
 	}
+	tableNames := []string{
+		"decode_templates", "devices", "import_records", "materials", "points",
+		"products", "system_configs", "users", "files", "bar_code_rules",
+	}
 
 	if env != "test" && env != "TEST" {
-		tableNames := []string{"decode_templates", "devices", "import_records", "materials", "points", "products", "system_configs", "users", "files"}
-		setupUTF8GeneralCI(tableNames)
 		setupRootUser()
 		setupPointsImportTemplate()
 	}
-	setupDefaultConfig()      // Test env need system config
-	setupBarCodeDecodeFuncs() // 设置解码规则
+	setupUTF8GeneralCI(tableNames)
+	setupDefaultConfig() // Test env need system config
 	DB.LogMode(true)
 	setupIndex()
 }

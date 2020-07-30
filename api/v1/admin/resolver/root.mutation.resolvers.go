@@ -48,6 +48,10 @@ func (r *mutationResolver) SaveDecodeTemplate(ctx context.Context, input model.D
 	return logic.SaveDecodeTemplate(ctx, input)
 }
 
+func (r *mutationResolver) SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.ResponseStatus, error) {
+	return logic.SaveBarCodeRule(ctx, input)
+}
+
 func (r *mutationResolver) ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error) {
 	return logic.ParseImportPoints(ctx, file)
 }

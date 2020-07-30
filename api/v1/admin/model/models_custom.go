@@ -2,12 +2,21 @@ package model
 
 import "time"
 
+type BarCodeRule struct {
+	ID         int            `json:"id"`
+	Name       string         `json:"name"`
+	Remark     string         `json:"remark"`
+	UserID     uint           `json:"userID"`
+	CodeLength int            `json:"codeLength"`
+	Items      []*BarCodeItem `json:"items"`
+}
+
 type MaterialVersion struct {
 	ID          int       `json:"id"`
 	Version     string    `json:"version"`
 	Description string    `json:"description"`
 	MaterialID  uint      `json:"material"`
-	UserID      uint      `json:"user"`
+	UserID      uint      `json:"userID"`
 	Active      bool      `json:"active"`
 	Amount      int       `json:"amount"`
 	Yield       float64   `json:"yield"`

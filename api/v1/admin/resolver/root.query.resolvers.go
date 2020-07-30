@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
@@ -53,6 +54,14 @@ func (r *queryResolver) ListDecodeTemplate(ctx context.Context, materialID int) 
 
 func (r *queryResolver) DecodeTemplateWithVersionID(ctx context.Context, id int) (*model.DecodeTemplate, error) {
 	return logic.DecodeTemplateWithVersionID(ctx, id)
+}
+
+func (r *queryResolver) ListBarCodeRules(ctx context.Context, search *string, limit int, page int) ([]*model.BarCodeRule, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *queryResolver) GetBarCodeRule(ctx context.Context, id int) (*model.BarCodeRule, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *queryResolver) ListDevices(ctx context.Context, pattern *string, materialID *int, page int, limit int) (*model.DeviceWrap, error) {

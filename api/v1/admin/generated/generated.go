@@ -36,6 +36,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	BarCodeRule() BarCodeRuleResolver
 	DecodeTemplate() DecodeTemplateResolver
 	Device() DeviceResolver
 	File() FileResolver
@@ -49,6 +50,25 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	BarCodeItem struct {
+		DayCode    func(childComplexity int) int
+		IndexRange func(childComplexity int) int
+		Key        func(childComplexity int) int
+		Label      func(childComplexity int) int
+		MonthCode  func(childComplexity int) int
+		Type       func(childComplexity int) int
+		YearCode   func(childComplexity int) int
+	}
+
+	BarCodeRule struct {
+		CodeLength func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Items      func(childComplexity int) int
+		Name       func(childComplexity int) int
+		Remark     func(childComplexity int) int
+		User       func(childComplexity int) int
+	}
+
 	DecodeTemplate struct {
 		CreatedAt            func(childComplexity int) int
 		CreatedAtColumnIndex func(childComplexity int) int
@@ -160,6 +180,7 @@ type ComplexityRoot struct {
 		MaterialFetch               func(childComplexity int, id int) int
 		ParseImportPoints           func(childComplexity int, file graphql.Upload) int
 		RevertImports               func(childComplexity int, ids []int) int
+		SaveBarCodeRule             func(childComplexity int, input model.BarCodeRuleInput) int
 		SaveDecodeTemplate          func(childComplexity int, input model.DecodeTemplateInput) int
 		SaveDevice                  func(childComplexity int, input model.DeviceInput) int
 		SavePoints                  func(childComplexity int, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) int
@@ -189,8 +210,10 @@ type ComplexityRoot struct {
 		CurrentUser                 func(childComplexity int) int
 		DecodeTemplateWithVersionID func(childComplexity int, id int) int
 		Device                      func(childComplexity int, id int) int
+		GetBarCodeRule              func(childComplexity int, id int) int
 		ImportRecords               func(childComplexity int, materialVersionID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) int
 		ImportStatus                func(childComplexity int, id int) int
+		ListBarCodeRules            func(childComplexity int, search *string, limit int, page int) int
 		ListDecodeTemplate          func(childComplexity int, materialID int) int
 		ListDevices                 func(childComplexity int, pattern *string, materialID *int, page int, limit int) int
 		ListMaterialPoints          func(childComplexity int, materialVersionID int) int
@@ -218,6 +241,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type BarCodeRuleResolver interface {
+	User(ctx context.Context, obj *model.BarCodeRule) (*model.User, error)
+}
 type DecodeTemplateResolver interface {
 	Material(ctx context.Context, obj *model.DecodeTemplate) (*model.Material, error)
 	MaterialVersion(ctx context.Context, obj *model.DecodeTemplate) (*model.MaterialVersion, error)
@@ -255,6 +281,7 @@ type MutationResolver interface {
 	UpdateMaterialVersion(ctx context.Context, id int, input model.MaterialVersionUpdateInput) (model.ResponseStatus, error)
 	ChangeMaterialVersionActive(ctx context.Context, id int, active bool) (model.ResponseStatus, error)
 	SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error)
+	SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.ResponseStatus, error)
 	ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error)
 	SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error)
 	SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, error)
@@ -276,6 +303,8 @@ type QueryResolver interface {
 	ImportStatus(ctx context.Context, id int) (*model.ImportStatusResponse, error)
 	ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error)
 	DecodeTemplateWithVersionID(ctx context.Context, id int) (*model.DecodeTemplate, error)
+	ListBarCodeRules(ctx context.Context, search *string, limit int, page int) ([]*model.BarCodeRule, error)
+	GetBarCodeRule(ctx context.Context, id int) (*model.BarCodeRule, error)
 	ListDevices(ctx context.Context, pattern *string, materialID *int, page int, limit int) (*model.DeviceWrap, error)
 	Device(ctx context.Context, id int) (*model.Device, error)
 }
@@ -294,6 +323,97 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "BarCodeItem.dayCode":
+		if e.complexity.BarCodeItem.DayCode == nil {
+			break
+		}
+
+		return e.complexity.BarCodeItem.DayCode(childComplexity), true
+
+	case "BarCodeItem.indexRange":
+		if e.complexity.BarCodeItem.IndexRange == nil {
+			break
+		}
+
+		return e.complexity.BarCodeItem.IndexRange(childComplexity), true
+
+	case "BarCodeItem.key":
+		if e.complexity.BarCodeItem.Key == nil {
+			break
+		}
+
+		return e.complexity.BarCodeItem.Key(childComplexity), true
+
+	case "BarCodeItem.label":
+		if e.complexity.BarCodeItem.Label == nil {
+			break
+		}
+
+		return e.complexity.BarCodeItem.Label(childComplexity), true
+
+	case "BarCodeItem.monthCode":
+		if e.complexity.BarCodeItem.MonthCode == nil {
+			break
+		}
+
+		return e.complexity.BarCodeItem.MonthCode(childComplexity), true
+
+	case "BarCodeItem.type":
+		if e.complexity.BarCodeItem.Type == nil {
+			break
+		}
+
+		return e.complexity.BarCodeItem.Type(childComplexity), true
+
+	case "BarCodeItem.yearCode":
+		if e.complexity.BarCodeItem.YearCode == nil {
+			break
+		}
+
+		return e.complexity.BarCodeItem.YearCode(childComplexity), true
+
+	case "BarCodeRule.codeLength":
+		if e.complexity.BarCodeRule.CodeLength == nil {
+			break
+		}
+
+		return e.complexity.BarCodeRule.CodeLength(childComplexity), true
+
+	case "BarCodeRule.id":
+		if e.complexity.BarCodeRule.ID == nil {
+			break
+		}
+
+		return e.complexity.BarCodeRule.ID(childComplexity), true
+
+	case "BarCodeRule.items":
+		if e.complexity.BarCodeRule.Items == nil {
+			break
+		}
+
+		return e.complexity.BarCodeRule.Items(childComplexity), true
+
+	case "BarCodeRule.name":
+		if e.complexity.BarCodeRule.Name == nil {
+			break
+		}
+
+		return e.complexity.BarCodeRule.Name(childComplexity), true
+
+	case "BarCodeRule.remark":
+		if e.complexity.BarCodeRule.Remark == nil {
+			break
+		}
+
+		return e.complexity.BarCodeRule.Remark(childComplexity), true
+
+	case "BarCodeRule.user":
+		if e.complexity.BarCodeRule.User == nil {
+			break
+		}
+
+		return e.complexity.BarCodeRule.User(childComplexity), true
 
 	case "DecodeTemplate.createdAt":
 		if e.complexity.DecodeTemplate.CreatedAt == nil {
@@ -910,6 +1030,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RevertImports(childComplexity, args["ids"].([]int)), true
 
+	case "Mutation.saveBarCodeRule":
+		if e.complexity.Mutation.SaveBarCodeRule == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_saveBarCodeRule_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SaveBarCodeRule(childComplexity, args["input"].(model.BarCodeRuleInput)), true
+
 	case "Mutation.saveDecodeTemplate":
 		if e.complexity.Mutation.SaveDecodeTemplate == nil {
 			break
@@ -1090,6 +1222,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Device(childComplexity, args["id"].(int)), true
 
+	case "Query.getBarCodeRule":
+		if e.complexity.Query.GetBarCodeRule == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getBarCodeRule_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetBarCodeRule(childComplexity, args["id"].(int)), true
+
 	case "Query.importRecords":
 		if e.complexity.Query.ImportRecords == nil {
 			break
@@ -1113,6 +1257,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.ImportStatus(childComplexity, args["id"].(int)), true
+
+	case "Query.listBarCodeRules":
+		if e.complexity.Query.ListBarCodeRules == nil {
+			break
+		}
+
+		args, err := ec.field_Query_listBarCodeRules_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ListBarCodeRules(childComplexity, args["search"].(*string), args["limit"].(int), args["page"].(int)), true
 
 	case "Query.listDecodeTemplate":
 		if e.complexity.Query.ListDecodeTemplate == nil {
@@ -1339,6 +1495,49 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	&ast.Source{Name: "schema/bar_code_rule.graphql", Input: `type BarCodeRule {
+    id: Int!
+    codeLength: Int!
+    name: String!
+    remark: String!
+    user: User!
+    items: [BarCodeItem]!
+}
+
+input BarCodeRuleInput {
+    id: Int
+    name: String!
+    remark: String!
+    codeLength: Int!
+    items: [BarCodeItemInput!]!
+}
+
+type BarCodeItem {
+    label: String!
+    key: String!
+    indexRange: [Int!]!
+    type: BarCodeItemType!
+    dayCode: [String!]!
+    monthCode: [String!]!
+    yearCode: [String!]!
+}
+
+input BarCodeItemInput {
+    label: String!
+    key: String!
+    indexRange: [Int!]!
+    type: BarCodeItemType!
+    dayCode: [String!]
+    monthCode: [String!]
+    yearCode: [String!]
+}
+
+enum BarCodeItemType {
+    Category
+    Datetime
+}
+
+`, BuiltIn: false},
 	&ast.Source{Name: "schema/config.graphql", Input: `type SystemConfig {
     id: Int
     key: String
@@ -1591,6 +1790,8 @@ input PointCreateInput {
     # 解析模板
     "保存解析模板"
     saveDecodeTemplate(input: DecodeTemplateInput!): ResponseStatus!
+    "添加二维码解析规则"
+    saveBarCodeRule(input: BarCodeRuleInput!): ResponseStatus!
 
     # 检测项
     "解析导入的检测项，非创建"
@@ -1649,6 +1850,10 @@ input PointCreateInput {
     listDecodeTemplate(materialID: Int!): [DecodeTemplate]!
     "根据MaterialVersionID获取解析模板"
     decodeTemplateWithVersionID(id: Int!): DecodeTemplate!
+    "获取二维码解析规则列表"
+    listBarCodeRules(search: String, limit: Int!, page: Int!): [BarCodeRule]!
+    "ID获取二维码解析规则"
+    getBarCodeRule(id: Int!): BarCodeRule!
 
     # 设备
     "设备列表"
@@ -1865,6 +2070,20 @@ func (ec *executionContext) field_Mutation_revertImports_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_saveBarCodeRule_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.BarCodeRuleInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNBarCodeRuleInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRuleInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_saveDecodeTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2023,6 +2242,20 @@ func (ec *executionContext) field_Query_device_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_getBarCodeRule_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_importRecords_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2080,6 +2313,36 @@ func (ec *executionContext) field_Query_importStatus_args(ctx context.Context, r
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_listBarCodeRules_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["search"]; ok {
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["search"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["limit"]; ok {
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg1
+	var arg2 int
+	if tmp, ok := rawArgs["page"]; ok {
+		arg2, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg2
 	return args, nil
 }
 
@@ -2264,6 +2527,448 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _BarCodeItem_label(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Label, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeItem_key(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeItem_indexRange(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IndexRange, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]int)
+	fc.Result = res
+	return ec.marshalNInt2ᚕintᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeItem_type(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.BarCodeItemType)
+	fc.Result = res
+	return ec.marshalNBarCodeItemType2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItemType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeItem_dayCode(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DayCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeItem_monthCode(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MonthCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeItem_yearCode(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.YearCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeRule_id(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeRule) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeRule",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeRule_codeLength(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeRule) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeRule",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CodeLength, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeRule_name(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeRule) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeRule",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeRule_remark(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeRule) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeRule",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Remark, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeRule_user(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeRule) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeRule",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.BarCodeRule().User(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeRule_items(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeRule) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeRule",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Items, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.BarCodeItem)
+	fc.Result = res
+	return ec.marshalNBarCodeItem2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItem(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _DecodeTemplate_id(ctx context.Context, field graphql.CollectedField, obj *model.DecodeTemplate) (ret graphql.Marshaler) {
 	defer func() {
@@ -4950,6 +5655,47 @@ func (ec *executionContext) _Mutation_saveDecodeTemplate(ctx context.Context, fi
 	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_saveBarCodeRule(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_saveBarCodeRule_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SaveBarCodeRule(rctx, args["input"].(model.BarCodeRuleInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ResponseStatus)
+	fc.Result = res
+	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_parseImportPoints(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -6084,6 +6830,88 @@ func (ec *executionContext) _Query_decodeTemplateWithVersionID(ctx context.Conte
 	res := resTmp.(*model.DecodeTemplate)
 	fc.Result = res
 	return ec.marshalNDecodeTemplate2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐDecodeTemplate(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_listBarCodeRules(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_listBarCodeRules_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ListBarCodeRules(rctx, args["search"].(*string), args["limit"].(int), args["page"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.BarCodeRule)
+	fc.Result = res
+	return ec.marshalNBarCodeRule2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getBarCodeRule(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getBarCodeRule_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetBarCodeRule(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.BarCodeRule)
+	fc.Result = res
+	return ec.marshalNBarCodeRule2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_listDevices(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7653,6 +8481,102 @@ func (ec *executionContext) unmarshalInputAddUserInput(ctx context.Context, obj 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputBarCodeItemInput(ctx context.Context, obj interface{}) (model.BarCodeItemInput, error) {
+	var it model.BarCodeItemInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "label":
+			var err error
+			it.Label, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "key":
+			var err error
+			it.Key, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "indexRange":
+			var err error
+			it.IndexRange, err = ec.unmarshalNInt2ᚕintᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "type":
+			var err error
+			it.Type, err = ec.unmarshalNBarCodeItemType2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItemType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "dayCode":
+			var err error
+			it.DayCode, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "monthCode":
+			var err error
+			it.MonthCode, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "yearCode":
+			var err error
+			it.YearCode, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputBarCodeRuleInput(ctx context.Context, obj interface{}) (model.BarCodeRuleInput, error) {
+	var it model.BarCodeRuleInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+			it.ID, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "remark":
+			var err error
+			it.Remark, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "codeLength":
+			var err error
+			it.CodeLength, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "items":
+			var err error
+			it.Items, err = ec.unmarshalNBarCodeItemInput2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItemInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputDecodeTemplateInput(ctx context.Context, obj interface{}) (model.DecodeTemplateInput, error) {
 	var it model.DecodeTemplateInput
 	var asMap = obj.(map[string]interface{})
@@ -8092,6 +9016,124 @@ func (ec *executionContext) unmarshalInputSettingInput(ctx context.Context, obj 
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var barCodeItemImplementors = []string{"BarCodeItem"}
+
+func (ec *executionContext) _BarCodeItem(ctx context.Context, sel ast.SelectionSet, obj *model.BarCodeItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, barCodeItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BarCodeItem")
+		case "label":
+			out.Values[i] = ec._BarCodeItem_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "key":
+			out.Values[i] = ec._BarCodeItem_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "indexRange":
+			out.Values[i] = ec._BarCodeItem_indexRange(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "type":
+			out.Values[i] = ec._BarCodeItem_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "dayCode":
+			out.Values[i] = ec._BarCodeItem_dayCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "monthCode":
+			out.Values[i] = ec._BarCodeItem_monthCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "yearCode":
+			out.Values[i] = ec._BarCodeItem_yearCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var barCodeRuleImplementors = []string{"BarCodeRule"}
+
+func (ec *executionContext) _BarCodeRule(ctx context.Context, sel ast.SelectionSet, obj *model.BarCodeRule) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, barCodeRuleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BarCodeRule")
+		case "id":
+			out.Values[i] = ec._BarCodeRule_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "codeLength":
+			out.Values[i] = ec._BarCodeRule_codeLength(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "name":
+			out.Values[i] = ec._BarCodeRule_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "remark":
+			out.Values[i] = ec._BarCodeRule_remark(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "user":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._BarCodeRule_user(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "items":
+			out.Values[i] = ec._BarCodeRule_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
 
 var decodeTemplateImplementors = []string{"DecodeTemplate"}
 
@@ -8805,6 +9847,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "saveBarCodeRule":
+			out.Values[i] = ec._Mutation_saveBarCodeRule(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "parseImportPoints":
 			out.Values[i] = ec._Mutation_parseImportPoints(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -9116,6 +10163,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_decodeTemplateWithVersionID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "listBarCodeRules":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_listBarCodeRules(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "getBarCodeRule":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getBarCodeRule(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -9490,6 +10565,139 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 func (ec *executionContext) unmarshalNAddUserInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐAddUserInput(ctx context.Context, v interface{}) (model.AddUserInput, error) {
 	return ec.unmarshalInputAddUserInput(ctx, v)
+}
+
+func (ec *executionContext) marshalNBarCodeItem2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItem(ctx context.Context, sel ast.SelectionSet, v []*model.BarCodeItem) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOBarCodeItem2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItem(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) unmarshalNBarCodeItemInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItemInput(ctx context.Context, v interface{}) (model.BarCodeItemInput, error) {
+	return ec.unmarshalInputBarCodeItemInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalNBarCodeItemInput2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItemInputᚄ(ctx context.Context, v interface{}) ([]*model.BarCodeItemInput, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*model.BarCodeItemInput, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNBarCodeItemInput2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItemInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNBarCodeItemInput2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItemInput(ctx context.Context, v interface{}) (*model.BarCodeItemInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNBarCodeItemInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItemInput(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) unmarshalNBarCodeItemType2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItemType(ctx context.Context, v interface{}) (model.BarCodeItemType, error) {
+	var res model.BarCodeItemType
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNBarCodeItemType2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItemType(ctx context.Context, sel ast.SelectionSet, v model.BarCodeItemType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNBarCodeRule2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx context.Context, sel ast.SelectionSet, v model.BarCodeRule) graphql.Marshaler {
+	return ec._BarCodeRule(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBarCodeRule2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx context.Context, sel ast.SelectionSet, v []*model.BarCodeRule) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOBarCodeRule2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNBarCodeRule2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx context.Context, sel ast.SelectionSet, v *model.BarCodeRule) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._BarCodeRule(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNBarCodeRuleInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRuleInput(ctx context.Context, v interface{}) (model.BarCodeRuleInput, error) {
+	return ec.unmarshalInputBarCodeRuleInput(ctx, v)
 }
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
@@ -10455,6 +11663,28 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) marshalOBarCodeItem2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItem(ctx context.Context, sel ast.SelectionSet, v model.BarCodeItem) graphql.Marshaler {
+	return ec._BarCodeItem(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOBarCodeItem2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItem(ctx context.Context, sel ast.SelectionSet, v *model.BarCodeItem) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._BarCodeItem(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOBarCodeRule2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx context.Context, sel ast.SelectionSet, v model.BarCodeRule) graphql.Marshaler {
+	return ec._BarCodeRule(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOBarCodeRule2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx context.Context, sel ast.SelectionSet, v *model.BarCodeRule) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._BarCodeRule(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
 }
@@ -10758,6 +11988,38 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalString(v)
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

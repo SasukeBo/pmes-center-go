@@ -16,6 +16,34 @@ type AddUserInput struct {
 	IsAdmin  bool   `json:"isAdmin"`
 }
 
+type BarCodeItem struct {
+	Label      string          `json:"label"`
+	Key        string          `json:"key"`
+	IndexRange []int           `json:"indexRange"`
+	Type       BarCodeItemType `json:"type"`
+	DayCode    []string        `json:"dayCode"`
+	MonthCode  []string        `json:"monthCode"`
+	YearCode   []string        `json:"yearCode"`
+}
+
+type BarCodeItemInput struct {
+	Label      string          `json:"label"`
+	Key        string          `json:"key"`
+	IndexRange []int           `json:"indexRange"`
+	Type       BarCodeItemType `json:"type"`
+	DayCode    []string        `json:"dayCode"`
+	MonthCode  []string        `json:"monthCode"`
+	YearCode   []string        `json:"yearCode"`
+}
+
+type BarCodeRuleInput struct {
+	ID         *int                `json:"id"`
+	Name       string              `json:"name"`
+	Remark     string              `json:"remark"`
+	CodeLength int                 `json:"codeLength"`
+	Items      []*BarCodeItemInput `json:"items"`
+}
+
 type DecodeTemplateInput struct {
 	ID                   *int                  `json:"id"`
 	DataRowIndex         int                   `json:"dataRowIndex"`
@@ -163,6 +191,47 @@ type User struct {
 	Name    string `json:"name"`
 	IsAdmin bool   `json:"isAdmin"`
 	UUID    string `json:"uuid"`
+}
+
+type BarCodeItemType string
+
+const (
+	BarCodeItemTypeCategory BarCodeItemType = "Category"
+	BarCodeItemTypeDatetime BarCodeItemType = "Datetime"
+)
+
+var AllBarCodeItemType = []BarCodeItemType{
+	BarCodeItemTypeCategory,
+	BarCodeItemTypeDatetime,
+}
+
+func (e BarCodeItemType) IsValid() bool {
+	switch e {
+	case BarCodeItemTypeCategory, BarCodeItemTypeDatetime:
+		return true
+	}
+	return false
+}
+
+func (e BarCodeItemType) String() string {
+	return string(e)
+}
+
+func (e *BarCodeItemType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = BarCodeItemType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid BarCodeItemType", str)
+	}
+	return nil
+}
+
+func (e BarCodeItemType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type ImportRecordImportType string
