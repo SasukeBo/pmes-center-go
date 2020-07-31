@@ -5,6 +5,12 @@ import (
 	"testing"
 )
 
+var decodeTemplateInput = test.Object{
+	"materialID":           test.Data.Material.ID,
+	"dataRowIndex":         15,
+	"createdAtColumnIndex": "B",
+}
+
 func TestMaterialVersion(t *testing.T) {
 	tester := test.NewTester(t)
 	test.Login(test.AdminAccount, test.AdminPasswd, true)

@@ -162,3 +162,14 @@ func GetBarCodeRule(ctx context.Context, id int) (*model.BarCodeRule, error) {
 	out := convertBarCodeRule(&rule)
 	return &out, nil
 }
+
+func LoadBarCodeRule(ctx context.Context, id uint) *model.BarCodeRule {
+	var rule orm.BarCodeRule
+	if err := rule.Get(id); err != nil {
+		log.Errorln(err)
+		return nil
+	}
+
+	out := convertBarCodeRule(&rule)
+	return &out
+}

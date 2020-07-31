@@ -48,11 +48,12 @@ type BarCodeRuleWrap struct {
 }
 
 type DecodeTemplateInput struct {
-	ID                   *int                  `json:"id"`
-	DataRowIndex         int                   `json:"dataRowIndex"`
-	CreatedAtColumnIndex string                `json:"createdAtColumnIndex"`
-	ProductColumns       []*ProductColumnInput `json:"productColumns"`
-	PointColumns         []*PointColumnInput   `json:"pointColumns"`
+	ID                   int                 `json:"id"`
+	DataRowIndex         int                 `json:"dataRowIndex"`
+	BarCodeIndex         *string             `json:"barCodeIndex"`
+	BarCodeRuleID        *int                `json:"barCodeRuleID"`
+	CreatedAtColumnIndex string              `json:"createdAtColumnIndex"`
+	PointColumns         []*PointColumnInput `json:"pointColumns"`
 }
 
 type DeviceInput struct {
@@ -157,22 +158,6 @@ type PointCreateInput struct {
 	Nominal    float64 `json:"nominal"`
 	LowerLimit float64 `json:"lowerLimit"`
 	Index      string  `json:"index"`
-}
-
-type ProductColumn struct {
-	Prefix string            `json:"prefix"`
-	Label  string            `json:"label"`
-	Token  string            `json:"token"`
-	Index  string            `json:"index"`
-	Type   ProductColumnType `json:"type"`
-}
-
-type ProductColumnInput struct {
-	Prefix string            `json:"prefix"`
-	Token  string            `json:"token"`
-	Label  string            `json:"label"`
-	Index  string            `json:"index"`
-	Type   ProductColumnType `json:"type"`
 }
 
 type SettingInput struct {
@@ -322,51 +307,6 @@ func (e *ImportStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ImportStatus) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type ProductColumnType string
-
-const (
-	ProductColumnTypeString   ProductColumnType = "String"
-	ProductColumnTypeInteger  ProductColumnType = "Integer"
-	ProductColumnTypeFloat    ProductColumnType = "Float"
-	ProductColumnTypeDatetime ProductColumnType = "Datetime"
-)
-
-var AllProductColumnType = []ProductColumnType{
-	ProductColumnTypeString,
-	ProductColumnTypeInteger,
-	ProductColumnTypeFloat,
-	ProductColumnTypeDatetime,
-}
-
-func (e ProductColumnType) IsValid() bool {
-	switch e {
-	case ProductColumnTypeString, ProductColumnTypeInteger, ProductColumnTypeFloat, ProductColumnTypeDatetime:
-		return true
-	}
-	return false
-}
-
-func (e ProductColumnType) String() string {
-	return string(e)
-}
-
-func (e *ProductColumnType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = ProductColumnType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ProductColumnType", str)
-	}
-	return nil
-}
-
-func (e ProductColumnType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

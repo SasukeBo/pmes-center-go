@@ -75,13 +75,14 @@ type ComplexityRoot struct {
 	}
 
 	DecodeTemplate struct {
+		BarCodeIndex         func(childComplexity int) int
+		BarCodeRule          func(childComplexity int) int
 		CreatedAt            func(childComplexity int) int
 		CreatedAtColumnIndex func(childComplexity int) int
 		DataRowIndex         func(childComplexity int) int
 		ID                   func(childComplexity int) int
 		Material             func(childComplexity int) int
 		MaterialVersion      func(childComplexity int) int
-		ProductColumns       func(childComplexity int) int
 		UpdatedAt            func(childComplexity int) int
 		User                 func(childComplexity int) int
 	}
@@ -186,10 +187,10 @@ type ComplexityRoot struct {
 		ParseImportPoints           func(childComplexity int, file graphql.Upload) int
 		RevertImports               func(childComplexity int, ids []int) int
 		SaveBarCodeRule             func(childComplexity int, input model.BarCodeRuleInput) int
-		SaveDecodeTemplate          func(childComplexity int, input model.DecodeTemplateInput) int
 		SaveDevice                  func(childComplexity int, input model.DeviceInput) int
 		SavePoints                  func(childComplexity int, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) int
 		ToggleBlockImports          func(childComplexity int, ids []int, block bool) int
+		UpdateDecodeTemplate        func(childComplexity int, input model.DecodeTemplateInput) int
 		UpdateMaterial              func(childComplexity int, input model.MaterialUpdateInput) int
 		UpdateMaterialVersion       func(childComplexity int, id int, input model.MaterialVersionUpdateInput) int
 	}
@@ -201,14 +202,6 @@ type ComplexityRoot struct {
 		Name       func(childComplexity int) int
 		Nominal    func(childComplexity int) int
 		UpperLimit func(childComplexity int) int
-	}
-
-	ProductColumn struct {
-		Index  func(childComplexity int) int
-		Label  func(childComplexity int) int
-		Prefix func(childComplexity int) int
-		Token  func(childComplexity int) int
-		Type   func(childComplexity int) int
 	}
 
 	Query struct {
@@ -253,6 +246,8 @@ type DecodeTemplateResolver interface {
 	Material(ctx context.Context, obj *model.DecodeTemplate) (*model.Material, error)
 	MaterialVersion(ctx context.Context, obj *model.DecodeTemplate) (*model.MaterialVersion, error)
 	User(ctx context.Context, obj *model.DecodeTemplate) (*model.User, error)
+
+	BarCodeRule(ctx context.Context, obj *model.DecodeTemplate) (*model.BarCodeRule, error)
 }
 type DeviceResolver interface {
 	Material(ctx context.Context, obj *model.Device) (*model.Material, error)
@@ -285,7 +280,7 @@ type MutationResolver interface {
 	DeleteMaterialVersion(ctx context.Context, id int) (model.ResponseStatus, error)
 	UpdateMaterialVersion(ctx context.Context, id int, input model.MaterialVersionUpdateInput) (model.ResponseStatus, error)
 	ChangeMaterialVersionActive(ctx context.Context, id int, active bool) (model.ResponseStatus, error)
-	SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error)
+	UpdateDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error)
 	SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.ResponseStatus, error)
 	ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error)
 	SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error)
@@ -434,6 +429,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BarCodeRuleWrap.Total(childComplexity), true
 
+	case "DecodeTemplate.barCodeIndex":
+		if e.complexity.DecodeTemplate.BarCodeIndex == nil {
+			break
+		}
+
+		return e.complexity.DecodeTemplate.BarCodeIndex(childComplexity), true
+
+	case "DecodeTemplate.barCodeRule":
+		if e.complexity.DecodeTemplate.BarCodeRule == nil {
+			break
+		}
+
+		return e.complexity.DecodeTemplate.BarCodeRule(childComplexity), true
+
 	case "DecodeTemplate.createdAt":
 		if e.complexity.DecodeTemplate.CreatedAt == nil {
 			break
@@ -475,13 +484,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DecodeTemplate.MaterialVersion(childComplexity), true
-
-	case "DecodeTemplate.productColumns":
-		if e.complexity.DecodeTemplate.ProductColumns == nil {
-			break
-		}
-
-		return e.complexity.DecodeTemplate.ProductColumns(childComplexity), true
 
 	case "DecodeTemplate.updatedAt":
 		if e.complexity.DecodeTemplate.UpdatedAt == nil {
@@ -1061,18 +1063,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SaveBarCodeRule(childComplexity, args["input"].(model.BarCodeRuleInput)), true
 
-	case "Mutation.saveDecodeTemplate":
-		if e.complexity.Mutation.SaveDecodeTemplate == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_saveDecodeTemplate_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SaveDecodeTemplate(childComplexity, args["input"].(model.DecodeTemplateInput)), true
-
 	case "Mutation.saveDevice":
 		if e.complexity.Mutation.SaveDevice == nil {
 			break
@@ -1108,6 +1098,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ToggleBlockImports(childComplexity, args["ids"].([]int), args["block"].(bool)), true
+
+	case "Mutation.updateDecodeTemplate":
+		if e.complexity.Mutation.UpdateDecodeTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateDecodeTemplate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateDecodeTemplate(childComplexity, args["input"].(model.DecodeTemplateInput)), true
 
 	case "Mutation.updateMaterial":
 		if e.complexity.Mutation.UpdateMaterial == nil {
@@ -1174,41 +1176,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Point.UpperLimit(childComplexity), true
-
-	case "ProductColumn.index":
-		if e.complexity.ProductColumn.Index == nil {
-			break
-		}
-
-		return e.complexity.ProductColumn.Index(childComplexity), true
-
-	case "ProductColumn.label":
-		if e.complexity.ProductColumn.Label == nil {
-			break
-		}
-
-		return e.complexity.ProductColumn.Label(childComplexity), true
-
-	case "ProductColumn.prefix":
-		if e.complexity.ProductColumn.Prefix == nil {
-			break
-		}
-
-		return e.complexity.ProductColumn.Prefix(childComplexity), true
-
-	case "ProductColumn.token":
-		if e.complexity.ProductColumn.Token == nil {
-			break
-		}
-
-		return e.complexity.ProductColumn.Token(childComplexity), true
-
-	case "ProductColumn.type":
-		if e.complexity.ProductColumn.Type == nil {
-			break
-		}
-
-		return e.complexity.ProductColumn.Type(childComplexity), true
 
 	case "Query.currentUser":
 		if e.complexity.Query.CurrentUser == nil {
@@ -1580,17 +1547,19 @@ input SettingInput {
     materialVersion: MaterialVersion
     user: User! # TODO: deprecated
     dataRowIndex: Int!
+    barCodeIndex: String!
+    barCodeRule: BarCodeRule!
     createdAtColumnIndex: String!
-    productColumns: [ProductColumn]!
     createdAt: Time!
     updatedAt: Time!
 }
 
 input DecodeTemplateInput {
-    id: Int
+    id: Int!
     dataRowIndex: Int!
+    barCodeIndex: String
+    barCodeRuleID: Int
     createdAtColumnIndex: String!
-    productColumns: [ProductColumnInput]!
     pointColumns: [PointColumnInput]!
 }
 
@@ -1599,28 +1568,7 @@ input PointColumnInput {
     index: String!
 }
 
-input ProductColumnInput {
-    prefix: String!
-    token: String!
-    label: String!
-    index: String!
-    type: ProductColumnType!
-}
-
-type ProductColumn {
-    prefix: String! # 展示为数据项时，加上此前缀
-    label: String!
-    token: String!
-    index: String!
-    type: ProductColumnType!
-}
-
-enum ProductColumnType {
-    String
-    Integer
-    Float
-    Datetime
-}`, BuiltIn: false},
+`, BuiltIn: false},
 	&ast.Source{Name: "schema/device.graphql", Input: `type Device {
     id: Int!
     uuid: String!
@@ -1811,8 +1759,8 @@ input PointCreateInput {
     changeMaterialVersionActive(id: Int!, active: Boolean!): ResponseStatus!
 
     # 解析模板
-    "保存解析模板"
-    saveDecodeTemplate(input: DecodeTemplateInput!): ResponseStatus!
+    "更新解析模板"
+    updateDecodeTemplate(input: DecodeTemplateInput!): ResponseStatus!
     "添加二维码解析规则"
     saveBarCodeRule(input: BarCodeRuleInput!): ResponseStatus!
 
@@ -2107,20 +2055,6 @@ func (ec *executionContext) field_Mutation_saveBarCodeRule_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_saveDecodeTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.DecodeTemplateInput
-	if tmp, ok := rawArgs["input"]; ok {
-		arg0, err = ec.unmarshalNDecodeTemplateInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐDecodeTemplateInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_saveDevice_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -2184,6 +2118,20 @@ func (ec *executionContext) field_Mutation_toggleBlockImports_args(ctx context.C
 		}
 	}
 	args["block"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateDecodeTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.DecodeTemplateInput
+	if tmp, ok := rawArgs["input"]; ok {
+		arg0, err = ec.unmarshalNDecodeTemplateInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐDecodeTemplateInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -3225,6 +3173,74 @@ func (ec *executionContext) _DecodeTemplate_dataRowIndex(ctx context.Context, fi
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _DecodeTemplate_barCodeIndex(ctx context.Context, field graphql.CollectedField, obj *model.DecodeTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "DecodeTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BarCodeIndex, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DecodeTemplate_barCodeRule(ctx context.Context, field graphql.CollectedField, obj *model.DecodeTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "DecodeTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.DecodeTemplate().BarCodeRule(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.BarCodeRule)
+	fc.Result = res
+	return ec.marshalNBarCodeRule2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _DecodeTemplate_createdAtColumnIndex(ctx context.Context, field graphql.CollectedField, obj *model.DecodeTemplate) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3257,40 +3273,6 @@ func (ec *executionContext) _DecodeTemplate_createdAtColumnIndex(ctx context.Con
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _DecodeTemplate_productColumns(ctx context.Context, field graphql.CollectedField, obj *model.DecodeTemplate) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "DecodeTemplate",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ProductColumns, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.ProductColumn)
-	fc.Result = res
-	return ec.marshalNProductColumn2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumn(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DecodeTemplate_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.DecodeTemplate) (ret graphql.Marshaler) {
@@ -5705,7 +5687,7 @@ func (ec *executionContext) _Mutation_changeMaterialVersionActive(ctx context.Co
 	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_saveDecodeTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_updateDecodeTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -5721,7 +5703,7 @@ func (ec *executionContext) _Mutation_saveDecodeTemplate(ctx context.Context, fi
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_saveDecodeTemplate_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_updateDecodeTemplate_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -5729,7 +5711,7 @@ func (ec *executionContext) _Mutation_saveDecodeTemplate(ctx context.Context, fi
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SaveDecodeTemplate(rctx, args["input"].(model.DecodeTemplateInput))
+		return ec.resolvers.Mutation().UpdateDecodeTemplate(rctx, args["input"].(model.DecodeTemplateInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6317,176 +6299,6 @@ func (ec *executionContext) _Point_index(ctx context.Context, field graphql.Coll
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProductColumn_prefix(ctx context.Context, field graphql.CollectedField, obj *model.ProductColumn) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ProductColumn",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Prefix, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProductColumn_label(ctx context.Context, field graphql.CollectedField, obj *model.ProductColumn) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ProductColumn",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Label, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProductColumn_token(ctx context.Context, field graphql.CollectedField, obj *model.ProductColumn) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ProductColumn",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Token, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProductColumn_index(ctx context.Context, field graphql.CollectedField, obj *model.ProductColumn) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ProductColumn",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Index, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _ProductColumn_type(ctx context.Context, field graphql.CollectedField, obj *model.ProductColumn) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "ProductColumn",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Type, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.ProductColumnType)
-	fc.Result = res
-	return ec.marshalNProductColumnType2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumnType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_currentUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8670,7 +8482,7 @@ func (ec *executionContext) unmarshalInputDecodeTemplateInput(ctx context.Contex
 		switch k {
 		case "id":
 			var err error
-			it.ID, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.ID, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8680,15 +8492,21 @@ func (ec *executionContext) unmarshalInputDecodeTemplateInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-		case "createdAtColumnIndex":
+		case "barCodeIndex":
 			var err error
-			it.CreatedAtColumnIndex, err = ec.unmarshalNString2string(ctx, v)
+			it.BarCodeIndex, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "productColumns":
+		case "barCodeRuleID":
 			var err error
-			it.ProductColumns, err = ec.unmarshalNProductColumnInput2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumnInput(ctx, v)
+			it.BarCodeRuleID, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "createdAtColumnIndex":
+			var err error
+			it.CreatedAtColumnIndex, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9028,48 +8846,6 @@ func (ec *executionContext) unmarshalInputPointCreateInput(ctx context.Context, 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputProductColumnInput(ctx context.Context, obj interface{}) (model.ProductColumnInput, error) {
-	var it model.ProductColumnInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "prefix":
-			var err error
-			it.Prefix, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "token":
-			var err error
-			it.Token, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "label":
-			var err error
-			it.Label, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "index":
-			var err error
-			it.Index, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "type":
-			var err error
-			it.Type, err = ec.unmarshalNProductColumnType2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumnType(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputSettingInput(ctx context.Context, obj interface{}) (model.SettingInput, error) {
 	var it model.SettingInput
 	var asMap = obj.(map[string]interface{})
@@ -9309,13 +9085,27 @@ func (ec *executionContext) _DecodeTemplate(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "createdAtColumnIndex":
-			out.Values[i] = ec._DecodeTemplate_createdAtColumnIndex(ctx, field, obj)
+		case "barCodeIndex":
+			out.Values[i] = ec._DecodeTemplate_barCodeIndex(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "productColumns":
-			out.Values[i] = ec._DecodeTemplate_productColumns(ctx, field, obj)
+		case "barCodeRule":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DecodeTemplate_barCodeRule(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "createdAtColumnIndex":
+			out.Values[i] = ec._DecodeTemplate_createdAtColumnIndex(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -9959,8 +9749,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "saveDecodeTemplate":
-			out.Values[i] = ec._Mutation_saveDecodeTemplate(ctx, field)
+		case "updateDecodeTemplate":
+			out.Values[i] = ec._Mutation_updateDecodeTemplate(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -10058,53 +9848,6 @@ func (ec *executionContext) _Point(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "index":
 			out.Values[i] = ec._Point_index(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var productColumnImplementors = []string{"ProductColumn"}
-
-func (ec *executionContext) _ProductColumn(ctx context.Context, sel ast.SelectionSet, obj *model.ProductColumn) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, productColumnImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ProductColumn")
-		case "prefix":
-			out.Values[i] = ec._ProductColumn_prefix(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "label":
-			out.Values[i] = ec._ProductColumn_label(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "token":
-			out.Values[i] = ec._ProductColumn_token(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "index":
-			out.Values[i] = ec._ProductColumn_index(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "type":
-			out.Values[i] = ec._ProductColumn_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -11342,72 +11085,6 @@ func (ec *executionContext) unmarshalNPointCreateInput2ᚕᚖgithubᚗcomᚋSasu
 	return res, nil
 }
 
-func (ec *executionContext) marshalNProductColumn2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumn(ctx context.Context, sel ast.SelectionSet, v []*model.ProductColumn) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOProductColumn2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumn(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) unmarshalNProductColumnInput2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumnInput(ctx context.Context, v interface{}) ([]*model.ProductColumnInput, error) {
-	var vSlice []interface{}
-	if v != nil {
-		if tmp1, ok := v.([]interface{}); ok {
-			vSlice = tmp1
-		} else {
-			vSlice = []interface{}{v}
-		}
-	}
-	var err error
-	res := make([]*model.ProductColumnInput, len(vSlice))
-	for i := range vSlice {
-		res[i], err = ec.unmarshalOProductColumnInput2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumnInput(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) unmarshalNProductColumnType2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumnType(ctx context.Context, v interface{}) (model.ProductColumnType, error) {
-	var res model.ProductColumnType
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNProductColumnType2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumnType(ctx context.Context, sel ast.SelectionSet, v model.ProductColumnType) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) unmarshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx context.Context, v interface{}) (model.ResponseStatus, error) {
 	var res model.ResponseStatus
 	return res, res.UnmarshalGQL(v)
@@ -12087,29 +11764,6 @@ func (ec *executionContext) unmarshalOPointCreateInput2ᚖgithubᚗcomᚋSasukeB
 		return nil, nil
 	}
 	res, err := ec.unmarshalOPointCreateInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐPointCreateInput(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOProductColumn2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumn(ctx context.Context, sel ast.SelectionSet, v model.ProductColumn) graphql.Marshaler {
-	return ec._ProductColumn(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOProductColumn2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumn(ctx context.Context, sel ast.SelectionSet, v *model.ProductColumn) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._ProductColumn(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOProductColumnInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumnInput(ctx context.Context, v interface{}) (model.ProductColumnInput, error) {
-	return ec.unmarshalInputProductColumnInput(ctx, v)
-}
-
-func (ec *executionContext) unmarshalOProductColumnInput2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumnInput(ctx context.Context, v interface{}) (*model.ProductColumnInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOProductColumnInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐProductColumnInput(ctx, v)
 	return &res, err
 }
 

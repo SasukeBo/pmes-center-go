@@ -45,15 +45,16 @@ type ImportRecord struct {
 }
 
 type DecodeTemplate struct {
-	ID                   int              `json:"id"`
-	MaterialID           uint             `json:"materialID"`
-	UserID               uint             `json:"userID"`
-	DataRowIndex         int              `json:"dataRowIndex"`
-	CreatedAtColumnIndex string           `json:"createdAtColumnIndex"`
-	ProductColumns       []*ProductColumn `json:"productColumns"`
-	MaterialVersionID    uint             `json:"materialVersionID"`
-	CreatedAt            time.Time        `json:"createdAt"`
-	UpdatedAt            time.Time        `json:"updatedAt"`
+	ID                   int       `json:"id"`
+	MaterialID           uint      `json:"materialID"`
+	UserID               uint      `json:"userID"`
+	DataRowIndex         int       `json:"dataRowIndex"`
+	CreatedAtColumnIndex string    `json:"createdAtColumnIndex"`
+	MaterialVersionID    uint      `json:"materialVersionID"`
+	BarCodeIndex         string    `json:"barCodeIndex"`
+	BarCodeRuleID        uint      `json:"barCodeRuleID"`
+	CreatedAt            time.Time `json:"createdAt"`
+	UpdatedAt            time.Time `json:"updatedAt"`
 }
 
 type Device struct {
