@@ -23,7 +23,6 @@ type BarCodeItem struct {
 	Type       BarCodeItemType `json:"type"`
 	DayCode    []string        `json:"dayCode"`
 	MonthCode  []string        `json:"monthCode"`
-	YearCode   []string        `json:"yearCode"`
 }
 
 type BarCodeItemInput struct {
@@ -33,7 +32,6 @@ type BarCodeItemInput struct {
 	Type       BarCodeItemType `json:"type"`
 	DayCode    []string        `json:"dayCode"`
 	MonthCode  []string        `json:"monthCode"`
-	YearCode   []string        `json:"yearCode"`
 }
 
 type BarCodeRuleInput struct {
@@ -42,6 +40,11 @@ type BarCodeRuleInput struct {
 	Remark     string              `json:"remark"`
 	CodeLength int                 `json:"codeLength"`
 	Items      []*BarCodeItemInput `json:"items"`
+}
+
+type BarCodeRuleWrap struct {
+	Total int            `json:"total"`
+	Rules []*BarCodeRule `json:"rules"`
 }
 
 type DecodeTemplateInput struct {

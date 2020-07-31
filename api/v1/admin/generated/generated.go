@@ -57,16 +57,21 @@ type ComplexityRoot struct {
 		Label      func(childComplexity int) int
 		MonthCode  func(childComplexity int) int
 		Type       func(childComplexity int) int
-		YearCode   func(childComplexity int) int
 	}
 
 	BarCodeRule struct {
 		CodeLength func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
 		ID         func(childComplexity int) int
 		Items      func(childComplexity int) int
 		Name       func(childComplexity int) int
 		Remark     func(childComplexity int) int
 		User       func(childComplexity int) int
+	}
+
+	BarCodeRuleWrap struct {
+		Rules func(childComplexity int) int
+		Total func(childComplexity int) int
 	}
 
 	DecodeTemplate struct {
@@ -303,7 +308,7 @@ type QueryResolver interface {
 	ImportStatus(ctx context.Context, id int) (*model.ImportStatusResponse, error)
 	ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error)
 	DecodeTemplateWithVersionID(ctx context.Context, id int) (*model.DecodeTemplate, error)
-	ListBarCodeRules(ctx context.Context, search *string, limit int, page int) ([]*model.BarCodeRule, error)
+	ListBarCodeRules(ctx context.Context, search *string, limit int, page int) (*model.BarCodeRuleWrap, error)
 	GetBarCodeRule(ctx context.Context, id int) (*model.BarCodeRule, error)
 	ListDevices(ctx context.Context, pattern *string, materialID *int, page int, limit int) (*model.DeviceWrap, error)
 	Device(ctx context.Context, id int) (*model.Device, error)
@@ -366,19 +371,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BarCodeItem.Type(childComplexity), true
 
-	case "BarCodeItem.yearCode":
-		if e.complexity.BarCodeItem.YearCode == nil {
-			break
-		}
-
-		return e.complexity.BarCodeItem.YearCode(childComplexity), true
-
 	case "BarCodeRule.codeLength":
 		if e.complexity.BarCodeRule.CodeLength == nil {
 			break
 		}
 
 		return e.complexity.BarCodeRule.CodeLength(childComplexity), true
+
+	case "BarCodeRule.createdAt":
+		if e.complexity.BarCodeRule.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.BarCodeRule.CreatedAt(childComplexity), true
 
 	case "BarCodeRule.id":
 		if e.complexity.BarCodeRule.ID == nil {
@@ -414,6 +419,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BarCodeRule.User(childComplexity), true
+
+	case "BarCodeRuleWrap.rules":
+		if e.complexity.BarCodeRuleWrap.Rules == nil {
+			break
+		}
+
+		return e.complexity.BarCodeRuleWrap.Rules(childComplexity), true
+
+	case "BarCodeRuleWrap.total":
+		if e.complexity.BarCodeRuleWrap.Total == nil {
+			break
+		}
+
+		return e.complexity.BarCodeRuleWrap.Total(childComplexity), true
 
 	case "DecodeTemplate.createdAt":
 		if e.complexity.DecodeTemplate.CreatedAt == nil {
@@ -1502,6 +1521,12 @@ var sources = []*ast.Source{
     remark: String!
     user: User!
     items: [BarCodeItem]!
+    createdAt: Time!
+}
+
+type BarCodeRuleWrap {
+    total: Int!
+    rules: [BarCodeRule]!
 }
 
 input BarCodeRuleInput {
@@ -1519,7 +1544,6 @@ type BarCodeItem {
     type: BarCodeItemType!
     dayCode: [String!]!
     monthCode: [String!]!
-    yearCode: [String!]!
 }
 
 input BarCodeItemInput {
@@ -1529,7 +1553,6 @@ input BarCodeItemInput {
     type: BarCodeItemType!
     dayCode: [String!]
     monthCode: [String!]
-    yearCode: [String!]
 }
 
 enum BarCodeItemType {
@@ -1851,7 +1874,7 @@ input PointCreateInput {
     "根据MaterialVersionID获取解析模板"
     decodeTemplateWithVersionID(id: Int!): DecodeTemplate!
     "获取二维码解析规则列表"
-    listBarCodeRules(search: String, limit: Int!, page: Int!): [BarCodeRule]!
+    listBarCodeRules(search: String, limit: Int!, page: Int!): BarCodeRuleWrap!
     "ID获取二维码解析规则"
     getBarCodeRule(id: Int!): BarCodeRule!
 
@@ -2732,40 +2755,6 @@ func (ec *executionContext) _BarCodeItem_monthCode(ctx context.Context, field gr
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _BarCodeItem_yearCode(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "BarCodeItem",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.YearCode, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _BarCodeRule_id(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeRule) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2968,6 +2957,108 @@ func (ec *executionContext) _BarCodeRule_items(ctx context.Context, field graphq
 	res := resTmp.([]*model.BarCodeItem)
 	fc.Result = res
 	return ec.marshalNBarCodeItem2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeItem(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeRule_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeRule) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeRule",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeRuleWrap_total(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeRuleWrap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeRuleWrap",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Total, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeRuleWrap_rules(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeRuleWrap) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeRuleWrap",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Rules, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.BarCodeRule)
+	fc.Result = res
+	return ec.marshalNBarCodeRule2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DecodeTemplate_id(ctx context.Context, field graphql.CollectedField, obj *model.DecodeTemplate) (ret graphql.Marshaler) {
@@ -6868,9 +6959,9 @@ func (ec *executionContext) _Query_listBarCodeRules(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.BarCodeRule)
+	res := resTmp.(*model.BarCodeRuleWrap)
 	fc.Result = res
-	return ec.marshalNBarCodeRule2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx, field.Selections, res)
+	return ec.marshalNBarCodeRuleWrap2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRuleWrap(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getBarCodeRule(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8523,12 +8614,6 @@ func (ec *executionContext) unmarshalInputBarCodeItemInput(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
-		case "yearCode":
-			var err error
-			it.YearCode, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -9058,11 +9143,6 @@ func (ec *executionContext) _BarCodeItem(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "yearCode":
-			out.Values[i] = ec._BarCodeItem_yearCode(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9123,6 +9203,43 @@ func (ec *executionContext) _BarCodeRule(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._BarCodeRule_items(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
+			}
+		case "createdAt":
+			out.Values[i] = ec._BarCodeRule_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var barCodeRuleWrapImplementors = []string{"BarCodeRuleWrap"}
+
+func (ec *executionContext) _BarCodeRuleWrap(ctx context.Context, sel ast.SelectionSet, obj *model.BarCodeRuleWrap) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, barCodeRuleWrapImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BarCodeRuleWrap")
+		case "total":
+			out.Values[i] = ec._BarCodeRuleWrap_total(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "rules":
+			out.Values[i] = ec._BarCodeRuleWrap_rules(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -10698,6 +10815,20 @@ func (ec *executionContext) marshalNBarCodeRule2ᚖgithubᚗcomᚋSasukeBoᚋpme
 
 func (ec *executionContext) unmarshalNBarCodeRuleInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRuleInput(ctx context.Context, v interface{}) (model.BarCodeRuleInput, error) {
 	return ec.unmarshalInputBarCodeRuleInput(ctx, v)
+}
+
+func (ec *executionContext) marshalNBarCodeRuleWrap2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRuleWrap(ctx context.Context, sel ast.SelectionSet, v model.BarCodeRuleWrap) graphql.Marshaler {
+	return ec._BarCodeRuleWrap(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBarCodeRuleWrap2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRuleWrap(ctx context.Context, sel ast.SelectionSet, v *model.BarCodeRuleWrap) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._BarCodeRuleWrap(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {

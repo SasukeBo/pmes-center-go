@@ -9,6 +9,7 @@ type BarCodeRule struct {
 	UserID     uint           `json:"userID"`
 	CodeLength int            `json:"codeLength"`
 	Items      []*BarCodeItem `json:"items"`
+	CreatedAt  time.Time      `json:"createdAt"`
 }
 
 type MaterialVersion struct {

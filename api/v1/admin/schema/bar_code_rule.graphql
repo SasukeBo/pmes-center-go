@@ -5,6 +5,12 @@ type BarCodeRule {
     remark: String!
     user: User!
     items: [BarCodeItem]!
+    createdAt: Time!
+}
+
+type BarCodeRuleWrap {
+    total: Int!
+    rules: [BarCodeRule]!
 }
 
 input BarCodeRuleInput {
@@ -22,7 +28,6 @@ type BarCodeItem {
     type: BarCodeItemType!
     dayCode: [String!]!
     monthCode: [String!]!
-    yearCode: [String!]!
 }
 
 input BarCodeItemInput {
@@ -32,7 +37,6 @@ input BarCodeItemInput {
     type: BarCodeItemType!
     dayCode: [String!]
     monthCode: [String!]
-    yearCode: [String!]
 }
 
 enum BarCodeItemType {
