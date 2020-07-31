@@ -1,10 +1,23 @@
 package api_v1
 
 import (
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 	test "github.com/SasukeBo/pmes-data-center/integration_test"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"testing"
+)
+
+const (
+	productAttributesGQL = `
+	query($materialID: Int!, $versionID: Int) {
+	  response: productAttributes(materialID: $materialID, versionID: $versionID) {
+	    prefix
+	    label
+	    token
+	  }
+	}
+	`
 )
 
 func TestMaterial(t *testing.T) {
@@ -87,6 +100,64 @@ func TestMaterial(t *testing.T) {
 			"limit":    4,
 		}).GQLObject().Path("$.data.response")
 	})
+
+	t.Run("TEST_ProductAttributes", func(t *testing.T) {
+		materialID := fakeForTestProductAttributes()
+		ret := tester.API1(productAttributesGQL, test.Object{"materialID": materialID}).GQLObject().Path("$.data.response")
+		ret.Array().Length().Equal(2)
+	})
+}
+
+func fakeForTestProductAttributes() uint {
+	itemsMap := make(types.Map)
+	items := []orm.BarCodeItem{
+		{
+			Label:      "LabelForItem1",
+			Key:        "AKeyForItem",
+			IndexRange: []int{},
+			Type:       model.BarCodeItemTypeCategory.String(),
+		},
+		{
+			Label:      "LabelForItem2",
+			Key:        "BKeyForItem",
+			IndexRange: []int{},
+			Type:       model.BarCodeItemTypeDatetime.String(),
+			DayCode:    []string{"1", "V"},
+			MonthCode:  []string{"1", "A"},
+		},
+	}
+	itemsMap["items"] = items
+	var rule = orm.BarCodeRule{
+		CodeLength: 0,
+		Name:       "fake_rule_name",
+		Remark:     "fake_rule_remark",
+		UserID:     test.Data.Admin.ID,
+		Items:      itemsMap,
+	}
+	orm.Create(&rule)
+
+	material := orm.Material{
+		Name: "Material_For_TEST_ProductAttributes",
+	}
+	orm.Create(&material)
+
+	version := orm.MaterialVersion{
+		Version:    "Version_For_TEST_ProductAttributes",
+		MaterialID: material.ID,
+		Active:     true,
+		UserID:     test.Data.Admin.ID,
+	}
+	orm.Create(&version)
+
+	template := orm.DecodeTemplate{
+		MaterialID:        material.ID,
+		MaterialVersionID: version.ID,
+		UserID:            test.Data.Admin.ID,
+		BarCodeRuleID:     rule.ID,
+		ProductColumns:    make(types.Map),
+	}
+	orm.Create(&template)
+	return material.ID
 }
 
 func createProducts(materialID, deviceID uint, rate int) {

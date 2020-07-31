@@ -9,12 +9,17 @@ import (
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
+	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/jinzhu/copier"
 	"strconv"
 )
 
 const (
 	itemsMapKey = "items"
+)
+
+var (
+	reservedCategory = []string{"Date", "Device", "Shift", "Attribute"}
 )
 
 func SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.ResponseStatus, error) {
@@ -39,6 +44,10 @@ func SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.R
 	var items []orm.BarCodeItem
 
 	for _, itemInput := range input.Items {
+		if util.Includes(reservedCategory, itemInput.Key) {
+			return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeBarCodeReservedKey, nil, itemInput.Key)
+		}
+
 		var item orm.BarCodeItem
 		if err := copier.Copy(&item, &itemInput); err != nil {
 			continue

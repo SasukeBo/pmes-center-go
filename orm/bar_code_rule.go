@@ -8,11 +8,11 @@ import (
 
 type BarCodeRule struct {
 	gorm.Model
-	CodeLength int       `gorm:"not null"`
-	Name       string    `gorm:"not null;unique_index"` // 编码规则名称
-	Remark     string    `gorm:"not null"`              // 规则描述
-	UserID     uint      // 创建人ID
-	Items      types.Map `gorm:"type:JSON;not null"` // 存储解析规则
+	CodeLength int       `gorm:"COMMENT:'编码长度';not null"`
+	Name       string    `gorm:"COMMENT:'编码规则名称';not null;unique_index"` // 编码规则名称
+	Remark     string    `gorm:"COMMENT:'编码规则描述';not null"`              // 规则描述
+	UserID     uint      `gorm:"COMMENT:'编码规则创建人'"`                      // 创建人ID
+	Items      types.Map `gorm:"COMMENT:'解析项配置';type:JSON;not null"`     // 存储解析规则
 }
 
 // BarCodeItem 二维码识别规则对象

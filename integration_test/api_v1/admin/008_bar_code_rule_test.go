@@ -72,6 +72,24 @@ func TestBarCodeRule(t *testing.T) {
 	test.Login(test.AdminAccount, test.AdminPasswd, true)
 	ids := generateBarCodeRules()
 
+	t.Run("SAVE_BAR_CODE_RULE_USE_RESERVED_KEY", func(t *testing.T) {
+		tester.API1Admin(saveBarCodeRuleGQL, test.Object{
+			"input": test.Object{
+				"name":       "test save rule failed",
+				"remark":     "测试编码规则",
+				"codeLength": 28,
+				"items": []test.Object{
+					{
+						"label":      "冲压班别",
+						"key":        "Shift",
+						"type":       "Category",
+						"indexRange": []int{1},
+					},
+				},
+			},
+		}).GQLObject().Path("$.data").Null()
+	})
+
 	t.Run("SAVE_BAR_CODE_RULE", func(t *testing.T) {
 		tester.API1Admin(saveBarCodeRuleGQL, test.Object{
 			"input": test.Object{

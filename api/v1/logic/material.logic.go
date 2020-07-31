@@ -8,6 +8,7 @@ import (
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/jinzhu/copier"
+	"strings"
 	"time"
 )
 
@@ -281,16 +282,34 @@ func ProductAttributes(ctx context.Context, materialID int, versionID *int) ([]*
 	if err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "material_decode_template")
 	}
+
 	var outs []*model.ProductAttribute
-	for _, v := range template.ProductColumns {
+
+	var rule orm.BarCodeRule
+	if err := rule.Get(template.BarCodeRuleID); err != nil {
+		log.Warnln(err)
+		return outs, nil
+	}
+
+	itemsValue, ok := rule.Items["items"]
+	if !ok {
+		return outs, nil
+	}
+
+	items, ok := itemsValue.([]interface{})
+	if !ok {
+		return outs, nil
+	}
+
+	for _, v := range items {
 		var out model.ProductAttribute
 		value, ok := v.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		out.Token = fmt.Sprint(value["Token"])
-		out.Label = fmt.Sprint(value["Label"])
-		out.Prefix = fmt.Sprint(value["Prefix"])
+		out.Token = fmt.Sprint(value["key"])
+		out.Label = fmt.Sprint(value["label"])
+		out.Prefix = strings.ToUpper(out.Token[0:1])
 		outs = append(outs, &out)
 	}
 
