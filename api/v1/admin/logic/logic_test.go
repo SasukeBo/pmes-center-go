@@ -7,7 +7,6 @@ import (
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"testing"
-	"time"
 )
 
 func TestCharASCII(t *testing.T) {
@@ -24,9 +23,11 @@ func TestParseIndexInCodeRange(t *testing.T) {
 }
 
 func TestWeekDayTime(t *testing.T) {
-	now := time.Now()
-	pt := time.Date(now.Year(), time.January, 31*7, 0, 0, 0, 0, time.UTC)
-	fmt.Println(pt)
+	fmt.Printf("第1周 周日是：%v\n", parseTimeFromWeekday(1, 1-1))
+	fmt.Printf("第2周 周五是：%v\n", parseTimeFromWeekday(2, 6-1))
+	fmt.Printf("第30周 周一是：%v\n", parseTimeFromWeekday(30, 2-1))
+	fmt.Printf("第31周 周六是：%v\n", parseTimeFromWeekday(31, 7-1))
+	fmt.Printf("第32周 周一是：%v\n", parseTimeFromWeekday(32, 2-1))
 }
 
 func TestBarCodeDecoder_Decode(t *testing.T) {

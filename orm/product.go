@@ -14,7 +14,7 @@ type Product struct {
 	DeviceID          uint      `gorm:"COMMENT:'检测设备ID';column:device_id;not null;index"`
 	Qualified         bool      `gorm:"COMMENT:'产品尺寸是否合格';column:qualified;default:false"`
 	BarCode           string    `gorm:"COMMENT:'识别条码';column:bar_code;"`
-	BarCodeQualified  bool      `gorm:"COMMENT:'条码扫描是否正确';column:bar_code_qualified;default:false"`
+	BarCodeStatus     int       `gorm:"COMMENT:'条码解析状态';column:bar_code_status;default:1"`
 	CreatedAt         time.Time `gorm:"COMMENT:'产品检测时间';index"` // 检测时间
 	Attribute         types.Map `gorm:"COMMENT:'产品属性值集合';type:JSON;not null"`
 	PointValues       types.Map `gorm:"COMMENT:'产品点位检测值集合';type:JSON;not null"`

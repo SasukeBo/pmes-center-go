@@ -38,3 +38,10 @@ func (r *BarCodeRule) Get(id uint) *errormap.Error {
 
 	return nil
 }
+
+const (
+	BarCodeStatusSuccess = 1 + iota
+	BarCodeStatusIllegal
+	BarCodeStatusEmpty
+	BarCodeStatusTooShort
+)

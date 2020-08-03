@@ -189,7 +189,8 @@ func DecodeBarCodeItemFromDBToStruct(item map[string]interface{}) orm.BarCodeIte
 }
 
 type BarCodeDecoder struct {
-	Rules []orm.BarCodeItem
+	Rules       []orm.BarCodeItem
+	BarCodeRule *orm.BarCodeRule
 }
 
 func NewBarCodeDecoder(rule *orm.BarCodeRule) BarCodeDecoder {
@@ -214,6 +215,7 @@ func NewBarCodeDecoder(rule *orm.BarCodeRule) BarCodeDecoder {
 	}
 
 	decoder.Rules = rules
+	decoder.BarCodeRule = rule
 	return decoder
 }
 
@@ -222,10 +224,15 @@ func NewBarCodeDecoder(rule *orm.BarCodeRule) BarCodeDecoder {
 // - 1 正确识别
 // - 2 识别码不符合编码规则
 // - 3 识别码读取失败，为空字符串
+// - 4 识别码长度不正确
 func (bdc *BarCodeDecoder) Decode(code string) (out types.Map, statusCode int) {
 	out = make(types.Map)
 	if code == "" {
-		statusCode = 3
+		statusCode = orm.BarCodeStatusEmpty
+		return
+	}
+	if len(code) != bdc.BarCodeRule.CodeLength {
+		statusCode = orm.BarCodeStatusTooShort
 		return
 	}
 
@@ -259,7 +266,7 @@ func (bdc *BarCodeDecoder) Decode(code string) (out types.Map, statusCode int) {
 			}
 
 			if err != nil {
-				statusCode = 2
+				statusCode = orm.BarCodeStatusIllegal
 				return
 			}
 
@@ -271,7 +278,7 @@ func (bdc *BarCodeDecoder) Decode(code string) (out types.Map, statusCode int) {
 		}
 	}
 
-	statusCode = 1
+	statusCode = orm.BarCodeStatusSuccess
 	return
 }
 
@@ -338,4 +345,13 @@ func parseIndexInCodeRange(code, begin, end string, rejects ...string) (int, err
 	}
 
 	return int(distance + 1), nil
+}
+
+func parseTimeFromWeekday(week, day int) *time.Time {
+	now := time.Now()
+	t := time.Date(now.Year(), time.January, 7*(week-1), 0, 0, 0, 0, time.UTC)
+	weekDay := t.Weekday()
+	distance := int(day) - int(weekDay)
+	nt := t.AddDate(0, 0, distance)
+	return &nt
 }
