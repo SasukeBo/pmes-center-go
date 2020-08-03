@@ -184,11 +184,12 @@ func fetchMaterialData(material orm.Material, paths []string, dt *orm.DecodeTemp
 		xr := newXLSXReader(&material, nil, dt)
 
 		importRecord := &orm.ImportRecord{
-			FileName:         filepath.Base(path),
-			MaterialID:       material.ID,
-			Status:           orm.ImportStatusLoading,
-			ImportType:       orm.ImportRecordTypeSystem,
-			DecodeTemplateID: dt.ID,
+			FileName:          filepath.Base(path),
+			MaterialID:        material.ID,
+			Status:            orm.ImportStatusLoading,
+			ImportType:        orm.ImportRecordTypeSystem,
+			DecodeTemplateID:  dt.ID,
+			MaterialVersionID: dt.MaterialVersionID,
 		}
 		if err := orm.Create(importRecord).Error; err != nil {
 			log.Errorln(err)
@@ -327,21 +328,12 @@ func store(xr *XLSXReader) {
 
 	var time1 = time.Now()
 
-	var versions []orm.MaterialVersion
-	if err := orm.Model(&orm.MaterialVersion{}).Where("material_id = ? AND active = true", xr.Material.ID).Find(&versions).Error; err != nil {
+	currentVersion, err := xr.Material.GetCurrentVersion()
+	if err != nil {
 		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, err)
 		return
 	}
-	if len(versions) == 0 {
-		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, nil)
-		return
-	}
-	if len(versions) > 1 {
-		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotUnique, nil)
-		return
-	}
 
-	var currentVersion = versions[0]
 	var points []orm.Point
 	if err := orm.DB.Model(&orm.Point{}).Where(
 		"material_id = ? AND material_version_id = ?", xr.Material.ID, currentVersion.ID,
