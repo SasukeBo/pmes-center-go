@@ -22,6 +22,7 @@ type ImportRecord struct {
 	DeviceID           uint                   `json:"deviceID"`
 	RowCount           int                    `json:"rowCount"`
 	RowFinishedCount   int                    `json:"rowFinishedCount"`
+	RowInvalidCount    int                    `json:"rowInvalidCount"`
 	Status             ImportStatus           `json:"status"`
 	ErrorCode          *string                `json:"errorCode"`
 	OriginErrorMessage *string                `json:"originErrorMessage"`

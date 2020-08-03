@@ -6,6 +6,7 @@ type ImportRecord {
     device: Device
     rowCount: Int!
     rowFinishedCount: Int!
+    rowInvalidCount: Int!
     status: ImportStatus!
     errorMessage: String
     originErrorMessage: String
