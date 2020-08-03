@@ -327,21 +327,14 @@ func store(xr *XLSXReader) {
 
 	var time1 = time.Now()
 
-	var versions []orm.MaterialVersion
-	if err := orm.Model(&orm.MaterialVersion{}).Where("material_id = ? AND active = true", xr.Material.ID).Find(&versions).Error; err != nil {
+	currentVersion, err := xr.Material.GetCurrentVersion()
+	if err != nil {
 		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, err)
 		return
 	}
-	if len(versions) == 0 {
-		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, nil)
-		return
-	}
-	if len(versions) > 1 {
-		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotUnique, nil)
-		return
-	}
+	xr.Record.MaterialVersionID = currentVersion.ID
+	orm.Save(xr.Record)
 
-	var currentVersion = versions[0]
 	var points []orm.Point
 	if err := orm.DB.Model(&orm.Point{}).Where(
 		"material_id = ? AND material_version_id = ?", xr.Material.ID, currentVersion.ID,
