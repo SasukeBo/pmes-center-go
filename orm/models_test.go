@@ -45,3 +45,14 @@ func TestImportRecord_genKey(t *testing.T) {
 	key := record.genKey(1)
 	fmt.Println(key)
 }
+
+func TestPoint_ValueWithLegal(t *testing.T) {
+	point := Point{
+		Name:       "test point",
+		UpperLimit: 9.818,
+		LowerLimit: 9.746,
+	}
+
+	value, valid := point.ValueWithLegal("ERR")
+	fmt.Printf("value: %v, valid: %v\n", value, valid)
+}

@@ -345,9 +345,10 @@ func store(xr *XLSXReader) {
 	productColumns := xr.DecodeTemplate.ProductColumns
 	productValueExpands := make([]interface{}, 0)
 
-	var importOK int
+	var importOK, invalidRow int
 	for _, row := range xr.DataSet {
 		qualified := true
+		rowValid := true
 		createdAt := time.Now()
 		if t := timer.ParseTime(row[xr.DecodeTemplate.CreatedAtColumnIndex-1], 8); t != nil {
 			createdAt = *t
@@ -393,12 +394,23 @@ func store(xr *XLSXReader) {
 				log.Errorln(message)
 				return
 			}
-			value := parseFloat(row[idx])
+			var value float64
+			value, rowValid = v.ValueWithLegal(row[idx])
+			if !rowValid { // 无效数据结束遍历该行
+				invalidRow++
+				break
+			}
+
 			if value < v.LowerLimit || value > v.UpperLimit {
 				qualified = false
 			}
 			pointValues[v.Name] = value
 		}
+
+		if !rowValid {
+			continue // 过滤无效行
+		}
+
 		var deviceID uint
 		if xr.Device != nil {
 			deviceID = xr.Device.ID
@@ -429,6 +441,7 @@ func store(xr *XLSXReader) {
 	} else {
 		yield = float64(importOK) / float64(total)
 	}
+	xr.Record.RowInvalidCount = invalidRow
 	_ = xr.Record.Finish(yield)
 
 	/*			记录当前版本的总量与良率
@@ -438,7 +451,7 @@ func store(xr *XLSXReader) {
 	}
 
 	var time2 = time.Now()
-	fmt.Printf("___________________________ process file [%s] duration is %v\n", xr.Record.FileName, time2.Sub(time1))
+	log.Info("___________________________ process file [%s] duration is %v\n", xr.Record.FileName, time2.Sub(time1))
 }
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, record *orm.ImportRecord) {

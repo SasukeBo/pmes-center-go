@@ -105,7 +105,7 @@ func AnalyzePointValues(point orm.Point, data []float64) (s, cp, cpk, avg float6
 	ok = 0
 	valueSet = make([]float64, 0)
 	for _, v := range data {
-		if point.NotValid(v) {
+		if !point.IsValid(v) {
 			continue
 		}
 
