@@ -5,6 +5,7 @@ import (
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 // 检测点位
@@ -22,9 +23,11 @@ type Point struct {
 	Nominal           float64
 }
 
-// NotValid 校验数据有效性
-func (p *Point) NotValid(v float64) bool {
-	return p.Nominal > 0 && v > p.Nominal*100
+// IsValid 校验数据有效性
+func (p *Point) IsValid(v float64) bool {
+	distance := (p.UpperLimit - p.LowerLimit) / 2
+
+	return v > (p.LowerLimit-distance*10) && v < (p.UpperLimit+distance*10)
 }
 
 func (p *Point) Get(id uint) *errormap.Error {
@@ -33,6 +36,23 @@ func (p *Point) Get(id uint) *errormap.Error {
 	}
 
 	return nil
+}
+
+func (p *Point) ValueWithLegal(v string) (float64, bool) {
+	if v == "" {
+		return 0, false
+	}
+
+	value, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return 0, false
+	}
+
+	if !p.IsValid(value) {
+		return 0, false
+	}
+
+	return value, true
 }
 
 func setupPointsImportTemplate() {
