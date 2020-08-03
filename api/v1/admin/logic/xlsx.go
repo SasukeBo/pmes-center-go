@@ -184,11 +184,12 @@ func fetchMaterialData(material orm.Material, paths []string, dt *orm.DecodeTemp
 		xr := newXLSXReader(&material, nil, dt)
 
 		importRecord := &orm.ImportRecord{
-			FileName:         filepath.Base(path),
-			MaterialID:       material.ID,
-			Status:           orm.ImportStatusLoading,
-			ImportType:       orm.ImportRecordTypeSystem,
-			DecodeTemplateID: dt.ID,
+			FileName:          filepath.Base(path),
+			MaterialID:        material.ID,
+			Status:            orm.ImportStatusLoading,
+			ImportType:        orm.ImportRecordTypeSystem,
+			DecodeTemplateID:  dt.ID,
+			MaterialVersionID: dt.MaterialVersionID,
 		}
 		if err := orm.Create(importRecord).Error; err != nil {
 			log.Errorln(err)
@@ -332,8 +333,6 @@ func store(xr *XLSXReader) {
 		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, err)
 		return
 	}
-	xr.Record.MaterialVersionID = currentVersion.ID
-	orm.Save(xr.Record)
 
 	var points []orm.Point
 	if err := orm.DB.Model(&orm.Point{}).Where(
