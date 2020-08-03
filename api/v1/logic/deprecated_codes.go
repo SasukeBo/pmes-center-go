@@ -299,7 +299,7 @@ package logic
 //	//	total := len(data)
 //	//	ok := 0
 //	//	for _, v := range data {
-//	//		if p.NotValid(v) {
+//	//		if p.IsValid(v) {
 //	//			continue
 //	//		}
 //	//
