@@ -129,6 +129,7 @@ type ComplexityRoot struct {
 		OriginErrorMessage func(childComplexity int) int
 		RowCount           func(childComplexity int) int
 		RowFinishedCount   func(childComplexity int) int
+		RowInvalidCount    func(childComplexity int) int
 		Status             func(childComplexity int) int
 		User               func(childComplexity int) int
 		Yield              func(childComplexity int) int
@@ -722,6 +723,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ImportRecord.RowFinishedCount(childComplexity), true
+
+	case "ImportRecord.rowInvalidCount":
+		if e.complexity.ImportRecord.RowInvalidCount == nil {
+			break
+		}
+
+		return e.complexity.ImportRecord.RowInvalidCount(childComplexity), true
 
 	case "ImportRecord.status":
 		if e.complexity.ImportRecord.Status == nil {
@@ -1615,6 +1623,7 @@ type DeviceWrap {
     device: Device
     rowCount: Int!
     rowFinishedCount: Int!
+    rowInvalidCount: Int!
     status: ImportStatus!
     errorMessage: String
     originErrorMessage: String
@@ -4169,6 +4178,40 @@ func (ec *executionContext) _ImportRecord_rowFinishedCount(ctx context.Context, 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.RowFinishedCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ImportRecord_rowInvalidCount(ctx context.Context, field graphql.CollectedField, obj *model.ImportRecord) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ImportRecord",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RowInvalidCount, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9366,6 +9409,11 @@ func (ec *executionContext) _ImportRecord(ctx context.Context, sel ast.Selection
 			}
 		case "rowFinishedCount":
 			out.Values[i] = ec._ImportRecord_rowFinishedCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "rowInvalidCount":
+			out.Values[i] = ec._ImportRecord_rowInvalidCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}

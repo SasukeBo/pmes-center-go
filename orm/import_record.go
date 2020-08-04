@@ -38,6 +38,7 @@ type ImportRecord struct {
 	DeviceID           uint         `gorm:"not null;index"`  // 关联设备ID
 	RowCount           int          // 数据行数
 	RowFinishedCount   int          // 完成行数
+	RowInvalidCount    int          // 无效数据行
 	Status             ImportStatus `gorm:"not null;default:false"` // 导入状态
 	ErrorCode          string       // 错误码
 	OriginErrorMessage string       // 原始错误信息

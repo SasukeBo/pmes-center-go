@@ -184,11 +184,12 @@ func fetchMaterialData(material orm.Material, paths []string, dt *orm.DecodeTemp
 		xr := newXLSXReader(&material, nil, dt)
 
 		importRecord := &orm.ImportRecord{
-			FileName:         filepath.Base(path),
-			MaterialID:       material.ID,
-			Status:           orm.ImportStatusLoading,
-			ImportType:       orm.ImportRecordTypeSystem,
-			DecodeTemplateID: dt.ID,
+			FileName:          filepath.Base(path),
+			MaterialID:        material.ID,
+			Status:            orm.ImportStatusLoading,
+			ImportType:        orm.ImportRecordTypeSystem,
+			DecodeTemplateID:  dt.ID,
+			MaterialVersionID: dt.MaterialVersionID,
 		}
 		if err := orm.Create(importRecord).Error; err != nil {
 			log.Errorln(err)
@@ -463,21 +464,12 @@ func store(xr *XLSXReader) {
 
 	var time1 = time.Now()
 
-	var versions []orm.MaterialVersion
-	if err := orm.Model(&orm.MaterialVersion{}).Where("material_id = ? AND active = true", xr.Material.ID).Find(&versions).Error; err != nil {
+	currentVersion, err := xr.Material.GetCurrentVersion()
+	if err != nil {
 		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, err)
 		return
 	}
-	if len(versions) == 0 {
-		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, nil)
-		return
-	}
-	if len(versions) > 1 {
-		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotUnique, nil)
-		return
-	}
 
-	var currentVersion = versions[0]
 	var points []orm.Point
 	if err := orm.DB.Model(&orm.Point{}).Where(
 		"material_id = ? AND material_version_id = ?", xr.Material.ID, currentVersion.ID,
@@ -494,9 +486,10 @@ func store(xr *XLSXReader) {
 
 	productValueExpands := make([]interface{}, 0)
 
-	var importOK int
+	var importOK, invalidRow int
 	for _, row := range xr.DataSet {
 		qualified := true
+		rowValid := true
 		createdAt := time.Now()
 		if t := timer.ParseTime(row[xr.DecodeTemplate.CreatedAtColumnIndex-1], 8); t != nil {
 			createdAt = *t
@@ -522,12 +515,23 @@ func store(xr *XLSXReader) {
 				log.Errorln(message)
 				return
 			}
-			value := parseFloat(row[idx])
+			var value float64
+			value, rowValid = v.ValueWithLegal(row[idx])
+			if !rowValid { // 无效数据结束遍历该行
+				invalidRow++
+				break
+			}
+
 			if value < v.LowerLimit || value > v.UpperLimit {
 				qualified = false
 			}
 			pointValues[v.Name] = value
 		}
+
+		if !rowValid {
+			continue // 过滤无效行
+		}
+
 		var deviceID uint
 		if xr.Device != nil {
 			deviceID = xr.Device.ID
@@ -559,6 +563,7 @@ func store(xr *XLSXReader) {
 	} else {
 		yield = float64(importOK) / float64(total)
 	}
+	xr.Record.RowInvalidCount = invalidRow
 	_ = xr.Record.Finish(yield)
 
 	/*			记录当前版本的总量与良率
@@ -568,7 +573,7 @@ func store(xr *XLSXReader) {
 	}
 
 	var time2 = time.Now()
-	fmt.Printf("___________________________ process file [%s] duration is %v\n", xr.Record.FileName, time2.Sub(time1))
+	log.Info("___________________________ process file [%s] duration is %v\n", xr.Record.FileName, time2.Sub(time1))
 }
 
 func execInsert(dataset []interface{}, itemLen int, sqltpl, valuetpl string, record *orm.ImportRecord) {
