@@ -63,8 +63,8 @@ func TestDecodeTemplate(t *testing.T) {
 
 	t.Run("TEST_decodeTemplateWithVersionID", func(t *testing.T) {
 		version := orm.MaterialVersion{
-			Version:     "test version",
-			Description: "test version description",
+			Version:     "process version",
+			Description: "process version description",
 			MaterialID:  test.Data.Material.ID,
 			Active:      true,
 		}

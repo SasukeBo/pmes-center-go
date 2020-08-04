@@ -24,8 +24,8 @@ func TestMaterial(t *testing.T) {
 	tester := test.NewTester(t)
 	material := test.Data.Material
 	device := orm.Device{
-		Name:       "test device",
-		Remark:     "test device",
+		Name:       "process device",
+		Remark:     "process device",
 		MaterialID: material.ID,
 	}
 	orm.Create(&device)
@@ -55,15 +55,15 @@ func TestMaterial(t *testing.T) {
 	// Test analyze material
 	t.Run("TEST_ANALYZE_MATERIAL", func(t *testing.T) {
 		device1 := orm.Device{
-			Name:       "test device 1",
-			Remark:     "test device 1",
+			Name:       "process device 1",
+			Remark:     "process device 1",
 			MaterialID: material.ID,
 		}
 		orm.Create(&device1)
 		createProducts(material.ID, device1.ID, 3)
 		device2 := orm.Device{
-			Name:       "test device 2",
-			Remark:     "test device 2",
+			Name:       "process device 2",
+			Remark:     "process device 2",
 			MaterialID: material.ID,
 		}
 		orm.Create(&device2)

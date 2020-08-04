@@ -132,7 +132,7 @@ func init() {
 		"products", "system_configs", "users", "files", "bar_code_rules",
 	}
 
-	if env != "test" && env != "TEST" {
+	if env != "process" && env != "TEST" {
 		setupRootUser()
 		setupPointsImportTemplate()
 	}

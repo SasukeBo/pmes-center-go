@@ -6,7 +6,7 @@ import (
 )
 
 func TestIndexColumnCodeConvert(t *testing.T) {
-	t.Run("test convert column code to index", func(t *testing.T) {
+	t.Run("process convert column code to index", func(t *testing.T) {
 		var columnCode = "AZ"
 		result := parseIndexFromColumnCode(columnCode)
 		fmt.Println(result)
@@ -20,7 +20,7 @@ func TestIndexColumnCodeConvert(t *testing.T) {
 		fmt.Println(result)
 	})
 
-	t.Run("test convert index to column code", func(t *testing.T) {
+	t.Run("process convert index to column code", func(t *testing.T) {
 		var columnCode = "AA"
 		result := parseIndexFromColumnCode(columnCode)
 		fmt.Println("")

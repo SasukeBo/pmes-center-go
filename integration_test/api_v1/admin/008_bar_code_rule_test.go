@@ -75,7 +75,7 @@ func TestBarCodeRule(t *testing.T) {
 	t.Run("SAVE_BAR_CODE_RULE_USE_RESERVED_KEY", func(t *testing.T) {
 		tester.API1Admin(saveBarCodeRuleGQL, test.Object{
 			"input": test.Object{
-				"name":       "test save rule failed",
+				"name":       "process save rule failed",
 				"remark":     "测试编码规则",
 				"codeLength": 28,
 				"items": []test.Object{
@@ -93,7 +93,7 @@ func TestBarCodeRule(t *testing.T) {
 	t.Run("SAVE_BAR_CODE_RULE", func(t *testing.T) {
 		tester.API1Admin(saveBarCodeRuleGQL, test.Object{
 			"input": test.Object{
-				"name":       "test rule",
+				"name":       "process rule",
 				"remark":     "测试编码规则",
 				"codeLength": 28,
 				"items": []test.Object{

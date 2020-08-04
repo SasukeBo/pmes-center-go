@@ -186,16 +186,18 @@ type BarCodeItemType string
 const (
 	BarCodeItemTypeCategory BarCodeItemType = "Category"
 	BarCodeItemTypeDatetime BarCodeItemType = "Datetime"
+	BarCodeItemTypeWeekday  BarCodeItemType = "Weekday"
 )
 
 var AllBarCodeItemType = []BarCodeItemType{
 	BarCodeItemTypeCategory,
 	BarCodeItemTypeDatetime,
+	BarCodeItemTypeWeekday,
 }
 
 func (e BarCodeItemType) IsValid() bool {
 	switch e {
-	case BarCodeItemTypeCategory, BarCodeItemTypeDatetime:
+	case BarCodeItemTypeCategory, BarCodeItemTypeDatetime, BarCodeItemTypeWeekday:
 		return true
 	}
 	return false

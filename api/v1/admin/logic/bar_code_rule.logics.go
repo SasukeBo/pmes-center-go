@@ -193,15 +193,15 @@ type BarCodeDecoder struct {
 	BarCodeRule *orm.BarCodeRule
 }
 
-func NewBarCodeDecoder(rule *orm.BarCodeRule) BarCodeDecoder {
+func NewBarCodeDecoder(rule *orm.BarCodeRule) *BarCodeDecoder {
 	var decoder BarCodeDecoder
 	itemsMapValue, ok := rule.Items["items"]
 	if !ok {
-		return decoder
+		return nil
 	}
 	items, ok := itemsMapValue.([]interface{})
 	if !ok {
-		return decoder
+		return nil
 	}
 	var rules []orm.BarCodeItem
 	for _, v := range items {
@@ -216,7 +216,7 @@ func NewBarCodeDecoder(rule *orm.BarCodeRule) BarCodeDecoder {
 
 	decoder.Rules = rules
 	decoder.BarCodeRule = rule
-	return decoder
+	return &decoder
 }
 
 // Decode 解析识别码，返回解析结果对象 及 状态码
@@ -252,9 +252,9 @@ func (bdc *BarCodeDecoder) Decode(code string) (out types.Map, statusCode int) {
 		}
 
 		switch rule.Type {
-		case "Category":
+		case orm.BarCodeItemTypeCategory:
 			out[rule.Key] = childStr
-		case "Datetime":
+		case orm.BarCodeItemTypeDatetime:
 			timeCode := childStr
 			var t *time.Time
 			var err error
@@ -275,6 +275,24 @@ func (bdc *BarCodeDecoder) Decode(code string) (out types.Map, statusCode int) {
 			} else {
 				out[rule.Key] = *t
 			}
+		case orm.BarCodeItemTypeWeekday:
+			weekCode := childStr
+			var t *time.Time
+			var err error
+
+			if len(weekCode) != 3 {
+				statusCode = orm.BarCodeStatusIllegal
+				return
+			}
+
+			week, err := strconv.ParseInt(weekCode[:2], 10, 64)
+			if err != nil {
+				statusCode = orm.BarCodeStatusIllegal
+				return
+			}
+			weekDay, err := strconv.ParseInt(weekCode[2:], 10, 64)
+			t = parseTimeFromWeekday(int(week), int(weekDay-1))
+			out[rule.Key] = *t
 		}
 	}
 
@@ -351,7 +369,7 @@ func parseTimeFromWeekday(week, day int) *time.Time {
 	now := time.Now()
 	t := time.Date(now.Year(), time.January, 7*(week-1), 0, 0, 0, 0, time.UTC)
 	weekDay := t.Weekday()
-	distance := int(day) - int(weekDay)
+	distance := day - int(weekDay)
 	nt := t.AddDate(0, 0, distance)
 	return &nt
 }

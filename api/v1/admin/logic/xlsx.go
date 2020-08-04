@@ -305,14 +305,150 @@ var (
 			created_at,
 			attribute,
 			point_values,
-			material_version_id
+			material_version_id,
+			bar_code_status
 		)
 		VALUES
 		%s
 	`
-	productValueFieldTpl = `(?,?,?,?,?,?,?,?)`
-	productValueCount    = 8
+	productValueFieldTpl = `(?,?,?,?,?,?,?,?,?)`
+	productValueCount    = 9
 )
+
+// TODO deprecated
+//func store(xr *XLSXReader) {
+//	defer func() {
+//		err := recover()
+//		if err != nil {
+//			fmt.Println(err)
+//			_ = xr.Record.Failed(errormap.ErrorCodeImportFailedWithPanic, err)
+//			debug.PrintStack()
+//		}
+//	}()
+//
+//	var time1 = time.Now()
+//
+//	var versions []orm.MaterialVersion
+//	if err := orm.Model(&orm.MaterialVersion{}).Where("material_id = ? AND active = true", xr.Material.ID).Find(&versions).Error; err != nil {
+//		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, err)
+//		return
+//	}
+//	if len(versions) == 0 {
+//		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, nil)
+//		return
+//	}
+//	if len(versions) > 1 {
+//		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotUnique, nil)
+//		return
+//	}
+//
+//	var currentVersion = versions[0]
+//	var points []orm.Point
+//	if err := orm.DB.Model(&orm.Point{}).Where(
+//		"material_id = ? AND material_version_id = ?", xr.Material.ID, currentVersion.ID,
+//	).Find(&points).Error; err != nil {
+//		_ = xr.Record.Failed(errormap.ErrorCodeImportGetPointsFailed, err)
+//		return
+//	}
+//
+//	productColumns := xr.DecodeTemplate.ProductColumns
+//	productValueExpands := make([]interface{}, 0)
+//
+//	var importOK int
+//	for _, row := range xr.DataSet {
+//		qualified := true
+//		createdAt := time.Now()
+//		if t := timer.ParseTime(row[xr.DecodeTemplate.CreatedAtColumnIndex-1], 8); t != nil {
+//			createdAt = *t
+//		}
+//		attribute := make(types.Map)
+//		for name, iColumn := range productColumns {
+//			column := iColumn.(map[string]interface{})
+//			index := int(column["Index"].(float64))
+//			cType := column["Type"].(string)
+//			value := row[index-1]
+//
+//			switch cType {
+//			case orm.ProductColumnTypeDatetime:
+//				t := timer.ParseTime(value, 8)
+//				if t == nil {
+//					now := time.Now()
+//					t = &now
+//				}
+//				attribute[name] = *t
+//			case orm.ProductColumnTypeFloat:
+//				fv, err := strconv.ParseFloat(value, 64)
+//				if err != nil {
+//					fv = float64(0)
+//				}
+//				attribute[name] = fv
+//			case orm.ProductColumnTypeInteger:
+//				iv, err := strconv.ParseInt(value, 10, 64)
+//				if err != nil {
+//					iv = int64(0)
+//				}
+//				attribute[name] = iv
+//			case orm.ProductColumnTypeString:
+//				attribute[name] = fmt.Sprint(value)
+//			}
+//		}
+//
+//		pointValues := make(types.Map)
+//		for _, v := range points {
+//			idx := v.Index - 1
+//			if idx >= len(row) {
+//				message := fmt.Sprintf("point(%s) index(%d) out of range with data row length(%d)", v.Name, idx, len(row))
+//				_ = xr.Record.Failed(errormap.ErrorCodeImportWithIllegalDecodeTemplate, message)
+//				log.Errorln(message)
+//				return
+//			}
+//			value := parseFloat(row[idx])
+//			if value < v.LowerLimit || value > v.UpperLimit {
+//				qualified = false
+//			}
+//			pointValues[v.Name] = value
+//		}
+//		var deviceID uint
+//		if xr.Device != nil {
+//			deviceID = xr.Device.ID
+//		}
+//
+//		productValueExpands = append(productValueExpands,
+//			xr.Record.ID,
+//			xr.Material.ID,
+//			deviceID,
+//			qualified,
+//			createdAt,
+//			attribute,
+//			pointValues,
+//			currentVersion.ID,
+//		)
+//		if qualified {
+//			importOK++
+//		}
+//	}
+//
+//	execInsert(productValueExpands, productValueCount, insertProductsTpl, productValueFieldTpl, xr.Record)
+//
+//	/*			记录单次导入良率
+//	---------------------------------------------------------------------------------------------------------------- */
+//	var yield float64
+//	if total := len(xr.DataSet); total == 0 {
+//		yield = 0
+//	} else {
+//		yield = float64(importOK) / float64(total)
+//	}
+//	_ = xr.Record.Finish(yield)
+//
+//	/*			记录当前版本的总量与良率
+//	---------------------------------------------------------------------------------------------------------------- */
+//	if err := currentVersion.UpdateWithRecord(xr.Record); err != nil {
+//		log.Error("[store] currentVersion update with record failed: %v", err)
+//	}
+//
+//	var time2 = time.Now()
+//	fmt.Printf("___________________________ process file [%s] duration is %v\n", xr.Record.FileName, time2.Sub(time1))
+//}
 
 // store xlsx data into db
 func store(xr *XLSXReader) {
@@ -350,7 +486,12 @@ func store(xr *XLSXReader) {
 		return
 	}
 
-	productColumns := xr.DecodeTemplate.ProductColumns
+	var decoder *BarCodeDecoder
+	rule := xr.Device.GetCurrentTemplateDecodeRule()
+	if rule != nil {
+		decoder = NewBarCodeDecoder(rule)
+	}
+
 	productValueExpands := make([]interface{}, 0)
 
 	var importOK int
@@ -360,36 +501,16 @@ func store(xr *XLSXReader) {
 		if t := timer.ParseTime(row[xr.DecodeTemplate.CreatedAtColumnIndex-1], 8); t != nil {
 			createdAt = *t
 		}
-		attribute := make(types.Map)
-		for name, iColumn := range productColumns {
-			column := iColumn.(map[string]interface{})
-			index := int(column["Index"].(float64))
-			cType := column["Type"].(string)
-			value := row[index-1]
 
-			switch cType {
-			case orm.ProductColumnTypeDatetime:
-				t := timer.ParseTime(value, 8)
-				if t == nil {
-					now := time.Now()
-					t = &now
-				}
-				attribute[name] = *t
-			case orm.ProductColumnTypeFloat:
-				fv, err := strconv.ParseFloat(value, 64)
-				if err != nil {
-					fv = float64(0)
-				}
-				attribute[name] = fv
-			case orm.ProductColumnTypeInteger:
-				iv, err := strconv.ParseInt(value, 10, 64)
-				if err != nil {
-					iv = int64(0)
-				}
-				attribute[name] = iv
-			case orm.ProductColumnTypeString:
-				attribute[name] = fmt.Sprint(value)
-			}
+		var attribute types.Map
+		var statusCode = 1
+
+		if decoder != nil {
+			barCode := row[xr.DecodeTemplate.BarCodeIndex-1]
+			attribute, statusCode = decoder.Decode(barCode)
+		} else {
+			attribute = make(types.Map)
+			statusCode = orm.BarCodeStatusNoRule
 		}
 
 		pointValues := make(types.Map)
@@ -421,6 +542,7 @@ func store(xr *XLSXReader) {
 			attribute,
 			pointValues,
 			currentVersion.ID,
+			statusCode,
 		)
 		if qualified {
 			importOK++

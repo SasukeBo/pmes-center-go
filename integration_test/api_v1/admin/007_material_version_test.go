@@ -19,8 +19,8 @@ func TestMaterialVersion(t *testing.T) {
 		tester.API1Admin(GqlCreateMaterialVersion, test.Object{
 			"input": test.Object{
 				"materialID":  test.Data.Material.ID,
-				"version":     "test version",
-				"description": "test description",
+				"version":     "process version",
+				"description": "process description",
 				"active":      true,
 				"points":      inputPoints,
 				"template":    decodeTemplateInput,

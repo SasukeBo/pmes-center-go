@@ -15,6 +15,12 @@ type BarCodeRule struct {
 	Items      types.Map `gorm:"COMMENT:'解析项配置';type:JSON;not null"`     // 存储解析规则
 }
 
+const (
+	BarCodeItemTypeCategory = "Category"
+	BarCodeItemTypeDatetime = "Datetime"
+	BarCodeItemTypeWeekday  = "Weekday"
+)
+
 // BarCodeItem 二维码识别规则对象
 // - IndexRange 表示识别码索引范围，为整型数组，大于等于两位时，取前两位索引范围的字符，一位时，取该位索引为字符，0位时忽略该规则。
 // - Type 值类型，主要分两类Category和Date，前者一律处理为字符串，后者解析为日期
@@ -44,4 +50,5 @@ const (
 	BarCodeStatusIllegal
 	BarCodeStatusEmpty
 	BarCodeStatusTooShort
+	BarCodeStatusNoRule
 )

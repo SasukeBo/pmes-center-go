@@ -47,16 +47,10 @@ func TestBarCodeDecoder_Decode(t *testing.T) {
 			Type:       model.BarCodeItemTypeCategory.String(),
 		},
 		{
-			Label:      "焊接周别",
+			Label:      "焊接日期",
 			Key:        "Attr3",
-			IndexRange: []int{5, 6},
-			Type:       model.BarCodeItemTypeCategory.String(),
-		},
-		{
-			Label:      "焊接周别天数",
-			Key:        "Attr4",
-			IndexRange: []int{7},
-			Type:       model.BarCodeItemTypeCategory.String(),
+			IndexRange: []int{5, 7},
+			Type:       model.BarCodeItemTypeWeekday.String(),
 		},
 		{
 			Label:      "连续计数",
@@ -131,7 +125,7 @@ func TestBarCodeDecoder_Decode(t *testing.T) {
 	}
 	itemsMap["items"] = items
 	var rule = orm.BarCodeRule{
-		CodeLength: 0,
+		CodeLength: 28,
 		Name:       "TestBarCodeRule",
 		Remark:     "测试解析规则",
 		Items:      itemsMap,
@@ -144,7 +138,7 @@ func TestBarCodeDecoder_Decode(t *testing.T) {
 
 	//          0        1         2
 	//          1234567890123456789012345678
-	var code = "FTTA31703E42867H1102B17K17MT"
+	var code = "FTTA05603E42867H1102B17K17MT"
 	fmt.Printf("	开始解析：%v\n", code)
 	result, statusCode := decoder.Decode(code)
 	switch statusCode {
@@ -154,6 +148,8 @@ func TestBarCodeDecoder_Decode(t *testing.T) {
 		log.Error("Decode failed.")
 	case 3:
 		log.Error("Empty code")
+	default:
+		log.Error("Got Error %v", statusCode)
 	}
 
 	fmt.Println()

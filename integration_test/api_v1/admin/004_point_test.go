@@ -34,7 +34,7 @@ func TestPointsImport(t *testing.T) {
 		ret1.Last().Object().Value("name").Equal("Profile")
 	})
 
-	// test save points including delete point
+	// process save points including delete point
 	t.Run("TEST_SAVE_POINTS_INCLUDING_DELETE_POINT", func(t *testing.T) {
 		point1 := orm.Point{
 			Name:       "test_point_1",
@@ -74,7 +74,7 @@ func TestPointsImport(t *testing.T) {
 		}).GQLObject().Path("$.data.response").Equal("OK")
 	})
 
-	// test get list of points with materialID
+	// process get list of points with materialID
 	t.Run("TEST_GET_LIST_OF_POINTS_WITH_MATERIAL_ID", func(t *testing.T) {
 		var material = orm.Material{
 			Name:          "TEST_GET_LIST_OF_POINTS_WITH_MATERIAL_ID",

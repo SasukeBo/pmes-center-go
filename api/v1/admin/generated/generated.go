@@ -1525,6 +1525,7 @@ input BarCodeItemInput {
 enum BarCodeItemType {
     Category
     Datetime
+    Weekday
 }
 
 `, BuiltIn: false},
