@@ -100,6 +100,7 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 	}
 
 	out.CreatedAtColumnIndex = parseColumnCodeFromIndex(template.CreatedAtColumnIndex)
+	out.BarCodeIndex = parseColumnCodeFromIndex(template.BarCodeIndex)
 	return &out, nil
 }
 

@@ -1577,7 +1577,7 @@ input SettingInput {
     user: User! # TODO: deprecated
     dataRowIndex: Int!
     barCodeIndex: String!
-    barCodeRule: BarCodeRule!
+    barCodeRule: BarCodeRule
     createdAtColumnIndex: String!
     createdAt: Time!
     updatedAt: Time!
@@ -3329,14 +3329,11 @@ func (ec *executionContext) _DecodeTemplate_barCodeRule(ctx context.Context, fie
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.BarCodeRule)
 	fc.Result = res
-	return ec.marshalNBarCodeRule2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx, field.Selections, res)
+	return ec.marshalOBarCodeRule2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐBarCodeRule(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _DecodeTemplate_createdAtColumnIndex(ctx context.Context, field graphql.CollectedField, obj *model.DecodeTemplate) (ret graphql.Marshaler) {
@@ -9253,9 +9250,6 @@ func (ec *executionContext) _DecodeTemplate(ctx context.Context, sel ast.Selecti
 					}
 				}()
 				res = ec._DecodeTemplate_barCodeRule(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "createdAtColumnIndex":

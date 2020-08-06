@@ -307,6 +307,7 @@ func ProductAttributes(ctx context.Context, materialID int, versionID *int) ([]*
 		if !ok {
 			continue
 		}
+		out.Type = fmt.Sprint(value["type"])
 		out.Token = fmt.Sprint(value["key"])
 		out.Label = fmt.Sprint(value["label"])
 		out.Prefix = strings.ToUpper(out.Token[0:1])

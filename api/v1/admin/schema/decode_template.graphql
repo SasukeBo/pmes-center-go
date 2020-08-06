@@ -5,7 +5,7 @@ type DecodeTemplate {
     user: User! # TODO: deprecated
     dataRowIndex: Int!
     barCodeIndex: String!
-    barCodeRule: BarCodeRule!
+    barCodeRule: BarCodeRule
     createdAtColumnIndex: String!
     createdAt: Time!
     updatedAt: Time!

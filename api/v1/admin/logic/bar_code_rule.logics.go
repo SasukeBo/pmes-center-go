@@ -54,6 +54,12 @@ func SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.R
 		if err := copier.Copy(&item, &itemInput); err != nil {
 			continue
 		}
+		if item.Type != orm.BarCodeItemTypeDatetime {
+			item.DayCode = nil
+			item.DayCodeReject = nil
+			item.MonthCode = nil
+			item.MonthCodeReject = nil
+		}
 
 		items = append(items, item)
 	}
