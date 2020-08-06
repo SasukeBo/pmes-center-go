@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -500,6 +501,7 @@ func store(xr *XLSXReader) {
 		var statusCode = 1
 
 		barCode := row[xr.DecodeTemplate.BarCodeIndex-1]
+		barCode = strings.TrimSpace(barCode)
 		if decoder != nil {
 			attribute, statusCode = decoder.Decode(barCode)
 		} else {

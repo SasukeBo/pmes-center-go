@@ -112,9 +112,10 @@ func DeviceProduce() gin.HandlerFunc {
 		var statusCode = 1
 
 		rule := device.GetCurrentTemplateDecodeRule()
+		barCode := strings.TrimSpace(form.BarCode)
 		if rule != nil {
 			decoder := logic.NewBarCodeDecoder(rule)
-			attribute, statusCode = decoder.Decode(form.BarCode)
+			attribute, statusCode = decoder.Decode(barCode)
 		} else {
 			attribute = make(types.Map)
 		}
@@ -153,7 +154,7 @@ func DeviceProduce() gin.HandlerFunc {
 			PointValues:       pointValues,
 			ImportRecordID:    record.ID,
 			MaterialVersionID: record.MaterialVersionID,
-			BarCode:           form.BarCode,
+			BarCode:           barCode,
 			BarCodeStatus:     statusCode,
 		}
 		if err := orm.Create(&product).Error; err != nil {

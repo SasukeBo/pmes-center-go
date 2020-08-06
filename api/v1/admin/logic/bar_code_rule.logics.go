@@ -13,6 +13,7 @@ import (
 	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/jinzhu/copier"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -250,12 +251,12 @@ func NewBarCodeDecoder(rule *orm.BarCodeRule) *BarCodeDecoder {
 // 状态码：
 // - 1 正确识别
 // - 2 识别码不符合编码规则
-// - 3 识别码读取失败，为空字符串
+// - 3 识别码读取失败，为空字符串或ERR
 // - 4 识别码长度不正确
 func (bdc *BarCodeDecoder) Decode(code string) (out types.Map, statusCode int) {
 	out = make(types.Map)
-	if code == "" {
-		statusCode = orm.BarCodeStatusEmpty
+	if code == "" || strings.ToUpper(code) == "ERR" {
+		statusCode = orm.BarCodeStatusReadFail
 		return
 	}
 	if len(code) != bdc.BarCodeRule.CodeLength {
