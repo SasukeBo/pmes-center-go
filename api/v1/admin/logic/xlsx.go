@@ -533,6 +533,7 @@ func store(xr *XLSXReader) {
 			continue // 过滤无效行
 		}
 
+		// TODO: fix device id
 		var deviceID uint
 		if xr.Device != nil {
 			deviceID = xr.Device.ID
