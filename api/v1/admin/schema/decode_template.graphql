@@ -4,17 +4,19 @@ type DecodeTemplate {
     materialVersion: MaterialVersion
     user: User! # TODO: deprecated
     dataRowIndex: Int!
+    barCodeIndex: String!
+    barCodeRule: BarCodeRule
     createdAtColumnIndex: String!
-    productColumns: [ProductColumn]!
     createdAt: Time!
     updatedAt: Time!
 }
 
 input DecodeTemplateInput {
-    id: Int
+    id: Int!
     dataRowIndex: Int!
+    barCodeIndex: String
+    barCodeRuleID: Int
     createdAtColumnIndex: String!
-    productColumns: [ProductColumnInput]!
     pointColumns: [PointColumnInput]!
 }
 
@@ -23,25 +25,3 @@ input PointColumnInput {
     index: String!
 }
 
-input ProductColumnInput {
-    prefix: String!
-    token: String!
-    label: String!
-    index: String!
-    type: ProductColumnType!
-}
-
-type ProductColumn {
-    prefix: String! # 展示为数据项时，加上此前缀
-    label: String!
-    token: String!
-    index: String!
-    type: ProductColumnType!
-}
-
-enum ProductColumnType {
-    String
-    Integer
-    Float
-    Datetime
-}

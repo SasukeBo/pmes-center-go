@@ -30,6 +30,10 @@ type Query {
     listDecodeTemplate(materialID: Int!): [DecodeTemplate]!
     "根据MaterialVersionID获取解析模板"
     decodeTemplateWithVersionID(id: Int!): DecodeTemplate!
+    "获取二维码解析规则列表"
+    listBarCodeRules(search: String, limit: Int!, page: Int!): BarCodeRuleWrap!
+    "ID获取二维码解析规则"
+    getBarCodeRule(id: Int!): BarCodeRule!
 
     # 设备
     "设备列表"

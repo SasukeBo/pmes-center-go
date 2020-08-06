@@ -10,8 +10,8 @@ import (
 func TestDeviceProducing(t *testing.T) {
 	tester := test.NewTester(t)
 	device := orm.Device{
-		Name:       "test device",
-		Remark:     "test device",
+		Name:       "process device",
+		Remark:     "process device",
 		MaterialID: test.Data.Material.ID,
 		IsRealtime: true,
 	}

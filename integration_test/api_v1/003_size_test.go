@@ -9,7 +9,7 @@ import (
 func TestSize(t *testing.T) {
 	tester := test.NewTester(t)
 
-	// test SizeUnYieldTop
+	// process SizeUnYieldTop
 	t.Run("TEST_SizeUnYieldTop", func(t *testing.T) {
 		materialID := generateMaterialData(tester)
 		tester.API1(sizeUnYieldTopGQL, test.Object{

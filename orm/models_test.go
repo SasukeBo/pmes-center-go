@@ -7,11 +7,11 @@ import (
 )
 
 func TestDevice_GetWithToken(t *testing.T) {
-	material := Material{Name: "test material"}
+	material := Material{Name: "process material"}
 	Create(&material)
 	device := Device{
-		Name:       "test device",
-		Remark:     "test device",
+		Name:       "process device",
+		Remark:     "process device",
 		MaterialID: material.ID,
 	}
 	Create(&device)
@@ -25,7 +25,7 @@ func TestDevice_GetWithToken(t *testing.T) {
 		t.Fatal(err)
 	}
 	t3 := time.Now()
-	device.Name = "test device updated"
+	device.Name = "process device updated"
 	Save(&device)
 	t4 := time.Now()
 	if err := device3.GetWithToken(device.UUID); err != nil {

@@ -18,9 +18,9 @@ func TestDevice(t *testing.T) {
 				"remark":         "test_remark",
 				"ip":             "0.0.0.0",
 				"materialID":     test.Data.Material.ID,
-				"deviceSupplier": "test device supplier",
+				"deviceSupplier": "process device supplier",
 				"isRealtime":     true,
-				"address":        "test device address",
+				"address":        "process device address",
 			},
 		}).GQLObject().Path("$.data.response").Object()
 		ret.Value("uuid").NotNull()

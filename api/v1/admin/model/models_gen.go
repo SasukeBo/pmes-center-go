@@ -16,12 +16,50 @@ type AddUserInput struct {
 	IsAdmin  bool   `json:"isAdmin"`
 }
 
+type BarCodeItem struct {
+	Label           string          `json:"label"`
+	Key             string          `json:"key"`
+	IndexRange      []int           `json:"indexRange"`
+	Type            BarCodeItemType `json:"type"`
+	DayCode         []string        `json:"dayCode"`
+	DayCodeReject   []string        `json:"dayCodeReject"`
+	MonthCode       []string        `json:"monthCode"`
+	MonthCodeReject []string        `json:"monthCodeReject"`
+	CategorySet     []string        `json:"categorySet"`
+}
+
+type BarCodeItemInput struct {
+	Label           string          `json:"label"`
+	Key             string          `json:"key"`
+	IndexRange      []int           `json:"indexRange"`
+	Type            BarCodeItemType `json:"type"`
+	DayCode         []string        `json:"dayCode"`
+	MonthCode       []string        `json:"monthCode"`
+	DayCodeReject   []string        `json:"dayCodeReject"`
+	MonthCodeReject []string        `json:"monthCodeReject"`
+	CategorySet     []string        `json:"categorySet"`
+}
+
+type BarCodeRuleInput struct {
+	ID         *int                `json:"id"`
+	Name       string              `json:"name"`
+	Remark     string              `json:"remark"`
+	CodeLength int                 `json:"codeLength"`
+	Items      []*BarCodeItemInput `json:"items"`
+}
+
+type BarCodeRuleWrap struct {
+	Total int            `json:"total"`
+	Rules []*BarCodeRule `json:"rules"`
+}
+
 type DecodeTemplateInput struct {
-	ID                   *int                  `json:"id"`
-	DataRowIndex         int                   `json:"dataRowIndex"`
-	CreatedAtColumnIndex string                `json:"createdAtColumnIndex"`
-	ProductColumns       []*ProductColumnInput `json:"productColumns"`
-	PointColumns         []*PointColumnInput   `json:"pointColumns"`
+	ID                   int                 `json:"id"`
+	DataRowIndex         int                 `json:"dataRowIndex"`
+	BarCodeIndex         *string             `json:"barCodeIndex"`
+	BarCodeRuleID        *int                `json:"barCodeRuleID"`
+	CreatedAtColumnIndex string              `json:"createdAtColumnIndex"`
+	PointColumns         []*PointColumnInput `json:"pointColumns"`
 }
 
 type DeviceInput struct {
@@ -128,22 +166,6 @@ type PointCreateInput struct {
 	Index      string  `json:"index"`
 }
 
-type ProductColumn struct {
-	Prefix string            `json:"prefix"`
-	Label  string            `json:"label"`
-	Token  string            `json:"token"`
-	Index  string            `json:"index"`
-	Type   ProductColumnType `json:"type"`
-}
-
-type ProductColumnInput struct {
-	Prefix string            `json:"prefix"`
-	Token  string            `json:"token"`
-	Label  string            `json:"label"`
-	Index  string            `json:"index"`
-	Type   ProductColumnType `json:"type"`
-}
-
 type SettingInput struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
@@ -163,6 +185,49 @@ type User struct {
 	Name    string `json:"name"`
 	IsAdmin bool   `json:"isAdmin"`
 	UUID    string `json:"uuid"`
+}
+
+type BarCodeItemType string
+
+const (
+	BarCodeItemTypeCategory BarCodeItemType = "Category"
+	BarCodeItemTypeDatetime BarCodeItemType = "Datetime"
+	BarCodeItemTypeWeekday  BarCodeItemType = "Weekday"
+)
+
+var AllBarCodeItemType = []BarCodeItemType{
+	BarCodeItemTypeCategory,
+	BarCodeItemTypeDatetime,
+	BarCodeItemTypeWeekday,
+}
+
+func (e BarCodeItemType) IsValid() bool {
+	switch e {
+	case BarCodeItemTypeCategory, BarCodeItemTypeDatetime, BarCodeItemTypeWeekday:
+		return true
+	}
+	return false
+}
+
+func (e BarCodeItemType) String() string {
+	return string(e)
+}
+
+func (e *BarCodeItemType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = BarCodeItemType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid BarCodeItemType", str)
+	}
+	return nil
+}
+
+func (e BarCodeItemType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type ImportRecordImportType string
@@ -250,51 +315,6 @@ func (e *ImportStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ImportStatus) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-type ProductColumnType string
-
-const (
-	ProductColumnTypeString   ProductColumnType = "String"
-	ProductColumnTypeInteger  ProductColumnType = "Integer"
-	ProductColumnTypeFloat    ProductColumnType = "Float"
-	ProductColumnTypeDatetime ProductColumnType = "Datetime"
-)
-
-var AllProductColumnType = []ProductColumnType{
-	ProductColumnTypeString,
-	ProductColumnTypeInteger,
-	ProductColumnTypeFloat,
-	ProductColumnTypeDatetime,
-}
-
-func (e ProductColumnType) IsValid() bool {
-	switch e {
-	case ProductColumnTypeString, ProductColumnTypeInteger, ProductColumnTypeFloat, ProductColumnTypeDatetime:
-		return true
-	}
-	return false
-}
-
-func (e ProductColumnType) String() string {
-	return string(e)
-}
-
-func (e *ProductColumnType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = ProductColumnType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ProductColumnType", str)
-	}
-	return nil
-}
-
-func (e ProductColumnType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

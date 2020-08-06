@@ -1,0 +1,53 @@
+type BarCodeRule {
+    id: Int!
+    codeLength: Int!
+    name: String!
+    remark: String!
+    user: User!
+    items: [BarCodeItem]!
+    createdAt: Time!
+}
+
+type BarCodeRuleWrap {
+    total: Int!
+    rules: [BarCodeRule]!
+}
+
+input BarCodeRuleInput {
+    id: Int
+    name: String!
+    remark: String!
+    codeLength: Int!
+    items: [BarCodeItemInput!]!
+}
+
+type BarCodeItem {
+    label: String!
+    key: String!
+    indexRange: [Int!]!
+    type: BarCodeItemType!
+    dayCode: [String!]!
+    dayCodeReject: [String!]!
+    monthCode: [String!]!
+    monthCodeReject: [String!]!
+    categorySet: [String!]!
+}
+
+input BarCodeItemInput {
+    label: String!
+    key: String!
+    indexRange: [Int!]!
+    type: BarCodeItemType!
+    dayCode: [String!]
+    monthCode: [String!]
+    dayCodeReject: [String!]
+    monthCodeReject: [String!]
+    categorySet: [String!]
+}
+
+enum BarCodeItemType {
+    Category
+    Datetime
+    Weekday
+}
+

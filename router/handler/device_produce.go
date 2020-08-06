@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
@@ -106,21 +107,32 @@ func DeviceProduce() gin.HandlerFunc {
 			qualified = true
 		}
 
-		attributesStr := form.Attributes
-		attribute := make(types.Map)
-		kValues := strings.Split(attributesStr, ";")
-		for _, item := range kValues {
-			sectors := strings.Split(item, ":")
-			if len(sectors) < 2 {
-				continue
-			}
+		//attributesStr := form.Attributes
+		var attribute types.Map
+		var statusCode = 1
 
-			attribute[sectors[0]] = sectors[1]
+		rule := device.GetCurrentTemplateDecodeRule()
+		if rule != nil {
+			decoder := logic.NewBarCodeDecoder(rule)
+			attribute, statusCode = decoder.Decode(form.BarCode)
+		} else {
+			attribute = make(types.Map)
 		}
+
+		// TODO: deprecate
+		//kValues := strings.Split(attributesStr, ";")
+		//for _, item := range kValues {
+		//	sectors := strings.Split(item, ":")
+		//	if len(sectors) < 2 {
+		//		continue
+		//	}
+		//
+		//	attribute[sectors[0]] = sectors[1]
+		//}
 
 		pointValuesStr := form.PointValues
 		pointValues := make(types.Map)
-		kValues = strings.Split(pointValuesStr, ";")
+		kValues := strings.Split(pointValuesStr, ";")
 		for _, item := range kValues {
 			sectors := strings.Split(item, ":")
 			if len(sectors) < 2 {
@@ -142,6 +154,7 @@ func DeviceProduce() gin.HandlerFunc {
 			ImportRecordID:    record.ID,
 			MaterialVersionID: record.MaterialVersionID,
 			BarCode:           form.BarCode,
+			BarCodeStatus:     statusCode,
 		}
 		if err := orm.Create(&product).Error; err != nil {
 			errormap.SendHttpError(c, errormap.ErrorCodeCreateObjectError, err, "product")

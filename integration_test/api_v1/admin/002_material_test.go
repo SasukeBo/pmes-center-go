@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// NOTE: this test need your ftp service working
+// NOTE: this process need your ftp service working
 // - docker-compose up ftp
 // - then create a directory named 1828
 // - put a data file into this directory

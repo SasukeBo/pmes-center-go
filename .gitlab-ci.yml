@@ -14,5 +14,5 @@ before_script:
 job1:
   script:
     - cd integration_test/api_v1
-    - go test
-    - echo "finish test"
+    - go process
+    - echo "finish process"

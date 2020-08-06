@@ -23,6 +23,10 @@ func (r *decodeTemplateResolver) User(ctx context.Context, obj *model.DecodeTemp
 	return logic.LoadUser(ctx, obj.UserID), nil
 }
 
+func (r *decodeTemplateResolver) BarCodeRule(ctx context.Context, obj *model.DecodeTemplate) (*model.BarCodeRule, error) {
+	return logic.LoadBarCodeRule(ctx, obj.BarCodeRuleID), nil
+}
+
 // DecodeTemplate returns generated.DecodeTemplateResolver implementation.
 func (r *Resolver) DecodeTemplate() generated.DecodeTemplateResolver {
 	return &decodeTemplateResolver{r}

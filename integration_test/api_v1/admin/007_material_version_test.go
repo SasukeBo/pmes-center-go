@@ -5,6 +5,12 @@ import (
 	"testing"
 )
 
+var decodeTemplateInput = test.Object{
+	"materialID":           test.Data.Material.ID,
+	"dataRowIndex":         15,
+	"createdAtColumnIndex": "B",
+}
+
 func TestMaterialVersion(t *testing.T) {
 	tester := test.NewTester(t)
 	test.Login(test.AdminAccount, test.AdminPasswd, true)
@@ -13,8 +19,8 @@ func TestMaterialVersion(t *testing.T) {
 		tester.API1Admin(GqlCreateMaterialVersion, test.Object{
 			"input": test.Object{
 				"materialID":  test.Data.Material.ID,
-				"version":     "test version",
-				"description": "test description",
+				"version":     "process version",
+				"description": "process description",
 				"active":      true,
 				"points":      inputPoints,
 				"template":    decodeTemplateInput,

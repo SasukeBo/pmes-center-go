@@ -16,3 +16,13 @@ func NowDateStr() string {
 	var tStr = time.Now().String()
 	return tStr[:10]
 }
+
+func Includes(items []string, target string) bool {
+	for _, e := range items {
+		if e == target {
+			return true
+		}
+	}
+
+	return false
+}

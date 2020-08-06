@@ -69,57 +69,6 @@ query($materialID: Int!, $deviceID: Int, $page: Int!, $limit: Int!) {
   }
 }
 `
-var saveDecodeTemplateGQL = `
-mutation($input: DecodeTemplateInput!) {
-  response: saveDecodeTemplate(input: $input) {
-    id
-    name
-    material { id }
-    user { id } 
-    description
-    dataRowIndex
-    createdAtColumnIndex
-    productColumns {
-		name
-		index
-		type
-	}
-    pointColumns
-    default
-    createdAt
-    updatedAt
-  }
-}
-`
-var listDecodeTemplateGQL = `
-query($materialID: Int!) {
-  response: listDecodeTemplate(materialID: $materialID) {
-    id
-    name
-    material {
-      id
-    }
-    user {
-      id
-    }
-    description
-    dataRowIndex
-    createdAtColumnIndex
-    productColumns {
-      label
-      name
-      index
-      type
-    }
-    pointColumns
-    default
-    createdAt
-    updatedAt
-  }
-}
-`
-var deleteDecodeTemplateGQL = ` mutation($id: Int!) { response: deleteDecodeTemplate(id: $id) } `
-var changeDefaultTemplateGQL = ` mutation($id: Int!, $isDefault: Boolean!) { response: changeDefaultTemplate(id: $id, isDefault: $isDefault) } `
 var deleteMaterialGQL = ` mutation($id: Int!) { response: deleteMaterial(id: $id) } `
 var updateMaterialGQL = `
 mutation($input: MaterialUpdateInput!) {
