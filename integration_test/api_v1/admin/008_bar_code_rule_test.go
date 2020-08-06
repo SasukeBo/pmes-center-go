@@ -60,6 +60,7 @@ const (
 	      type
 	      dayCode
 	      monthCode
+		  categorySet
 	    }
 	    createdAt
 	  }
@@ -98,10 +99,11 @@ func TestBarCodeRule(t *testing.T) {
 				"codeLength": 28,
 				"items": []test.Object{
 					{
-						"label":      "治具号",
-						"key":        "Fixture",
-						"type":       "Category",
-						"indexRange": []int{1},
+						"label":       "治具号",
+						"key":         "Fixture",
+						"type":        "Category",
+						"indexRange":  []int{1},
+						"categorySet": []string{"A", "B"},
 					},
 					{
 						"label":      "冲压日期",
@@ -138,10 +140,11 @@ func generateBarCodeRules() []uint {
 		itemsMap := make(types.Map)
 		items := []orm.BarCodeItem{
 			{
-				Label:      fmt.Sprintf("label_%v_1", i),
-				Key:        fmt.Sprintf("key_%v_1", i),
-				IndexRange: []int{i, i + 1},
-				Type:       model.BarCodeItemTypeCategory.String(),
+				Label:       fmt.Sprintf("label_%v_1", i),
+				Key:         fmt.Sprintf("key_%v_1", i),
+				IndexRange:  []int{i, i + 1},
+				Type:        model.BarCodeItemTypeCategory.String(),
+				CategorySet: []string{"A", "B"},
 			},
 			{
 				Label:      fmt.Sprintf("label_%v_2", i),

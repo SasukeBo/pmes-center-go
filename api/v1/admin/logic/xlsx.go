@@ -307,13 +307,14 @@ var (
 			attribute,
 			point_values,
 			material_version_id,
-			bar_code_status
+			bar_code_status,
+			bar_code
 		)
 		VALUES
 		%s
 	`
-	productValueFieldTpl = `(?,?,?,?,?,?,?,?,?)`
-	productValueCount    = 9
+	productValueFieldTpl = `(?,?,?,?,?,?,?,?,?,?)`
+	productValueCount    = 10
 )
 
 // TODO deprecated
@@ -498,8 +499,8 @@ func store(xr *XLSXReader) {
 		var attribute types.Map
 		var statusCode = 1
 
+		barCode := row[xr.DecodeTemplate.BarCodeIndex-1]
 		if decoder != nil {
-			barCode := row[xr.DecodeTemplate.BarCodeIndex-1]
 			attribute, statusCode = decoder.Decode(barCode)
 		} else {
 			attribute = make(types.Map)
@@ -547,6 +548,7 @@ func store(xr *XLSXReader) {
 			pointValues,
 			currentVersion.ID,
 			statusCode,
+			barCode,
 		)
 		if qualified {
 			importOK++

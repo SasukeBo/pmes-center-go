@@ -25,6 +25,7 @@ type BarCodeItem struct {
 	DayCodeReject   []string        `json:"dayCodeReject"`
 	MonthCode       []string        `json:"monthCode"`
 	MonthCodeReject []string        `json:"monthCodeReject"`
+	CategorySet     []string        `json:"categorySet"`
 }
 
 type BarCodeItemInput struct {
@@ -36,6 +37,7 @@ type BarCodeItemInput struct {
 	MonthCode       []string        `json:"monthCode"`
 	DayCodeReject   []string        `json:"dayCodeReject"`
 	MonthCodeReject []string        `json:"monthCodeReject"`
+	CategorySet     []string        `json:"categorySet"`
 }
 
 type BarCodeRuleInput struct {

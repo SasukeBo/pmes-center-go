@@ -204,6 +204,13 @@ func DecodeBarCodeItemFromDBToStruct(item map[string]interface{}) orm.BarCodeIte
 		}
 		outItem.IndexRange = indexRange
 	}
+	if codes, ok := item["category_set"].([]interface{}); ok {
+		var set []string
+		for _, code := range codes {
+			set = append(set, fmt.Sprint(code))
+		}
+		outItem.CategorySet = set
+	}
 
 	return outItem
 }
@@ -273,7 +280,22 @@ func (bdc *BarCodeDecoder) Decode(code string) (out types.Map, statusCode int) {
 
 		switch rule.Type {
 		case orm.BarCodeItemTypeCategory:
-			out[rule.Key] = childStr
+			if len(rule.CategorySet) > 0 {
+				var match = false
+				for _, set := range rule.CategorySet {
+					if set == childStr {
+						out[rule.Key] = childStr
+						match = true
+						break
+					}
+				}
+				if !match {
+					statusCode = orm.BarCodeStatusIllegal
+					return
+				}
+			} else {
+				out[rule.Key] = childStr
+			}
 		case orm.BarCodeItemTypeDatetime:
 			timeCode := childStr
 			var t *time.Time

@@ -37,6 +37,7 @@ type BarCodeItem struct {
 	DayCodeReject   []string `json:"day_code_reject"`   // 日码区间剔除字段
 	MonthCode       []string `json:"month_code"`        // 月码区间
 	MonthCodeReject []string `json:"month_code_reject"` // 月码区间剔除字段
+	CategorySet     []string `json:"category_set"`      // 类别取值区间
 }
 
 func (r *BarCodeRule) Get(id uint) *errormap.Error {

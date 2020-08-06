@@ -30,6 +30,7 @@ type BarCodeItem {
     dayCodeReject: [String!]!
     monthCode: [String!]!
     monthCodeReject: [String!]!
+    categorySet: [String!]!
 }
 
 input BarCodeItemInput {
@@ -41,6 +42,7 @@ input BarCodeItemInput {
     monthCode: [String!]
     dayCodeReject: [String!]
     monthCodeReject: [String!]
+    categorySet: [String!]
 }
 
 enum BarCodeItemType {

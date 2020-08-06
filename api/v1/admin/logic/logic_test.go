@@ -35,10 +35,11 @@ func TestBarCodeDecoder_Decode(t *testing.T) {
 	itemsMap := make(types.Map)
 	items := []orm.BarCodeItem{
 		{
-			Label:      "厂商代码",
-			Key:        "Attr1",
-			IndexRange: []int{1, 3},
-			Type:       model.BarCodeItemTypeCategory.String(),
+			Label:       "厂商代码",
+			Key:         "Attr1",
+			IndexRange:  []int{1, 3},
+			CategorySet: []string{"FTT"},
+			Type:        model.BarCodeItemTypeCategory.String(),
 		},
 		{
 			Label:      "年份",
@@ -144,11 +145,13 @@ func TestBarCodeDecoder_Decode(t *testing.T) {
 	result, statusCode := decoder.Decode(code)
 	switch statusCode {
 	case 1:
-		log.Info("Decode successful.")
+		log.Info("正确成功.")
 	case 2:
-		log.Error("Decode failed.")
+		log.Error("识别码不符合编码规则")
 	case 3:
-		log.Error("Empty code")
+		log.Error("识别码读取失败，为空字符串")
+	case 4:
+		log.Error("识别码长度不正确")
 	default:
 		log.Error("Got Error %v", statusCode)
 	}
