@@ -17,21 +17,25 @@ type AddUserInput struct {
 }
 
 type BarCodeItem struct {
-	Label      string          `json:"label"`
-	Key        string          `json:"key"`
-	IndexRange []int           `json:"indexRange"`
-	Type       BarCodeItemType `json:"type"`
-	DayCode    []string        `json:"dayCode"`
-	MonthCode  []string        `json:"monthCode"`
+	Label           string          `json:"label"`
+	Key             string          `json:"key"`
+	IndexRange      []int           `json:"indexRange"`
+	Type            BarCodeItemType `json:"type"`
+	DayCode         []string        `json:"dayCode"`
+	DayCodeReject   []string        `json:"dayCodeReject"`
+	MonthCode       []string        `json:"monthCode"`
+	MonthCodeReject []string        `json:"monthCodeReject"`
 }
 
 type BarCodeItemInput struct {
-	Label      string          `json:"label"`
-	Key        string          `json:"key"`
-	IndexRange []int           `json:"indexRange"`
-	Type       BarCodeItemType `json:"type"`
-	DayCode    []string        `json:"dayCode"`
-	MonthCode  []string        `json:"monthCode"`
+	Label           string          `json:"label"`
+	Key             string          `json:"key"`
+	IndexRange      []int           `json:"indexRange"`
+	Type            BarCodeItemType `json:"type"`
+	DayCode         []string        `json:"dayCode"`
+	MonthCode       []string        `json:"monthCode"`
+	DayCodeReject   []string        `json:"dayCodeReject"`
+	MonthCodeReject []string        `json:"monthCodeReject"`
 }
 
 type BarCodeRuleInput struct {

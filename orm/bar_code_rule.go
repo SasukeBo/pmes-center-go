@@ -29,12 +29,14 @@ const (
 //   字符中剔除这些字符。当位数小于2时，视为无DayCode，则对应日期按照检测时间的日期补全。[1, Y, B, I, O] 表示从1到Y，去除B，I，O。
 // - MonthCode - 月份编码，字符串数组，规则同DayCode。 [1, D, A] 表示从1到D，去除A。
 type BarCodeItem struct {
-	Label      string   `json:"label"`       // 解析项的名称，例如：冲压日期
-	Key        string   `json:"key"`         // 解析项的英文标识，例如：ProduceDate
-	IndexRange []int    `json:"index_range"` // 解析码索引区间，例如：[21,22]
-	Type       string   `json:"type"`        // 解析项类型，例如：Datetime
-	DayCode    []string `json:"day_code"`    // 日码区间
-	MonthCode  []string `json:"month_code"`  // 月码区间
+	Label           string   `json:"label"`             // 解析项的名称，例如：冲压日期
+	Key             string   `json:"key"`               // 解析项的英文标识，例如：ProduceDate
+	IndexRange      []int    `json:"index_range"`       // 解析码索引区间，例如：[21,22]
+	Type            string   `json:"type"`              // 解析项类型，例如：Datetime
+	DayCode         []string `json:"day_code"`          // 日码区间
+	DayCodeReject   []string `json:"day_code_reject"`   // 日码区间剔除字段
+	MonthCode       []string `json:"month_code"`        // 月码区间
+	MonthCodeReject []string `json:"month_code_reject"` // 月码区间剔除字段
 }
 
 func (r *BarCodeRule) Get(id uint) *errormap.Error {

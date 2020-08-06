@@ -166,12 +166,26 @@ func DecodeBarCodeItemFromDBToStruct(item map[string]interface{}) orm.BarCodeIte
 		}
 		outItem.DayCode = dayCode
 	}
+	if codes, ok := item["day_code_reject"].([]interface{}); ok {
+		var dayCodeReject []string
+		for _, code := range codes {
+			dayCodeReject = append(dayCodeReject, fmt.Sprint(code))
+		}
+		outItem.DayCodeReject = dayCodeReject
+	}
 	if codes, ok := item["month_code"].([]interface{}); ok {
 		var monthCode []string
 		for _, code := range codes {
 			monthCode = append(monthCode, fmt.Sprint(code))
 		}
 		outItem.MonthCode = monthCode
+	}
+	if codes, ok := item["month_code_reject"].([]interface{}); ok {
+		var monthCodeReject []string
+		for _, code := range codes {
+			monthCodeReject = append(monthCodeReject, fmt.Sprint(code))
+		}
+		outItem.MonthCodeReject = monthCodeReject
 	}
 	if codes, ok := item["index_range"].([]interface{}); ok {
 		var indexRange []int
@@ -305,7 +319,7 @@ func parseCodeDatetime(monthCode, dayCode string, rule orm.BarCodeItem) (*time.T
 	var err error
 
 	if monthCode != "" && len(rule.MonthCode) > 1 {
-		month, err = parseIndexInCodeRange(monthCode, rule.MonthCode[0], rule.MonthCode[1], rule.MonthCode[2:]...)
+		month, err = parseIndexInCodeRange(monthCode, rule.MonthCode[0], rule.MonthCode[1], rule.MonthCodeReject...)
 		if err != nil {
 			log.Errorln(err)
 			return nil, err
@@ -318,7 +332,7 @@ func parseCodeDatetime(monthCode, dayCode string, rule orm.BarCodeItem) (*time.T
 	}
 
 	if dayCode != "" && len(rule.DayCode) > 1 {
-		day, err = parseIndexInCodeRange(dayCode, rule.DayCode[0], rule.DayCode[1], rule.DayCode[2:]...)
+		day, err = parseIndexInCodeRange(dayCode, rule.DayCode[0], rule.DayCode[1], rule.DayCodeReject...)
 		if err != nil {
 			log.Errorln(err)
 			return nil, err

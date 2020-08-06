@@ -51,12 +51,14 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	BarCodeItem struct {
-		DayCode    func(childComplexity int) int
-		IndexRange func(childComplexity int) int
-		Key        func(childComplexity int) int
-		Label      func(childComplexity int) int
-		MonthCode  func(childComplexity int) int
-		Type       func(childComplexity int) int
+		DayCode         func(childComplexity int) int
+		DayCodeReject   func(childComplexity int) int
+		IndexRange      func(childComplexity int) int
+		Key             func(childComplexity int) int
+		Label           func(childComplexity int) int
+		MonthCode       func(childComplexity int) int
+		MonthCodeReject func(childComplexity int) int
+		Type            func(childComplexity int) int
 	}
 
 	BarCodeRule struct {
@@ -332,6 +334,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.BarCodeItem.DayCode(childComplexity), true
 
+	case "BarCodeItem.dayCodeReject":
+		if e.complexity.BarCodeItem.DayCodeReject == nil {
+			break
+		}
+
+		return e.complexity.BarCodeItem.DayCodeReject(childComplexity), true
+
 	case "BarCodeItem.indexRange":
 		if e.complexity.BarCodeItem.IndexRange == nil {
 			break
@@ -359,6 +368,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BarCodeItem.MonthCode(childComplexity), true
+
+	case "BarCodeItem.monthCodeReject":
+		if e.complexity.BarCodeItem.MonthCodeReject == nil {
+			break
+		}
+
+		return e.complexity.BarCodeItem.MonthCodeReject(childComplexity), true
 
 	case "BarCodeItem.type":
 		if e.complexity.BarCodeItem.Type == nil {
@@ -1518,7 +1534,9 @@ type BarCodeItem {
     indexRange: [Int!]!
     type: BarCodeItemType!
     dayCode: [String!]!
+    dayCodeReject: [String!]!
     monthCode: [String!]!
+    monthCodeReject: [String!]!
 }
 
 input BarCodeItemInput {
@@ -1528,6 +1546,8 @@ input BarCodeItemInput {
     type: BarCodeItemType!
     dayCode: [String!]
     monthCode: [String!]
+    dayCodeReject: [String!]
+    monthCodeReject: [String!]
 }
 
 enum BarCodeItemType {
@@ -2679,6 +2699,40 @@ func (ec *executionContext) _BarCodeItem_dayCode(ctx context.Context, field grap
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _BarCodeItem_dayCodeReject(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DayCodeReject, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _BarCodeItem_monthCode(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2697,6 +2751,40 @@ func (ec *executionContext) _BarCodeItem_monthCode(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.MonthCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeItem_monthCodeReject(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MonthCodeReject, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8470,6 +8558,18 @@ func (ec *executionContext) unmarshalInputBarCodeItemInput(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
+		case "dayCodeReject":
+			var err error
+			it.DayCodeReject, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "monthCodeReject":
+			var err error
+			it.MonthCodeReject, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -8958,8 +9058,18 @@ func (ec *executionContext) _BarCodeItem(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "dayCodeReject":
+			out.Values[i] = ec._BarCodeItem_dayCodeReject(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "monthCode":
 			out.Values[i] = ec._BarCodeItem_monthCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "monthCodeReject":
+			out.Values[i] = ec._BarCodeItem_monthCodeReject(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
