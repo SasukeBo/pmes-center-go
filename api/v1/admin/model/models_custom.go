@@ -2,12 +2,22 @@ package model
 
 import "time"
 
+type BarCodeRule struct {
+	ID         int            `json:"id"`
+	Name       string         `json:"name"`
+	Remark     string         `json:"remark"`
+	UserID     uint           `json:"userID"`
+	CodeLength int            `json:"codeLength"`
+	Items      []*BarCodeItem `json:"items"`
+	CreatedAt  time.Time      `json:"createdAt"`
+}
+
 type MaterialVersion struct {
 	ID          int       `json:"id"`
 	Version     string    `json:"version"`
 	Description string    `json:"description"`
 	MaterialID  uint      `json:"material"`
-	UserID      uint      `json:"user"`
+	UserID      uint      `json:"userID"`
 	Active      bool      `json:"active"`
 	Amount      int       `json:"amount"`
 	Yield       float64   `json:"yield"`
@@ -36,15 +46,16 @@ type ImportRecord struct {
 }
 
 type DecodeTemplate struct {
-	ID                   int              `json:"id"`
-	MaterialID           uint             `json:"materialID"`
-	UserID               uint             `json:"userID"`
-	DataRowIndex         int              `json:"dataRowIndex"`
-	CreatedAtColumnIndex string           `json:"createdAtColumnIndex"`
-	ProductColumns       []*ProductColumn `json:"productColumns"`
-	MaterialVersionID    uint             `json:"materialVersionID"`
-	CreatedAt            time.Time        `json:"createdAt"`
-	UpdatedAt            time.Time        `json:"updatedAt"`
+	ID                   int       `json:"id"`
+	MaterialID           uint      `json:"materialID"`
+	UserID               uint      `json:"userID"`
+	DataRowIndex         int       `json:"dataRowIndex"`
+	CreatedAtColumnIndex string    `json:"createdAtColumnIndex"`
+	MaterialVersionID    uint      `json:"materialVersionID"`
+	BarCodeIndex         string    `json:"barCodeIndex"`
+	BarCodeRuleID        uint      `json:"barCodeRuleID"`
+	CreatedAt            time.Time `json:"createdAt"`
+	UpdatedAt            time.Time `json:"updatedAt"`
 }
 
 type Device struct {

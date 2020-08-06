@@ -64,3 +64,6 @@ models:
     model: github.com/SasukeBo/pmes-data-center/api/v1/admin/model.File
   MaterialVersion:
     model: github.com/SasukeBo/pmes-data-center/api/v1/admin/model.MaterialVersion
+  BarCodeRule:
+    model: github.com/SasukeBo/pmes-data-center/api/v1/admin/model.BarCodeRule
+

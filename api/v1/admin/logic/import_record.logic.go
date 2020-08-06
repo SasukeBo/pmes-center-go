@@ -17,7 +17,7 @@ func ImportRecords(ctx context.Context, materialVersionID int, deviceID *int, pa
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
 	}
 
-	query := orm.Model(&orm.ImportRecord{}).Where("material_version_id = ?", materialVersionID)
+	query := orm.Model(&orm.ImportRecord{}).Where("material_version_id = ? AND status != ?", materialVersionID, model.ImportStatusReverted)
 	if deviceID != nil {
 		query = query.Where("device_id = ?", *deviceID)
 	}

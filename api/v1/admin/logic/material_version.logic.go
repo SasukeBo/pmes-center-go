@@ -62,6 +62,7 @@ func CreateMaterialVersion(ctx context.Context, input model.MaterialVersionInput
 		MaterialVersionID:    version.ID,
 		UserID:               user.ID,
 		DataRowIndex:         15,
+		BarCodeIndex:         3,
 		CreatedAtColumnIndex: 2,
 	}
 	err := genDefaultProductColumns(&decodeTemplate)

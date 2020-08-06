@@ -124,6 +124,7 @@ type ComplexityRoot struct {
 		Label  func(childComplexity int) int
 		Prefix func(childComplexity int) int
 		Token  func(childComplexity int) int
+		Type   func(childComplexity int) int
 	}
 
 	Query struct {
@@ -536,6 +537,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProductAttribute.Token(childComplexity), true
 
+	case "ProductAttribute.type":
+		if e.complexity.ProductAttribute.Type == nil {
+			break
+		}
+
+		return e.complexity.ProductAttribute.Type(childComplexity), true
+
 	case "Query.analyzeDevice":
 		if e.complexity.Query.AnalyzeDevice == nil {
 			break
@@ -915,6 +923,7 @@ enum YAxis {
 }
 
 type ProductAttribute {
+    type: String!
     prefix: String!
     label: String!
     token: String!
@@ -3036,6 +3045,40 @@ func (ec *executionContext) _PointResult_point(ctx context.Context, field graphq
 	res := resTmp.(*model.Point)
 	fc.Result = res
 	return ec.marshalNPoint2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐPoint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProductAttribute_type(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttribute) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProductAttribute",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ProductAttribute_prefix(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttribute) (ret graphql.Marshaler) {
@@ -5809,6 +5852,11 @@ func (ec *executionContext) _ProductAttribute(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("ProductAttribute")
+		case "type":
+			out.Values[i] = ec._ProductAttribute_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "prefix":
 			out.Values[i] = ec._ProductAttribute_prefix(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

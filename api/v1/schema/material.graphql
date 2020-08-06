@@ -52,6 +52,7 @@ enum YAxis {
 }
 
 type ProductAttribute {
+    type: String!
     prefix: String!
     label: String!
     token: String!

@@ -20,7 +20,7 @@ type DecodeTemplate struct {
 	DataRowIndex         int
 	CreatedAtColumnIndex int       `gorm:"not null"` // 检测时间位置
 	BarCodeIndex         int       // 编码读取位置
-	BarCodeDecodeFuncID  int       `gorm:"column:bar_code_decode_func_id"` // 编码解析函数ID
+	BarCodeRuleID        uint      `gorm:"COMMENT:'编码规则ID';column:bar_code_rule_id"`
 	ProductColumns       types.Map `gorm:"type:JSON;not null"`
 }
 

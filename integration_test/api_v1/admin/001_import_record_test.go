@@ -19,7 +19,6 @@ func TestImportRecord(t *testing.T) {
 		}
 		orm.Create(&material)
 		template := orm.DecodeTemplate{
-			Name:       "test_template",
 			MaterialID: material.ID,
 			UserID:     test.Data.Admin.ID,
 		}

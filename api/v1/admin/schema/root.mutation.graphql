@@ -24,8 +24,10 @@ type Mutation {
     changeMaterialVersionActive(id: Int!, active: Boolean!): ResponseStatus!
 
     # 解析模板
-    "保存解析模板"
-    saveDecodeTemplate(input: DecodeTemplateInput!): ResponseStatus!
+    "更新解析模板"
+    updateDecodeTemplate(input: DecodeTemplateInput!): ResponseStatus!
+    "添加二维码解析规则"
+    saveBarCodeRule(input: BarCodeRuleInput!): ResponseStatus!
 
     # 检测项
     "解析导入的检测项，非创建"

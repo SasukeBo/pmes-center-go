@@ -110,6 +110,7 @@ func init() {
 
 func tearDown() {
 	var tables = []string{
+		"bar_code_rules",
 		"decode_templates",
 		"devices",
 		"import_records",

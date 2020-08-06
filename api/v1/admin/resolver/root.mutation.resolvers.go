@@ -44,8 +44,12 @@ func (r *mutationResolver) ChangeMaterialVersionActive(ctx context.Context, id i
 	return logic.ChangeMaterialVersionActive(ctx, id, active)
 }
 
-func (r *mutationResolver) SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error) {
-	return logic.SaveDecodeTemplate(ctx, input)
+func (r *mutationResolver) UpdateDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error) {
+	return logic.UpdateDecodeTemplate(ctx, input)
+}
+
+func (r *mutationResolver) SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.ResponseStatus, error) {
+	return logic.SaveBarCodeRule(ctx, input)
 }
 
 func (r *mutationResolver) ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error) {

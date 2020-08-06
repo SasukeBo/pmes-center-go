@@ -3,14 +3,12 @@ package logic
 import (
 	"context"
 	"fmt"
-	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"github.com/jinzhu/copier"
-	"github.com/jinzhu/gorm"
 	"math"
 	"strings"
 )
@@ -28,7 +26,7 @@ func LoadDecodeTemplate(ctx context.Context, templateID uint) *model.DecodeTempl
 	return &out
 }
 
-func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error) {
+func UpdateDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
@@ -36,27 +34,19 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (m
 
 	tx := orm.Begin()
 	var template orm.DecodeTemplate
-	if input.ID != nil {
-		if err := template.Get(uint(*input.ID)); err != nil {
-			return model.ResponseStatusError, errormap.SendGQLError(ctx, err.ErrorCode, err, "decode_template")
-		}
+	if err := template.Get(uint(input.ID)); err != nil {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, err.ErrorCode, err, "decode_template")
 	}
 
 	template.DataRowIndex = input.DataRowIndex
 	template.CreatedAtColumnIndex = parseIndexFromColumnCode(input.CreatedAtColumnIndex)
-
-	productColumns := make(types.Map)
-	for _, iColumn := range input.ProductColumns {
-		var column orm.Column
-		if err := copier.Copy(&column, &iColumn); err != nil {
-			continue
-		}
-		column.Index = parseIndexFromColumnCode(iColumn.Index)
-		productColumns[iColumn.Token] = column
+	if input.BarCodeIndex != nil {
+		template.BarCodeIndex = parseIndexFromColumnCode(*input.BarCodeIndex)
 	}
-	template.ProductColumns = productColumns
+	if input.BarCodeRuleID != nil {
+		template.BarCodeRuleID = uint(*input.BarCodeRuleID)
+	}
 
-	fmt.Println("-------------------", input.PointColumns[0])
 	for _, v := range input.PointColumns {
 		var point orm.Point
 		if err := point.Get(uint(v.ID)); err != nil {
@@ -73,15 +63,6 @@ func SaveDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (m
 	if err := tx.Save(&template).Error; err != nil {
 		tx.Rollback()
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeSaveObjectError, err, "decode_template")
-	}
-	var freshTemplate orm.DecodeTemplate
-	if err := tx.Model(&freshTemplate).Where("id = ?", template.ID).First(&freshTemplate).Error; err != nil {
-		tx.Rollback()
-		if err == gorm.ErrRecordNotFound {
-			return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeObjectNotFound, err, "decode_template")
-		}
-
-		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "decode_template")
 	}
 
 	tx.Commit()
@@ -119,37 +100,7 @@ func convertDecodeTemplateOutput(template *orm.DecodeTemplate) (*model.DecodeTem
 	}
 
 	out.CreatedAtColumnIndex = parseColumnCodeFromIndex(template.CreatedAtColumnIndex)
-	var oProductColumns []*model.ProductColumn
-	iProductColumns := template.ProductColumns
-
-	for token, iColumn := range iProductColumns {
-		column, ok := iColumn.(map[string]interface{})
-		if !ok {
-			log.Warnln("type assert interface{} to map[string]interface{} failed")
-			continue
-		}
-
-		var oColumn model.ProductColumn
-		oColumn.Token = token
-		if label, ok := column["Label"].(string); ok {
-			oColumn.Label = label
-		}
-
-		if idx, ok := column["Index"].(float64); ok {
-			oColumn.Index = parseColumnCodeFromIndex(int(idx))
-		}
-
-		if cType, ok := column["Type"].(string); ok {
-			oColumn.Type = model.ProductColumnType(cType)
-		}
-
-		if prefix, ok := column["Prefix"].(string); ok {
-			oColumn.Prefix = prefix
-		}
-
-		oProductColumns = append(oProductColumns, &oColumn)
-	}
-	out.ProductColumns = oProductColumns
+	out.BarCodeIndex = parseColumnCodeFromIndex(template.BarCodeIndex)
 	return &out, nil
 }
 

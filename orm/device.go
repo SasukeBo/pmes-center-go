@@ -10,6 +10,7 @@ import (
 	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
+	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
@@ -106,4 +107,37 @@ func (d *Device) CreateIfNotExist(materialID uint, remark string) error {
 	}
 
 	return nil
+}
+
+func (d *Device) genTemplateDecodeRuleKey() string {
+	return fmt.Sprintf("device_current_version_template_rule_key_%v_%s", d.ID, util.NowDateStr())
+}
+
+func (d *Device) GetCurrentTemplateDecodeRule() *BarCodeRule {
+	key := d.genTemplateDecodeRuleKey()
+	value := cache.Get(key)
+	if value != nil {
+		rule, ok := value.(*BarCodeRule)
+		if ok {
+			_ = cache.Set(key, rule)
+			return rule
+		}
+	}
+
+	var template DecodeTemplate
+	query := Model(&DecodeTemplate{}).Joins("JOIN material_versions ON decode_templates.material_version_id = material_versions.id")
+	query.Where("decode_templates.material_id = ? AND material_versions.active = true", d.MaterialID)
+	if err := query.Find(&template).Error; err != nil {
+		log.Errorln(err)
+		return nil
+	}
+
+	var rule BarCodeRule
+	if err := rule.Get(template.BarCodeRuleID); err != nil {
+		log.Errorln(err)
+		return nil
+	}
+
+	_ = cache.Set(key, &rule)
+	return &rule
 }
