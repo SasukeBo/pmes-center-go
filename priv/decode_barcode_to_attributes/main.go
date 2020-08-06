@@ -38,7 +38,6 @@ func main() {
 	conn.LogMode(true)
 
 	orm.DB = conn
-	tx := orm.Begin()
 
 	var material orm.Material
 	err = orm.Model(&orm.Material{}).Where("id = ?", materialID).Find(&material).Error
@@ -55,24 +54,25 @@ func main() {
 		panic("nil decoder")
 	}
 
-	var products []orm.Product
+	var ids []int
 	query := orm.Model(&orm.Product{}).Where("material_id = ?", materialID)
-	query = query.Where("id = ?", productID)
-	err = query.Find(&products).Error
+	//query = query.Where("id = ?", productID)
+	err = query.Pluck("id", &ids).Error
 	if err != nil {
 		panic(err)
 	}
 
-	for _, p := range products {
+	for _, id := range ids {
+		var p orm.Product
+		if err := orm.Model(&orm.Product{}).Where("id = ?", id).Find(&p).Error; err != nil {
+			panic(err)
+		}
 		attributes, status := decoder.Decode(p.BarCode)
 		p.Attribute = attributes
 		p.BarCodeStatus = status
-		err := tx.Save(&p).Error
+		err := orm.Save(&p).Error
 		if err != nil {
-			tx.Rollback()
 			panic(err)
 		}
 	}
-
-	tx.Commit()
 }
