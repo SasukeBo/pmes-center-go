@@ -480,7 +480,7 @@ func store(xr *XLSXReader) {
 	}
 
 	var decoder *BarCodeDecoder
-	rule := xr.Device.GetCurrentTemplateDecodeRule()
+	rule := xr.Material.GetCurrentTemplateDecodeRule()
 	if rule != nil {
 		decoder = NewBarCodeDecoder(rule)
 	}
