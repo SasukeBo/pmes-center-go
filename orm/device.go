@@ -126,7 +126,7 @@ func (d *Device) GetCurrentTemplateDecodeRule() *BarCodeRule {
 
 	var template DecodeTemplate
 	query := Model(&DecodeTemplate{}).Joins("JOIN material_versions ON decode_templates.material_version_id = material_versions.id")
-	query.Where("decode_templates.material_id = ? AND material_versions.active = true", d.MaterialID)
+	query = query.Where("decode_templates.material_id = ? AND material_versions.active = true", d.MaterialID)
 	if err := query.Find(&template).Error; err != nil {
 		log.Errorln(err)
 		return nil
