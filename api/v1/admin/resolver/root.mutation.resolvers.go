@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
@@ -50,6 +49,10 @@ func (r *mutationResolver) UpdateDecodeTemplate(ctx context.Context, input model
 
 func (r *mutationResolver) SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.ResponseStatus, error) {
 	return logic.SaveBarCodeRule(ctx, input)
+}
+
+func (r *mutationResolver) DeleteBarCodeRule(ctx context.Context, id int) (model.ResponseStatus, error) {
+	return logic.DeleteBarCodeRule(ctx, id)
 }
 
 func (r *mutationResolver) ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error) {

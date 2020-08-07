@@ -28,6 +28,8 @@ type Mutation {
     updateDecodeTemplate(input: DecodeTemplateInput!): ResponseStatus!
     "添加二维码解析规则"
     saveBarCodeRule(input: BarCodeRuleInput!): ResponseStatus!
+    "删除二维码解析规则"
+    deleteBarCodeRule(id: Int!): ResponseStatus!
 
     # 检测项
     "解析导入的检测项，非创建"

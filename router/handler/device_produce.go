@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
@@ -95,7 +96,10 @@ func DeviceProduce() gin.HandlerFunc {
 			errormap.SendHttpError(c, err.GetCode(), err, "device")
 			return
 		}
+		ipGin := c.ClientIP()
+		fmt.Println(ipGin)
 		ip := c.Request.Header.Get("X-Real-IP")
+		fmt.Println(ip)
 		if device.IP != ip {
 			device.IP = ip
 			_ = orm.Save(&device)
