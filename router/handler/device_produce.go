@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
@@ -82,6 +83,8 @@ type response struct {
 
 func DeviceProduce() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ip := c.Request.Header.Get("X-Real-IP")
+		fmt.Printf("IP: %v\n", ip)
 		body, _ := ioutil.ReadAll(c.Request.Body)
 		var form response
 		if err := json.Unmarshal(body, &form); err != nil {
