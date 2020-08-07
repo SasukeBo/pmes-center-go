@@ -95,6 +95,11 @@ func DeviceProduce() gin.HandlerFunc {
 			errormap.SendHttpError(c, err.GetCode(), err, "device")
 			return
 		}
+		ip := c.Request.Header.Get("X-Real-IP")
+		if device.IP != ip {
+			device.IP = ip
+			_ = orm.Save(&device)
+		}
 
 		var record orm.ImportRecord
 		if err := record.GetDeviceRealtimeRecord(&device); err != nil {
