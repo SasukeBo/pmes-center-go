@@ -183,6 +183,7 @@ type ComplexityRoot struct {
 		AddUser                     func(childComplexity int, input model.AddUserInput) int
 		ChangeMaterialVersionActive func(childComplexity int, id int, active bool) int
 		CreateMaterialVersion       func(childComplexity int, input model.MaterialVersionInput) int
+		DeleteBarCodeRule           func(childComplexity int, id int) int
 		DeleteDevice                func(childComplexity int, id int) int
 		DeleteMaterial              func(childComplexity int, id int) int
 		DeleteMaterialVersion       func(childComplexity int, id int) int
@@ -286,6 +287,7 @@ type MutationResolver interface {
 	ChangeMaterialVersionActive(ctx context.Context, id int, active bool) (model.ResponseStatus, error)
 	UpdateDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) (model.ResponseStatus, error)
 	SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.ResponseStatus, error)
+	DeleteBarCodeRule(ctx context.Context, id int) (model.ResponseStatus, error)
 	ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error)
 	SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error)
 	SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, error)
@@ -998,6 +1000,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateMaterialVersion(childComplexity, args["input"].(model.MaterialVersionInput)), true
+
+	case "Mutation.deleteBarCodeRule":
+		if e.complexity.Mutation.DeleteBarCodeRule == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteBarCodeRule_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteBarCodeRule(childComplexity, args["id"].(int)), true
 
 	case "Mutation.deleteDevice":
 		if e.complexity.Mutation.DeleteDevice == nil {
@@ -1803,6 +1817,8 @@ input PointCreateInput {
     updateDecodeTemplate(input: DecodeTemplateInput!): ResponseStatus!
     "添加二维码解析规则"
     saveBarCodeRule(input: BarCodeRuleInput!): ResponseStatus!
+    "删除二维码解析规则"
+    deleteBarCodeRule(id: Int!): ResponseStatus!
 
     # 检测项
     "解析导入的检测项，非创建"
@@ -1964,6 +1980,20 @@ func (ec *executionContext) field_Mutation_createMaterialVersion_args(ctx contex
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteBarCodeRule_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -5926,6 +5956,47 @@ func (ec *executionContext) _Mutation_saveBarCodeRule(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().SaveBarCodeRule(rctx, args["input"].(model.BarCodeRuleInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ResponseStatus)
+	fc.Result = res
+	return ec.marshalNResponseStatus2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐResponseStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_deleteBarCodeRule(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteBarCodeRule_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteBarCodeRule(rctx, args["id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9964,6 +10035,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "saveBarCodeRule":
 			out.Values[i] = ec._Mutation_saveBarCodeRule(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "deleteBarCodeRule":
+			out.Values[i] = ec._Mutation_deleteBarCodeRule(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

@@ -416,3 +416,16 @@ func parseTimeFromWeekday(week, day int) *time.Time {
 	nt := t.AddDate(0, 0, distance)
 	return &nt
 }
+
+func DeleteBarCodeRule(ctx context.Context, id int) (model.ResponseStatus, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+
+	if err := orm.Delete(&orm.BarCodeRule{}, "id = ?", id).Error; err != nil {
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeDeleteObjectError, err, "bar_code_rule")
+	}
+
+	return model.ResponseStatusOk, nil
+}
