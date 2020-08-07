@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -480,7 +481,7 @@ func store(xr *XLSXReader) {
 	}
 
 	var decoder *BarCodeDecoder
-	rule := xr.Device.GetCurrentTemplateDecodeRule()
+	rule := xr.Material.GetCurrentTemplateDecodeRule()
 	if rule != nil {
 		decoder = NewBarCodeDecoder(rule)
 	}
@@ -500,6 +501,7 @@ func store(xr *XLSXReader) {
 		var statusCode = 1
 
 		barCode := row[xr.DecodeTemplate.BarCodeIndex-1]
+		barCode = strings.TrimSpace(barCode)
 		if decoder != nil {
 			attribute, statusCode = decoder.Decode(barCode)
 		} else {
@@ -533,6 +535,7 @@ func store(xr *XLSXReader) {
 			continue // 过滤无效行
 		}
 
+		// TODO: fix device id
 		var deviceID uint
 		if xr.Device != nil {
 			deviceID = xr.Device.ID

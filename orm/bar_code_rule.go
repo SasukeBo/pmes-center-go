@@ -51,7 +51,7 @@ func (r *BarCodeRule) Get(id uint) *errormap.Error {
 const (
 	BarCodeStatusSuccess = 1 + iota
 	BarCodeStatusIllegal
-	BarCodeStatusEmpty
+	BarCodeStatusReadFail
 	BarCodeStatusTooShort
 	BarCodeStatusNoRule
 )

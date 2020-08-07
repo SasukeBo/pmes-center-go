@@ -1,6 +1,7 @@
 package orm
 
 import (
+	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/jinzhu/gorm"
 )
@@ -37,6 +38,24 @@ func (m *Material) GetCurrentVersion() (*MaterialVersion, error) {
 	}
 
 	return &version, nil
+}
+
+func (m *Material) GetCurrentTemplateDecodeRule() *BarCodeRule {
+	var template DecodeTemplate
+	query := Model(&DecodeTemplate{}).Joins("JOIN material_versions ON decode_templates.material_version_id = material_versions.id")
+	query = query.Where("decode_templates.material_id = ? AND material_versions.active = true", m.ID)
+	if err := query.Find(&template).Error; err != nil {
+		log.Errorln(err)
+		return nil
+	}
+
+	var rule BarCodeRule
+	if err := rule.Get(template.BarCodeRuleID); err != nil {
+		log.Errorln(err)
+		return nil
+	}
+
+	return &rule
 }
 
 func (m *Material) GetCurrentVersionTemplate() (*DecodeTemplate, error) {
