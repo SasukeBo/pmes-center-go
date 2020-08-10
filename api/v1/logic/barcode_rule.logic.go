@@ -68,7 +68,9 @@ func BarCodeStatusAnalyze(ctx context.Context, materialID int, versionID *int, d
 		}
 	}
 	response.Amount = total
-	response.Yield = float64(ok) / float64(total)
+	if total > 0 {
+		response.Yield = float64(ok) / float64(total)
+	}
 	ng := total - ok
 
 	for _, r := range results {
