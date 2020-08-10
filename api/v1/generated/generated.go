@@ -45,6 +45,14 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	BarCodeStatusAnalyzeResponse struct {
+		Amount        func(childComplexity int) int
+		FailedAmounts func(childComplexity int) int
+		FailedLabels  func(childComplexity int) int
+		FailedYields  func(childComplexity int) int
+		Yield         func(childComplexity int) int
+	}
+
 	Device struct {
 		ID       func(childComplexity int) int
 		Material func(childComplexity int) int
@@ -131,6 +139,7 @@ type ComplexityRoot struct {
 		AnalyzeDevice          func(childComplexity int, searchInput model.Search) int
 		AnalyzeDevices         func(childComplexity int, materialID int, versionID *int) int
 		AnalyzeMaterial        func(childComplexity int, id int, deviceID *int, versionID *int, duration []*time.Time) int
+		BarCodeStatusAnalyze   func(childComplexity int, materialID int, versionID *int, duration []*time.Time) int
 		Device                 func(childComplexity int, id int) int
 		Devices                func(childComplexity int, materialID int) int
 		GroupAnalyzeDevice     func(childComplexity int, analyzeInput model.GraphInput) int
@@ -174,6 +183,7 @@ type QueryResolver interface {
 	MaterialVersions(ctx context.Context, id int, search *string, limit *int, isActive *bool) ([]*model.MaterialVersion, error)
 	MaterialVersion(ctx context.Context, id int) (*model.MaterialVersion, error)
 	MaterialActiveVersion(ctx context.Context, id int) (*model.MaterialVersion, error)
+	BarCodeStatusAnalyze(ctx context.Context, materialID int, versionID *int, duration []*time.Time) (*model.BarCodeStatusAnalyzeResponse, error)
 	Device(ctx context.Context, id int) (*model.Device, error)
 	Devices(ctx context.Context, materialID int) ([]*model.Device, error)
 	AnalyzeDevices(ctx context.Context, materialID int, versionID *int) ([]*model.DeviceResult, error)
@@ -200,6 +210,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "BarCodeStatusAnalyzeResponse.amount":
+		if e.complexity.BarCodeStatusAnalyzeResponse.Amount == nil {
+			break
+		}
+
+		return e.complexity.BarCodeStatusAnalyzeResponse.Amount(childComplexity), true
+
+	case "BarCodeStatusAnalyzeResponse.failedAmounts":
+		if e.complexity.BarCodeStatusAnalyzeResponse.FailedAmounts == nil {
+			break
+		}
+
+		return e.complexity.BarCodeStatusAnalyzeResponse.FailedAmounts(childComplexity), true
+
+	case "BarCodeStatusAnalyzeResponse.failedLabels":
+		if e.complexity.BarCodeStatusAnalyzeResponse.FailedLabels == nil {
+			break
+		}
+
+		return e.complexity.BarCodeStatusAnalyzeResponse.FailedLabels(childComplexity), true
+
+	case "BarCodeStatusAnalyzeResponse.failedYields":
+		if e.complexity.BarCodeStatusAnalyzeResponse.FailedYields == nil {
+			break
+		}
+
+		return e.complexity.BarCodeStatusAnalyzeResponse.FailedYields(childComplexity), true
+
+	case "BarCodeStatusAnalyzeResponse.yield":
+		if e.complexity.BarCodeStatusAnalyzeResponse.Yield == nil {
+			break
+		}
+
+		return e.complexity.BarCodeStatusAnalyzeResponse.Yield(childComplexity), true
 
 	case "Device.id":
 		if e.complexity.Device.ID == nil {
@@ -580,6 +625,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.AnalyzeMaterial(childComplexity, args["id"].(int), args["deviceID"].(*int), args["versionID"].(*int), args["duration"].([]*time.Time)), true
 
+	case "Query.barCodeStatusAnalyze":
+		if e.complexity.Query.BarCodeStatusAnalyze == nil {
+			break
+		}
+
+		args, err := ec.field_Query_barCodeStatusAnalyze_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.BarCodeStatusAnalyze(childComplexity, args["materialID"].(int), args["versionID"].(*int), args["duration"].([]*time.Time)), true
+
 	case "Query.device":
 		if e.complexity.Query.Device == nil {
 			break
@@ -857,6 +914,13 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	&ast.Source{Name: "schema/barcode_rule.graphql", Input: `type BarCodeStatusAnalyzeResponse {
+    yield: Float!
+    amount: Int!
+    failedYields: [Float!]!
+    failedAmounts: [Int!]!
+    failedLabels: [String!]!
+}`, BuiltIn: false},
 	&ast.Source{Name: "schema/device.graphql", Input: `type Device {
     id: Int!
     name: String!
@@ -985,6 +1049,8 @@ type PointResult {
     materialVersion(id: Int!): MaterialVersion!
     "获取料号启用的版本"
     materialActiveVersion(id: Int!): MaterialVersion!
+    "查询料号产品条码识别状态占比"
+    barCodeStatusAnalyze(materialID: Int!, versionID: Int, duration: [Time]!): BarCodeStatusAnalyzeResponse!
 
     # 设备
     "ID查询设备"
@@ -1134,6 +1200,36 @@ func (ec *executionContext) field_Query_analyzeMaterial_args(ctx context.Context
 		}
 	}
 	args["duration"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_barCodeStatusAnalyze_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["materialID"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["materialID"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["versionID"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["versionID"] = arg1
+	var arg2 []*time.Time
+	if tmp, ok := rawArgs["duration"]; ok {
+		arg2, err = ec.unmarshalNTime2ᚕᚖtimeᚐTime(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["duration"] = arg2
 	return args, nil
 }
 
@@ -1516,6 +1612,176 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _BarCodeStatusAnalyzeResponse_yield(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeStatusAnalyzeResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeStatusAnalyzeResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Yield, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	fc.Result = res
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeStatusAnalyzeResponse_amount(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeStatusAnalyzeResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeStatusAnalyzeResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeStatusAnalyzeResponse_failedYields(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeStatusAnalyzeResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeStatusAnalyzeResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FailedYields, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]float64)
+	fc.Result = res
+	return ec.marshalNFloat2ᚕfloat64ᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeStatusAnalyzeResponse_failedAmounts(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeStatusAnalyzeResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeStatusAnalyzeResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FailedAmounts, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]int)
+	fc.Result = res
+	return ec.marshalNInt2ᚕintᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeStatusAnalyzeResponse_failedLabels(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeStatusAnalyzeResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeStatusAnalyzeResponse",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FailedLabels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _Device_id(ctx context.Context, field graphql.CollectedField, obj *model.Device) (ret graphql.Marshaler) {
 	defer func() {
@@ -3552,6 +3818,47 @@ func (ec *executionContext) _Query_materialActiveVersion(ctx context.Context, fi
 	return ec.marshalNMaterialVersion2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐMaterialVersion(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_barCodeStatusAnalyze(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_barCodeStatusAnalyze_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().BarCodeStatusAnalyze(rctx, args["materialID"].(int), args["versionID"].(*int), args["duration"].([]*time.Time))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.BarCodeStatusAnalyzeResponse)
+	fc.Result = res
+	return ec.marshalNBarCodeStatusAnalyzeResponse2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐBarCodeStatusAnalyzeResponse(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_device(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -5378,6 +5685,53 @@ func (ec *executionContext) unmarshalInputSearch(ctx context.Context, obj interf
 
 // region    **************************** object.gotpl ****************************
 
+var barCodeStatusAnalyzeResponseImplementors = []string{"BarCodeStatusAnalyzeResponse"}
+
+func (ec *executionContext) _BarCodeStatusAnalyzeResponse(ctx context.Context, sel ast.SelectionSet, obj *model.BarCodeStatusAnalyzeResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, barCodeStatusAnalyzeResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("BarCodeStatusAnalyzeResponse")
+		case "yield":
+			out.Values[i] = ec._BarCodeStatusAnalyzeResponse_yield(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "amount":
+			out.Values[i] = ec._BarCodeStatusAnalyzeResponse_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "failedYields":
+			out.Values[i] = ec._BarCodeStatusAnalyzeResponse_failedYields(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "failedAmounts":
+			out.Values[i] = ec._BarCodeStatusAnalyzeResponse_failedAmounts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "failedLabels":
+			out.Values[i] = ec._BarCodeStatusAnalyzeResponse_failedLabels(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var deviceImplementors = []string{"Device"}
 
 func (ec *executionContext) _Device(ctx context.Context, sel ast.SelectionSet, obj *model.Device) graphql.Marshaler {
@@ -6024,6 +6378,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "barCodeStatusAnalyze":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_barCodeStatusAnalyze(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "device":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -6471,6 +6839,20 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) marshalNBarCodeStatusAnalyzeResponse2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐBarCodeStatusAnalyzeResponse(ctx context.Context, sel ast.SelectionSet, v model.BarCodeStatusAnalyzeResponse) graphql.Marshaler {
+	return ec._BarCodeStatusAnalyzeResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBarCodeStatusAnalyzeResponse2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐBarCodeStatusAnalyzeResponse(ctx context.Context, sel ast.SelectionSet, v *model.BarCodeStatusAnalyzeResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._BarCodeStatusAnalyzeResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
 }
@@ -6624,6 +7006,35 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 	return res
 }
 
+func (ec *executionContext) unmarshalNFloat2ᚕfloat64ᚄ(ctx context.Context, v interface{}) ([]float64, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]float64, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNFloat2float64(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNFloat2ᚕfloat64ᚄ(ctx context.Context, sel ast.SelectionSet, v []float64) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNFloat2float64(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNGraphInput2githubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋmodelᚐGraphInput(ctx context.Context, v interface{}) (model.GraphInput, error) {
 	return ec.unmarshalInputGraphInput(ctx, v)
 }
@@ -6640,6 +7051,35 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {

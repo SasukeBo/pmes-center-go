@@ -9,6 +9,14 @@ import (
 	"time"
 )
 
+type BarCodeStatusAnalyzeResponse struct {
+	Yield         float64   `json:"yield"`
+	Amount        int       `json:"amount"`
+	FailedYields  []float64 `json:"failedYields"`
+	FailedAmounts []int     `json:"failedAmounts"`
+	FailedLabels  []string  `json:"failedLabels"`
+}
+
 type DeviceResult struct {
 	Device *Device `json:"device"`
 	Ok     int     `json:"ok"`

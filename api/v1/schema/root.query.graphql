@@ -18,6 +18,8 @@ type Query {
     materialVersion(id: Int!): MaterialVersion!
     "获取料号启用的版本"
     materialActiveVersion(id: Int!): MaterialVersion!
+    "查询料号产品条码识别状态占比"
+    barCodeStatusAnalyze(materialID: Int!, versionID: Int, duration: [Time]!): BarCodeStatusAnalyzeResponse!
 
     # 设备
     "ID查询设备"

@@ -1,0 +1,7 @@
+type BarCodeStatusAnalyzeResponse {
+    yield: Float!
+    amount: Int!
+    failedYields: [Float!]!
+    failedAmounts: [Int!]!
+    failedLabels: [String!]!
+}

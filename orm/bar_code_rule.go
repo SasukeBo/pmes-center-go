@@ -49,9 +49,9 @@ func (r *BarCodeRule) Get(id uint) *errormap.Error {
 }
 
 const (
-	BarCodeStatusSuccess = 1 + iota
-	BarCodeStatusIllegal
-	BarCodeStatusReadFail
-	BarCodeStatusTooShort
-	BarCodeStatusNoRule
+	BarCodeStatusSuccess  = 1 + iota
+	BarCodeStatusIllegal  // 条码值非法
+	BarCodeStatusReadFail // 条码读取错误
+	BarCodeStatusTooShort // 条码长度错误
+	BarCodeStatusNoRule   // 条码规则无解析项
 )

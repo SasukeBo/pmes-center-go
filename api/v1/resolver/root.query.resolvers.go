@@ -48,6 +48,10 @@ func (r *queryResolver) MaterialActiveVersion(ctx context.Context, id int) (*mod
 	return logic.MaterialActiveVersion(ctx, id)
 }
 
+func (r *queryResolver) BarCodeStatusAnalyze(ctx context.Context, materialID int, versionID *int, duration []*time.Time) (*model.BarCodeStatusAnalyzeResponse, error) {
+	return logic.BarCodeStatusAnalyze(ctx, materialID, versionID, duration)
+}
+
 func (r *queryResolver) Device(ctx context.Context, id int) (*model.Device, error) {
 	return logic.Device(ctx, id)
 }
