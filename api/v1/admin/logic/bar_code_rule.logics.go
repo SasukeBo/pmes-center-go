@@ -47,14 +47,21 @@ func SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.R
 	var items []orm.BarCodeItem
 
 	for _, itemInput := range input.Items {
-		if util.Includes(reservedCategory, itemInput.Key) {
-			return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeBarCodeReservedKey, nil, itemInput.Key)
+		if util.Includes(reservedCategory, itemInput.Name) {
+			return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeBarCodeReservedKey, nil, itemInput.Name)
 		}
 
 		var item orm.BarCodeItem
 		if err := copier.Copy(&item, &itemInput); err != nil {
 			continue
 		}
+
+		if itemInput.Key != nil {
+			item.Key = *itemInput.Key
+		} else {
+			item.Key = strings.ToLower(strings.ReplaceAll(itemInput.Name, " ", "_"))
+		}
+
 		if item.Type != orm.BarCodeItemTypeDatetime {
 			item.DayCode = nil
 			item.DayCodeReject = nil

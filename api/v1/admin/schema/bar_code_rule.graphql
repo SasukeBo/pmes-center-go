@@ -23,6 +23,7 @@ input BarCodeRuleInput {
 
 type BarCodeItem {
     label: String!
+    name: String!
     key: String!
     indexRange: [Int!]!
     type: BarCodeItemType!
@@ -35,7 +36,8 @@ type BarCodeItem {
 
 input BarCodeItemInput {
     label: String!
-    key: String!
+    name: String!
+    key: String
     indexRange: [Int!]!
     type: BarCodeItemType!
     dayCode: [String!]
