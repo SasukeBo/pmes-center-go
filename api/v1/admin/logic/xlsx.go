@@ -13,7 +13,7 @@ import (
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"github.com/google/uuid"
-	"github.com/tealeg/xlsx"
+	"github.com/tealeg/xlsx/v3"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -129,9 +129,11 @@ func (xr *XLSXReader) setData(content []byte) error {
 	if err != nil {
 		return fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
 	}
+	formatTimeOfXlsx(xr.DecodeTemplate, file)
 
 	originData, err := file.ToSlice()
 	if err != nil {
+		log.Error("[setData] file.ToSlice(): %v", err)
 		return err
 	}
 	if len(originData) == 0 {
@@ -157,6 +159,37 @@ func (xr *XLSXReader) setData(content []byte) error {
 	orm.Save(xr.Record)
 
 	log.Info("data begin idx: %v, end idx: %v\n", bIdx, eIdx)
+	return nil
+}
+
+const xlsxDateFormatForNumeric = "yyyy/mm/dd hh:mm:ss"
+
+func formatTimeOfXlsx(template *orm.DecodeTemplate, file *xlsx.File) error {
+	idx := template.CreatedAtColumnIndex - 1
+	beginRow := template.DataRowIndex - 1
+	if len(file.Sheets) == 0 {
+		return errors.New("file has no sheet")
+	}
+	sheet := file.Sheets[0]
+	var i int
+	sheet.ForEachRow(func(r *xlsx.Row) error {
+		defer func() { i++ }()
+		if i < beginRow {
+			cell := r.GetCell(idx)
+			cell.SetDateTimeWithFormat(0, xlsxDateFormatForNumeric)
+			return nil
+		}
+		if cell := r.GetCell(idx); cell.Type() == xlsx.CellTypeNumeric {
+			v, err := cell.Float()
+			if err == nil {
+				cell.SetDateTimeWithFormat(v, xlsxDateFormatForNumeric)
+				fmt.Println(cell.String())
+			}
+		}
+
+		return nil
+	})
+
 	return nil
 }
 
