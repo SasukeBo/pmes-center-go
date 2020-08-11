@@ -279,6 +279,11 @@ func (bdc *BarCodeDecoder) Decode(code string) (out types.Map, statusCode int) {
 			childStr = string(code[begin-1])
 		}
 
+		// 如果条码段包含*号，表示补位，跳过此解析项
+		if strings.Contains(childStr, "*") {
+			continue
+		}
+
 		switch rule.Type {
 		case orm.BarCodeItemTypeCategory:
 			if len(rule.CategorySet) > 0 {
