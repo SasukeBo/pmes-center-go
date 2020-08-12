@@ -8,7 +8,7 @@ import (
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/jinzhu/copier"
-	"github.com/tealeg/xlsx"
+	"github.com/tealeg/xlsx/v3"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -35,27 +35,29 @@ func ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point
 	}
 
 	sheet := xFile.Sheets[0]
-	dimRow := sheet.Row(0)
-	uslRow := sheet.Row(1)
-	nominalRow := sheet.Row(2)
-	lslRow := sheet.Row(3)
+	dimRow, _ := sheet.Row(0)
+	uslRow, _ := sheet.Row(1)
+	nominalRow, _ := sheet.Row(2)
+	lslRow, _ := sheet.Row(3)
 
+	var cellIndex int
 	var outs []*model.Point
-	for i := 1; i < len(dimRow.Cells); i++ {
+	dimRow.ForEachCell(func(c *xlsx.Cell) error {
+		defer func() { cellIndex++ }()
 		var name string
-		name = dimRow.Cells[i].String()
-		if name == "" { // 过滤空单元格
-			continue
+		name = c.String()
+		if name == "" || cellIndex == 0 { // 过滤空单元格
+			return nil
 		}
 
 		var usl, lsl, nominal float64
-		if usl, err = uslRow.Cells[i].Float(); err != nil {
+		if usl, err = uslRow.GetCell(cellIndex).Float(); err != nil {
 			usl = 0
 		}
-		if nominal, err = nominalRow.Cells[i].Float(); err != nil {
+		if nominal, err = nominalRow.GetCell(cellIndex).Float(); err != nil {
 			nominal = 0
 		}
-		if lsl, err = lslRow.Cells[i].Float(); err != nil {
+		if lsl, err = lslRow.GetCell(cellIndex).Float(); err != nil {
 			lsl = 0
 		}
 		out := model.Point{
@@ -63,10 +65,11 @@ func ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point
 			UpperLimit: usl,
 			LowerLimit: lsl,
 			Nominal:    nominal,
-			Index:      parseColumnCodeFromIndex(i + 1),
+			Index:      parseColumnCodeFromIndex(cellIndex + 1),
 		}
 		outs = append(outs, &out)
-	}
+		return nil
+	})
 
 	return outs, nil
 }

@@ -9,12 +9,10 @@ require (
 	github.com/SasukeBo/log v1.0.0
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/ajg/form v1.5.1 // indirect
-	github.com/allegro/bigcache v1.2.1
 	github.com/astaxie/beego v1.12.2
 	github.com/fasthttp-contrib/websocket v0.0.0-20160511215533-1f3b11f56072 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/gavv/httpexpect v2.0.0+incompatible
-	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/validator/v10 v10.3.0 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
@@ -33,7 +31,7 @@ require (
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/onsi/ginkgo v1.12.2 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
-	github.com/tealeg/xlsx v1.0.5
+	github.com/tealeg/xlsx/v3 v3.2.0
 	github.com/valyala/fasthttp v1.13.1 // indirect
 	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
@@ -49,5 +47,3 @@ require (
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/gookit/color.v1 v1.1.6
 )
-
-replace github.com/tealeg/xlsx => github.com/SasukeBo/xlsx v1.0.5-fork
