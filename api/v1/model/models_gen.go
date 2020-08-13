@@ -95,6 +95,7 @@ type ProductAttribute struct {
 	Type   string `json:"type"`
 	Prefix string `json:"prefix"`
 	Label  string `json:"label"`
+	Name   string `json:"name"`
 	Token  string `json:"token"`
 }
 

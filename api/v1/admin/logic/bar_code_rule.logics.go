@@ -170,9 +170,18 @@ func LoadBarCodeRule(ctx context.Context, id uint) *model.BarCodeRule {
 
 func DecodeBarCodeItemFromDBToStruct(item map[string]interface{}) orm.BarCodeItem {
 	var outItem orm.BarCodeItem
-	outItem.Label = fmt.Sprint(item["label"])
-	outItem.Type = fmt.Sprint(item["type"])
-	outItem.Key = fmt.Sprint(item["key"])
+	if label, ok := item["label"]; ok {
+		outItem.Label = fmt.Sprint(label)
+	}
+	if iType, ok := item["type"]; ok {
+		outItem.Type = fmt.Sprint(iType)
+	}
+	if key, ok := item["key"]; ok {
+		outItem.Key = fmt.Sprint(key)
+	}
+	if name, ok := item["name"]; ok {
+		outItem.Name = fmt.Sprint(name)
+	}
 	if codes, ok := item["day_code"].([]interface{}); ok {
 		var dayCode []string
 		for _, code := range codes {
