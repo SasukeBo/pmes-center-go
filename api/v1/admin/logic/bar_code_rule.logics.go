@@ -47,14 +47,21 @@ func SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.R
 	var items []orm.BarCodeItem
 
 	for _, itemInput := range input.Items {
-		if util.Includes(reservedCategory, itemInput.Key) {
-			return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeBarCodeReservedKey, nil, itemInput.Key)
+		if util.Includes(reservedCategory, itemInput.Name) {
+			return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodeBarCodeReservedKey, nil, itemInput.Name)
 		}
 
 		var item orm.BarCodeItem
 		if err := copier.Copy(&item, &itemInput); err != nil {
 			continue
 		}
+
+		if itemInput.Key != nil {
+			item.Key = *itemInput.Key
+		} else {
+			item.Key = strings.ToLower(strings.ReplaceAll(itemInput.Name, " ", "_"))
+		}
+
 		if item.Type != orm.BarCodeItemTypeDatetime {
 			item.DayCode = nil
 			item.DayCodeReject = nil
@@ -163,9 +170,18 @@ func LoadBarCodeRule(ctx context.Context, id uint) *model.BarCodeRule {
 
 func DecodeBarCodeItemFromDBToStruct(item map[string]interface{}) orm.BarCodeItem {
 	var outItem orm.BarCodeItem
-	outItem.Label = fmt.Sprint(item["label"])
-	outItem.Type = fmt.Sprint(item["type"])
-	outItem.Key = fmt.Sprint(item["key"])
+	if label, ok := item["label"]; ok {
+		outItem.Label = fmt.Sprint(label)
+	}
+	if iType, ok := item["type"]; ok {
+		outItem.Type = fmt.Sprint(iType)
+	}
+	if key, ok := item["key"]; ok {
+		outItem.Key = fmt.Sprint(key)
+	}
+	if name, ok := item["name"]; ok {
+		outItem.Name = fmt.Sprint(name)
+	}
 	if codes, ok := item["day_code"].([]interface{}); ok {
 		var dayCode []string
 		for _, code := range codes {
@@ -255,7 +271,7 @@ func NewBarCodeDecoder(rule *orm.BarCodeRule) *BarCodeDecoder {
 // - 4 识别码长度不正确
 func (bdc *BarCodeDecoder) Decode(code string) (out types.Map, statusCode int) {
 	out = make(types.Map)
-	if code == "" || strings.ToUpper(code) == "ERR" {
+	if code == "" || strings.ToUpper(code) == "ERR" || strings.Contains(code, "#") {
 		statusCode = orm.BarCodeStatusReadFail
 		return
 	}
