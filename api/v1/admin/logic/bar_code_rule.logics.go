@@ -262,7 +262,7 @@ func NewBarCodeDecoder(rule *orm.BarCodeRule) *BarCodeDecoder {
 // - 4 识别码长度不正确
 func (bdc *BarCodeDecoder) Decode(code string) (out types.Map, statusCode int) {
 	out = make(types.Map)
-	if code == "" || strings.ToUpper(code) == "ERR" {
+	if code == "" || strings.ToUpper(code) == "ERR" || strings.Contains(code, "#") {
 		statusCode = orm.BarCodeStatusReadFail
 		return
 	}
