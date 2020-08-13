@@ -18,6 +18,7 @@ type AddUserInput struct {
 
 type BarCodeItem struct {
 	Label           string          `json:"label"`
+	Name            string          `json:"name"`
 	Key             string          `json:"key"`
 	IndexRange      []int           `json:"indexRange"`
 	Type            BarCodeItemType `json:"type"`
@@ -30,7 +31,8 @@ type BarCodeItem struct {
 
 type BarCodeItemInput struct {
 	Label           string          `json:"label"`
-	Key             string          `json:"key"`
+	Name            string          `json:"name"`
+	Key             *string         `json:"key"`
 	IndexRange      []int           `json:"indexRange"`
 	Type            BarCodeItemType `json:"type"`
 	DayCode         []string        `json:"dayCode"`

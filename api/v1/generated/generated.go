@@ -130,6 +130,7 @@ type ComplexityRoot struct {
 
 	ProductAttribute struct {
 		Label  func(childComplexity int) int
+		Name   func(childComplexity int) int
 		Prefix func(childComplexity int) int
 		Token  func(childComplexity int) int
 		Type   func(childComplexity int) int
@@ -568,6 +569,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ProductAttribute.Label(childComplexity), true
 
+	case "ProductAttribute.name":
+		if e.complexity.ProductAttribute.Name == nil {
+			break
+		}
+
+		return e.complexity.ProductAttribute.Name(childComplexity), true
+
 	case "ProductAttribute.prefix":
 		if e.complexity.ProductAttribute.Prefix == nil {
 			break
@@ -990,6 +998,7 @@ type ProductAttribute {
     type: String!
     prefix: String!
     label: String!
+    name: String!
     token: String!
 }
 `, BuiltIn: false},
@@ -3399,6 +3408,40 @@ func (ec *executionContext) _ProductAttribute_label(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Label, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ProductAttribute_name(ctx context.Context, field graphql.CollectedField, obj *model.ProductAttribute) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "ProductAttribute",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6218,6 +6261,11 @@ func (ec *executionContext) _ProductAttribute(ctx context.Context, sel ast.Selec
 			}
 		case "label":
 			out.Values[i] = ec._ProductAttribute_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._ProductAttribute_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

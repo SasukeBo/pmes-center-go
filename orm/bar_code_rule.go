@@ -30,7 +30,8 @@ const (
 // - MonthCode - 月份编码，字符串数组，规则同DayCode。 [1, D, A] 表示从1到D，去除A。
 type BarCodeItem struct {
 	Label           string   `json:"label"`             // 解析项的名称，例如：冲压日期
-	Key             string   `json:"key"`               // 解析项的英文标识，例如：ProduceDate
+	Name            string   `json:"name"`              // 解析项的英文名称，例如 Produce Date
+	Key             string   `json:"key"`               // 解析项的标识，例如：ProduceDate
 	IndexRange      []int    `json:"index_range"`       // 解析码索引区间，例如：[21,22]
 	Type            string   `json:"type"`              // 解析项类型，例如：Datetime
 	DayCode         []string `json:"day_code"`          // 日码区间

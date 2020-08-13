@@ -55,5 +55,6 @@ type ProductAttribute {
     type: String!
     prefix: String!
     label: String!
+    name: String!
     token: String!
 }

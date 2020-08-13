@@ -59,6 +59,7 @@ type ComplexityRoot struct {
 		Label           func(childComplexity int) int
 		MonthCode       func(childComplexity int) int
 		MonthCodeReject func(childComplexity int) int
+		Name            func(childComplexity int) int
 		Type            func(childComplexity int) int
 	}
 
@@ -385,6 +386,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.BarCodeItem.MonthCodeReject(childComplexity), true
+
+	case "BarCodeItem.name":
+		if e.complexity.BarCodeItem.Name == nil {
+			break
+		}
+
+		return e.complexity.BarCodeItem.Name(childComplexity), true
 
 	case "BarCodeItem.type":
 		if e.complexity.BarCodeItem.Type == nil {
@@ -1552,6 +1560,7 @@ input BarCodeRuleInput {
 
 type BarCodeItem {
     label: String!
+    name: String!
     key: String!
     indexRange: [Int!]!
     type: BarCodeItemType!
@@ -1564,7 +1573,8 @@ type BarCodeItem {
 
 input BarCodeItemInput {
     label: String!
-    key: String!
+    name: String!
+    key: String
     indexRange: [Int!]!
     type: BarCodeItemType!
     dayCode: [String!]
@@ -2587,6 +2597,40 @@ func (ec *executionContext) _BarCodeItem_label(ctx context.Context, field graphq
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Label, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _BarCodeItem_name(ctx context.Context, field graphql.CollectedField, obj *model.BarCodeItem) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "BarCodeItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8640,9 +8684,15 @@ func (ec *executionContext) unmarshalInputBarCodeItemInput(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
+		case "name":
+			var err error
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "key":
 			var err error
-			it.Key, err = ec.unmarshalNString2string(ctx, v)
+			it.Key, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9153,6 +9203,11 @@ func (ec *executionContext) _BarCodeItem(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = graphql.MarshalString("BarCodeItem")
 		case "label":
 			out.Values[i] = ec._BarCodeItem_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._BarCodeItem_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
