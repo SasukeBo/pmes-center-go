@@ -18,7 +18,8 @@ type DecodeTemplate struct {
 	MaterialVersionID    uint `gorm:"not null"` // 料号版本ID
 	UserID               uint
 	DataRowIndex         int
-	CreatedAtColumnIndex int       `gorm:"not null"` // 检测时间位置
+	DeviceNameRowIndex   int       `gorm:"default:2"` // 默认在第二行
+	CreatedAtColumnIndex int       `gorm:"not null"`  // 检测时间位置
 	BarCodeIndex         int       // 编码读取位置
 	BarCodeRuleID        uint      `gorm:"COMMENT:'编码规则ID';column:bar_code_rule_id"`
 	ProductColumns       types.Map `gorm:"type:JSON;not null"`

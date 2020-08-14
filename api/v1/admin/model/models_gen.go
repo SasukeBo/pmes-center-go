@@ -58,6 +58,7 @@ type BarCodeRuleWrap struct {
 type DecodeTemplateInput struct {
 	ID                   int                 `json:"id"`
 	DataRowIndex         int                 `json:"dataRowIndex"`
+	DeviceNameRowIndex   int                 `json:"deviceNameRowIndex"`
 	BarCodeIndex         *string             `json:"barCodeIndex"`
 	BarCodeRuleID        *int                `json:"barCodeRuleID"`
 	CreatedAtColumnIndex string              `json:"createdAtColumnIndex"`
