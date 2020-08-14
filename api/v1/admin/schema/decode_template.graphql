@@ -4,6 +4,7 @@ type DecodeTemplate {
     materialVersion: MaterialVersion
     user: User! # TODO: deprecated
     dataRowIndex: Int!
+    deviceNameRowIndex: Int!
     barCodeIndex: String!
     barCodeRule: BarCodeRule
     createdAtColumnIndex: String!
@@ -14,6 +15,7 @@ type DecodeTemplate {
 input DecodeTemplateInput {
     id: Int!
     dataRowIndex: Int!
+    deviceNameRowIndex: Int!
     barCodeIndex: String
     barCodeRuleID: Int
     createdAtColumnIndex: String!

@@ -63,11 +63,11 @@ func handleFileDevice(xr *XLSXReader, file *xlsx.File) error {
 		return fmt.Errorf("file has no sheet")
 	}
 	sheet := file.Sheets[0]
-	firstRow, err := sheet.Row(0)
+	row, err := sheet.Row(xr.DecodeTemplate.DeviceNameRowIndex - 1)
 	if err != nil {
 		return fmt.Errorf("first sheet of the file is empty")
 	}
-	firstCell := firstRow.GetCell(0)
+	firstCell := row.GetCell(0)
 	var deviceName string
 	if firstCell != nil {
 		deviceName = firstCell.String()

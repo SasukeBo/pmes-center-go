@@ -39,6 +39,7 @@ func UpdateDecodeTemplate(ctx context.Context, input model.DecodeTemplateInput) 
 	}
 
 	template.DataRowIndex = input.DataRowIndex
+	template.DeviceNameRowIndex = input.DeviceNameRowIndex
 	template.CreatedAtColumnIndex = parseIndexFromColumnCode(input.CreatedAtColumnIndex)
 	if input.BarCodeIndex != nil {
 		template.BarCodeIndex = parseIndexFromColumnCode(*input.BarCodeIndex)

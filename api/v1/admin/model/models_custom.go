@@ -50,6 +50,7 @@ type DecodeTemplate struct {
 	MaterialID           uint      `json:"materialID"`
 	UserID               uint      `json:"userID"`
 	DataRowIndex         int       `json:"dataRowIndex"`
+	DeviceNameRowIndex   int       `json:"deviceNameRowIndex"`
 	CreatedAtColumnIndex string    `json:"createdAtColumnIndex"`
 	MaterialVersionID    uint      `json:"materialVersionID"`
 	BarCodeIndex         string    `json:"barCodeIndex"`

@@ -84,6 +84,7 @@ type ComplexityRoot struct {
 		CreatedAt            func(childComplexity int) int
 		CreatedAtColumnIndex func(childComplexity int) int
 		DataRowIndex         func(childComplexity int) int
+		DeviceNameRowIndex   func(childComplexity int) int
 		ID                   func(childComplexity int) int
 		Material             func(childComplexity int) int
 		MaterialVersion      func(childComplexity int) int
@@ -498,6 +499,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.DecodeTemplate.DataRowIndex(childComplexity), true
+
+	case "DecodeTemplate.deviceNameRowIndex":
+		if e.complexity.DecodeTemplate.DeviceNameRowIndex == nil {
+			break
+		}
+
+		return e.complexity.DecodeTemplate.DeviceNameRowIndex(childComplexity), true
 
 	case "DecodeTemplate.id":
 		if e.complexity.DecodeTemplate.ID == nil {
@@ -1610,6 +1618,7 @@ input SettingInput {
     materialVersion: MaterialVersion
     user: User! # TODO: deprecated
     dataRowIndex: Int!
+    deviceNameRowIndex: Int!
     barCodeIndex: String!
     barCodeRule: BarCodeRule
     createdAtColumnIndex: String!
@@ -1620,6 +1629,7 @@ input SettingInput {
 input DecodeTemplateInput {
     id: Int!
     dataRowIndex: Int!
+    deviceNameRowIndex: Int!
     barCodeIndex: String
     barCodeRuleID: Int
     createdAtColumnIndex: String!
@@ -3373,6 +3383,40 @@ func (ec *executionContext) _DecodeTemplate_dataRowIndex(ctx context.Context, fi
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.DataRowIndex, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _DecodeTemplate_deviceNameRowIndex(ctx context.Context, field graphql.CollectedField, obj *model.DecodeTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "DecodeTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeviceNameRowIndex, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8804,6 +8848,12 @@ func (ec *executionContext) unmarshalInputDecodeTemplateInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
+		case "deviceNameRowIndex":
+			var err error
+			it.DeviceNameRowIndex, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		case "barCodeIndex":
 			var err error
 			it.BarCodeIndex, err = ec.unmarshalOString2ᚖstring(ctx, v)
@@ -9414,6 +9464,11 @@ func (ec *executionContext) _DecodeTemplate(ctx context.Context, sel ast.Selecti
 			})
 		case "dataRowIndex":
 			out.Values[i] = ec._DecodeTemplate_dataRowIndex(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "deviceNameRowIndex":
+			out.Values[i] = ec._DecodeTemplate_deviceNameRowIndex(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
