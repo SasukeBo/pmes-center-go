@@ -57,6 +57,41 @@ func (xr *XLSXReader) ReadFile(file *orm.File) error {
 	return xr.setData(content)
 }
 
+// 处理文件关联设备
+func handleFileDevice(xr *XLSXReader, file *xlsx.File) error {
+	if len(file.Sheets) == 0 {
+		return fmt.Errorf("file has no sheet")
+	}
+	sheet := file.Sheets[0]
+	firstRow, err := sheet.Row(0)
+	if err != nil {
+		return fmt.Errorf("first sheet of the file is empty")
+	}
+	firstCell := firstRow.GetCell(0)
+	var deviceName string
+	if firstCell != nil {
+		deviceName = firstCell.String()
+	}
+
+	var device orm.Device
+	if deviceName == "" {
+		device = xr.Material.GetUnKnownDevice()
+	} else {
+		err = orm.Model(&device).Where("material_id = ? AND name = ?", xr.Material.ID, deviceName).First(&device).Error
+		if err != nil {
+			device = orm.Device{
+				Name:       deviceName,
+				Remark:     strings.ToLower(strings.ReplaceAll(deviceName, " ", "_")),
+				MaterialID: xr.Material.ID,
+			}
+			orm.Save(&device)
+		}
+	}
+
+	xr.Device = &device
+	return nil
+}
+
 // ReadFTP 从FTP服务器读取文件
 // 删除已读取的文件
 // 存储文件到本地缓存
@@ -130,6 +165,11 @@ func (xr *XLSXReader) setData(content []byte) error {
 		return fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
 	}
 	formatTimeOfXlsx(xr.DecodeTemplate, file)
+	if xr.Device == nil {
+		if err := handleFileDevice(xr, file); err != nil {
+			return err
+		}
+	}
 
 	originData, err := file.ToSlice()
 	if err != nil {
