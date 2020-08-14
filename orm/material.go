@@ -74,7 +74,7 @@ func (m *Material) GetCurrentVersionTemplate() (*DecodeTemplate, error) {
 
 func (m *Material) GetUnKnownDevice() Device {
 	var device Device
-	if err := Model(&device).Where("material_id = ? AND remark = 'unknown'").First(&device).Error; err != nil {
+	if err := Model(&device).Where("material_id = ? AND remark = 'unknown'", m.ID).First(&device).Error; err != nil {
 		device = Device{
 			Name:       "未知设备",
 			Remark:     "unknown",
