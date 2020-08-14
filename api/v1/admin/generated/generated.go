@@ -254,8 +254,6 @@ type DecodeTemplateResolver interface {
 	MaterialVersion(ctx context.Context, obj *model.DecodeTemplate) (*model.MaterialVersion, error)
 	User(ctx context.Context, obj *model.DecodeTemplate) (*model.User, error)
 
-	DeviceNameRowIndex(ctx context.Context, obj *model.DecodeTemplate) (int, error)
-
 	BarCodeRule(ctx context.Context, obj *model.DecodeTemplate) (*model.BarCodeRule, error)
 }
 type DeviceResolver interface {
@@ -3412,13 +3410,13 @@ func (ec *executionContext) _DecodeTemplate_deviceNameRowIndex(ctx context.Conte
 		Object:   "DecodeTemplate",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DecodeTemplate().DeviceNameRowIndex(rctx, obj)
+		return obj.DeviceNameRowIndex, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -9470,19 +9468,10 @@ func (ec *executionContext) _DecodeTemplate(ctx context.Context, sel ast.Selecti
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "deviceNameRowIndex":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DecodeTemplate_deviceNameRowIndex(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._DecodeTemplate_deviceNameRowIndex(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "barCodeIndex":
 			out.Values[i] = ec._DecodeTemplate_barCodeIndex(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

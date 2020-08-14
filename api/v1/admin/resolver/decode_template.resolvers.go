@@ -5,8 +5,6 @@ package resolver
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/generated"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/logic"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
@@ -22,10 +20,6 @@ func (r *decodeTemplateResolver) MaterialVersion(ctx context.Context, obj *model
 
 func (r *decodeTemplateResolver) User(ctx context.Context, obj *model.DecodeTemplate) (*model.User, error) {
 	return logic.LoadUser(ctx, obj.UserID), nil
-}
-
-func (r *decodeTemplateResolver) DeviceNameRowIndex(ctx context.Context, obj *model.DecodeTemplate) (int, error) {
-	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *decodeTemplateResolver) BarCodeRule(ctx context.Context, obj *model.DecodeTemplate) (*model.BarCodeRule, error) {
