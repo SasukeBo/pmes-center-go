@@ -130,13 +130,11 @@ func (d *Device) GetCurrentTemplateDecodeRule(conn ...*gorm.DB) *BarCodeRule {
 	query := db.Model(&DecodeTemplate{}).Joins("JOIN material_versions ON decode_templates.material_version_id = material_versions.id")
 	query = query.Where("decode_templates.material_id = ? AND material_versions.active = true", d.MaterialID)
 	if err := query.Find(&template).Error; err != nil {
-		log.Errorln(err)
 		return nil
 	}
 
 	var rule BarCodeRule
 	if err := db.Model(&rule).Where("id = ?", template.BarCodeRuleID).First(&rule).Error; err != nil {
-		log.Errorln(err)
 		return nil
 	}
 
