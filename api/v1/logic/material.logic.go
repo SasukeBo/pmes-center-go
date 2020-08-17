@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api/v1/model"
+	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/jinzhu/copier"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -37,10 +39,10 @@ func Materials(ctx context.Context, search *string, page int, limit int) (*model
 			log.Error("[logic.Materials] copy material(%s) to out failed: %v", m.Name, err)
 			continue
 		}
-
-		ok, ng := countProductQualifiedForMaterial(&m)
-		out.Ok = ok
-		out.Ng = ng
+		//
+		//ok, ng := countProductQualifiedForMaterial(&m)
+		//out.Ok = ok
+		//out.Ng = ng
 		outs = append(outs, &out)
 	}
 
@@ -74,6 +76,17 @@ type qualifiedResult struct {
 }
 
 func countProductQualifiedForMaterial(material *orm.Material) (int, int) {
+	cacheKey := fmt.Sprintf("COUNT_PRODUCT_QUALIFIED_FOR_MATERIAL_%v", material.ID)
+	if value, err := cache.GetString(cacheKey); err == nil {
+		values := strings.Split(value, ",")
+		if len(values) == 2 {
+			ok, _ := strconv.Atoi(values[0])
+			ng, _ := strconv.Atoi(values[1])
+			cache.Set(cacheKey, value)
+			return ok, ng
+		}
+	}
+
 	currentVersion, err := material.GetCurrentVersion()
 	if err != nil {
 		return 0, 0
@@ -108,6 +121,7 @@ func countProductQualifiedForMaterial(material *orm.Material) (int, int) {
 	}
 
 	_ = rows.Close()
+	cache.Set(cacheKey, fmt.Sprintf("%v,%v", ok, ng))
 	return ok, ng
 }
 
