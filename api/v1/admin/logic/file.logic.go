@@ -181,8 +181,7 @@ func assembleDataIntoFile(name string, points []orm.Point, data []orm.Product) (
 		return nil, err
 	}
 
-	//var relevantPath = filepath.Join(orm.DirCache, token.String())
-	var relevantPath = filepath.Join(orm.DirCache, "test.xlsx")
+	var relevantPath = filepath.Join(orm.DirCache, token.String())
 	path := filepath.Join(dst, relevantPath)
 	if err = xlsxObj.Save(path); err != nil {
 		return nil, err
