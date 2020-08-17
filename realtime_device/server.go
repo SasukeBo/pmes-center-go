@@ -11,7 +11,6 @@ import (
 
 func main() {
 	r := gin.Default()
-	//r.Use(cors.Default())
 
 	// Panic Recovery
 	r.Use(gin.Recovery())
