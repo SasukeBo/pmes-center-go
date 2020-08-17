@@ -81,10 +81,20 @@ func setupIndex() {
 	DB.Model(&Point{}).AddUniqueIndex("unique_idx_point_name_material_id_version", "material_id", "material_version_id", "name")
 }
 
+var dbname string
+
+func NewConnection() *gorm.DB {
+	db, err := gorm.Open("mysql", createUriWithDBName(dbname))
+	if err != nil {
+		panic(err)
+	}
+	return db
+}
+
 func init() {
 	var err error
 	var uri = createUriWithDBName("mysql")
-	var dbname = configer.GetString("db_name")
+	dbname = configer.GetString("db_name")
 
 	reconnectLimit := 5
 	for {
@@ -101,10 +111,7 @@ func init() {
 		break
 	}
 
-	DB, err = gorm.Open("mysql", createUriWithDBName(dbname))
-	if err != nil {
-		panic(err)
-	}
+	DB = NewConnection()
 	DB.LogMode(false)
 	env := configer.GetString("env")
 	log.Warn("Current runtime environment is %s", env)
@@ -140,4 +147,12 @@ func init() {
 	setupDefaultConfig() // Test env need system config
 	DB.LogMode(true)
 	setupIndex()
+}
+
+func choseConn(options ...*gorm.DB) *gorm.DB {
+	if len(options) == 0 {
+		return DB
+	}
+
+	return options[0]
 }

@@ -96,7 +96,7 @@ func (i *ImportRecord) Load() error {
 	return Save(i).Error
 }
 
-func (i *ImportRecord) Increase(tc, fc int, qualified bool) error {
+func (i *ImportRecord) Increase(tc, fc int, qualified bool, conn *gorm.DB) error {
 	if i == nil {
 		return errors.New("cannot increase nil import record")
 	}
@@ -112,14 +112,14 @@ func (i *ImportRecord) Increase(tc, fc int, qualified bool) error {
 		log.Error("cache import record failed: %v", err)
 	}
 
-	return Save(i).Error
+	return conn.Save(i).Error
 }
 
 // 获取实时设备的导入记录
 // 生成以当前时间日期为结尾的key，通过key缓存获取数据
 // 当缓存中没有该日期的实时导入记录时，从数据库获取
 // 当数据库中没有该日期的实时导入记录时，创建新纪录
-func (i *ImportRecord) GetDeviceRealtimeRecord(device *Device) error {
+func (i *ImportRecord) GetDeviceRealtimeRecord(device *Device, db *gorm.DB) error {
 	// 生成key
 	cacheKey := i.genKey(device.ID)
 	log.Info("cacheKey is %s", cacheKey)
@@ -140,16 +140,16 @@ func (i *ImportRecord) GetDeviceRealtimeRecord(device *Device) error {
 	var query = "device_id = ? AND import_type = ? AND import_records.status = ?"
 
 	var record ImportRecord
-	if err := Model(&ImportRecord{}).Where(
+	if err := db.Model(&ImportRecord{}).Where(
 		query, device.ID, ImportRecordTypeRealtime, ImportStatusImporting,
 	).Order("created_at desc").First(&record).Error; err == nil {
 		if record.CreatedAt.Add(newRecordDuration).Before(time.Now()) { // 超时的导入记录，更新装填，且更新当前版本的总数及良率统计
 			record.Status = ImportStatusFinished
-			_ = Save(&record)
+			_ = db.Save(&record)
 
 			var version MaterialVersion
-			if err := version.Get(record.MaterialVersionID); err == nil {
-				_ = version.UpdateWithRecord(&record)
+			if err := db.Model(&version).Where("id = ?", record.MaterialVersionID).First(&version).Error; err == nil {
+				_ = version.UpdateWithRecord(&record, db)
 			}
 		} else {
 			if err := copier.Copy(i, &record); err == nil {
@@ -161,7 +161,7 @@ func (i *ImportRecord) GetDeviceRealtimeRecord(device *Device) error {
 
 	// 获取料号的当前版本信息
 	var version MaterialVersion
-	if err := version.GetActiveWithMaterialID(device.MaterialID); err != nil {
+	if err := db.Model(&version).Where("active = true AND material_id = ?", device.MaterialID).First(&version).Error; err != nil {
 		return err
 	}
 
@@ -171,7 +171,7 @@ func (i *ImportRecord) GetDeviceRealtimeRecord(device *Device) error {
 	i.DeviceID = device.ID
 	i.ImportType = ImportRecordTypeRealtime
 	i.MaterialVersionID = version.ID
-	if err := Create(i).Error; err != nil {
+	if err := db.Create(i).Error; err != nil {
 		return err
 	}
 

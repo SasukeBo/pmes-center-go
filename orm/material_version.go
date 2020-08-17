@@ -43,7 +43,9 @@ func (mv *MaterialVersion) GetTemplate() (*DecodeTemplate, error) {
 	return &template, nil
 }
 
-func (mv *MaterialVersion) UpdateWithRecord(record *ImportRecord) error {
+func (mv *MaterialVersion) UpdateWithRecord(record *ImportRecord, conn ...*gorm.DB) error {
+	db := choseConn(conn...)
+
 	if mv == nil {
 		return errors.New("cannot update <nil> version")
 	}
@@ -63,7 +65,7 @@ func (mv *MaterialVersion) UpdateWithRecord(record *ImportRecord) error {
 		} else {
 			mv.Yield = float64(currentOK) / float64(total)
 		}
-		return Save(mv).Error
+		return db.Save(mv).Error
 
 	case ImportStatusReverted:
 		currentTotal := mv.Amount
@@ -80,7 +82,7 @@ func (mv *MaterialVersion) UpdateWithRecord(record *ImportRecord) error {
 		} else {
 			mv.Yield = float64(ok) / float64(total)
 		}
-		return Save(mv).Error
+		return db.Save(mv).Error
 	}
 
 	return nil

@@ -7,6 +7,7 @@ import (
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -21,6 +22,8 @@ type response struct {
 	BarCode     string `json:"bar_code"`
 }
 
+var conn *gorm.DB
+
 func DeviceProduce() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		body, _ := ioutil.ReadAll(c.Request.Body)
@@ -32,18 +35,18 @@ func DeviceProduce() gin.HandlerFunc {
 
 		deviceToken := form.DeviceToken
 		var device orm.Device
-		if err := device.GetWithToken(deviceToken); err != nil {
+		if err := device.GetWithToken(deviceToken, conn); err != nil {
 			errormap.SendHttpError(c, err.GetCode(), err, "device")
 			return
 		}
 		ip := c.Request.Header.Get("X-Real-IP")
 		if device.IP != ip {
 			device.IP = ip
-			_ = orm.Save(&device)
+			_ = conn.Save(&device)
 		}
 
 		var record orm.ImportRecord
-		if err := record.GetDeviceRealtimeRecord(&device); err != nil {
+		if err := record.GetDeviceRealtimeRecord(&device, conn); err != nil {
 			errormap.SendHttpError(c, errormap.ErrorCodeInternalError, err, "record")
 		}
 
@@ -57,7 +60,7 @@ func DeviceProduce() gin.HandlerFunc {
 		var attribute types.Map
 		var statusCode = 1
 
-		rule := device.GetCurrentTemplateDecodeRule()
+		rule := device.GetCurrentTemplateDecodeRule(conn)
 		barCode := strings.TrimSpace(form.BarCode)
 		if rule != nil {
 			decoder := logic.NewBarCodeDecoder(rule)
@@ -92,11 +95,16 @@ func DeviceProduce() gin.HandlerFunc {
 			BarCode:           barCode,
 			BarCodeStatus:     statusCode,
 		}
-		if err := orm.Create(&product).Error; err != nil {
+		if err := conn.Create(&product).Error; err != nil {
 			errormap.SendHttpError(c, errormap.ErrorCodeCreateObjectError, err, "product")
 			return
 		}
-		record.Increase(1, 1, qualified)
+		record.Increase(1, 1, qualified, conn)
 		c.JSON(http.StatusOK, "ok")
 	}
+}
+
+func init() {
+	conn = orm.NewConnection()
+	conn.LogMode(false)
 }
