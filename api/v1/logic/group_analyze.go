@@ -9,6 +9,7 @@ import (
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"strings"
+	"time"
 )
 
 type analysis struct {
@@ -24,6 +25,7 @@ type echartsResult struct {
 }
 
 func groupAnalyze(ctx context.Context, params model.GraphInput, target string, versionID *int) (*model.EchartsResult, error) {
+	t1 := time.Now()
 	query := orm.DB.Model(&orm.Product{})
 	switch target {
 	case "material":
@@ -117,7 +119,11 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, v
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
 	}
 
+	t2 := time.Now()
+	fmt.Printf("query rows spand %v\n", t2.Sub(t1))
 	results := scanRows(rows, params.GroupBy)
+	t3 := time.Now()
+	fmt.Printf("scan rows spand %v\n", t3.Sub(t2))
 
 	if params.Limit != nil && *params.Limit < 0 {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("limit不能小于0"))
@@ -183,6 +189,7 @@ func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, so
 	totalAmount, _ := calAmountAnalysisResult(results, nil, nil)
 	yieldAmount, _ := calAmountAnalysisResult(qualifiedResults, nil, nil)
 
+	t1 := time.Now()
 	for i, item := range totalAmount.XAxisData {
 		var index = findIndex(yieldAmount.XAxisData, item)
 		for k, data := range totalAmount.SeriesData {
@@ -216,11 +223,14 @@ func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, so
 			totalAmount.SeriesAmountData[k] = v[:*limit]
 		}
 	}
+	t2 := time.Now()
+	fmt.Printf("[calYieldAnalysisResult] spend %v\n", t2.Sub(t1))
 
 	return convertToEchartsResult(totalAmount), nil
 }
 
 func convertToEchartsResult(result *echartsResult) *model.EchartsResult {
+	t1 := time.Now()
 	seriesData := make(map[string]interface{})
 	seriesAmountData := make(map[string]interface{})
 	for k, v := range result.SeriesData {
@@ -228,6 +238,8 @@ func convertToEchartsResult(result *echartsResult) *model.EchartsResult {
 		seriesAmountData[k] = result.SeriesAmountData[k]
 	}
 
+	t2 := time.Now()
+	fmt.Printf("[convertToEchartsResult] spend %v\n", t2.Sub(t1))
 	return &model.EchartsResult{
 		XAxisData:        result.XAxisData,
 		SeriesData:       seriesData,
@@ -246,6 +258,7 @@ func findIndex(list []string, find string) int {
 }
 
 func calAmountAnalysisResult(scanResults []analysis, limit *int, sort *model.Sort) (*echartsResult, error) {
+	t1 := time.Now()
 	var xAxisMapData = make(map[string]int)
 	var xAxisData []string
 	var seriesMapData = make(map[string]map[string]float64)
@@ -316,6 +329,8 @@ func calAmountAnalysisResult(scanResults []analysis, limit *int, sort *model.Sor
 		}
 	}
 
+	t2 := time.Now()
+	fmt.Printf("[groupAnalyzeMaterial] spend %v\n", t2.Sub(t1))
 	return &result, nil
 }
 
