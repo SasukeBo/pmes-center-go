@@ -215,6 +215,7 @@ type ComplexityRoot struct {
 		CurrentUser                 func(childComplexity int) int
 		DecodeTemplateWithVersionID func(childComplexity int, id int) int
 		Device                      func(childComplexity int, id int) int
+		DownloadImportRecords       func(childComplexity int, ids []int) int
 		GetBarCodeRule              func(childComplexity int, id int) int
 		ImportRecords               func(childComplexity int, materialVersionID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) int
 		ImportStatus                func(childComplexity int, id int) int
@@ -309,6 +310,7 @@ type QueryResolver interface {
 	ImportRecords(ctx context.Context, materialVersionID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error)
 	MyImportRecords(ctx context.Context, page int, limit int) (*model.ImportRecordsWrap, error)
 	ImportStatus(ctx context.Context, id int) (*model.ImportStatusResponse, error)
+	DownloadImportRecords(ctx context.Context, ids []int) (string, error)
 	ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error)
 	DecodeTemplateWithVersionID(ctx context.Context, id int) (*model.DecodeTemplate, error)
 	ListBarCodeRules(ctx context.Context, search *string, limit int, page int) (*model.BarCodeRuleWrap, error)
@@ -1270,6 +1272,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Device(childComplexity, args["id"].(int)), true
 
+	case "Query.downloadImportRecords":
+		if e.complexity.Query.DownloadImportRecords == nil {
+			break
+		}
+
+		args, err := ec.field_Query_downloadImportRecords_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.DownloadImportRecords(childComplexity, args["ids"].([]int)), true
+
 	case "Query.getBarCodeRule":
 		if e.complexity.Query.GetBarCodeRule == nil {
 			break
@@ -1891,6 +1905,8 @@ input PointCreateInput {
     myImportRecords(page: Int!, limit: Int!): ImportRecordsWrap!
     "查询导入完成状态"
     importStatus(id: Int!): ImportStatusResponse!
+    "下载导入记录原始数据，返回文件Token"
+    downloadImportRecords(ids: [Int!]!): String!
 
     # 解析模板
     "解析模板列表"
@@ -2300,6 +2316,20 @@ func (ec *executionContext) field_Query_device_args(ctx context.Context, rawArgs
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_downloadImportRecords_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []int
+	if tmp, ok := rawArgs["ids"]; ok {
+		arg0, err = ec.unmarshalNInt2ᚕintᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["ids"] = arg0
 	return args, nil
 }
 
@@ -6985,6 +7015,47 @@ func (ec *executionContext) _Query_importStatus(ctx context.Context, field graph
 	return ec.marshalNImportStatusResponse2ᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐImportStatusResponse(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_downloadImportRecords(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_downloadImportRecords_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().DownloadImportRecords(rctx, args["ids"].([]int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_listDecodeTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -10389,6 +10460,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_importStatus(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "downloadImportRecords":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_downloadImportRecords(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

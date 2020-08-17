@@ -13,6 +13,7 @@ const (
 	DirPrivate = "priv"
 	DirUpload = "post"
 	DirSource = "source"
+	DirCache = "cache"
 )
 
 // 文件 model，用于存储文件信息。

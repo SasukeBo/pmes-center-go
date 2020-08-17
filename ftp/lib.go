@@ -2,8 +2,8 @@ package ftp
 
 import (
 	"fmt"
+	"github.com/SasukeBo/log"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 	"strings"
 	"time"
@@ -33,6 +33,7 @@ func connect() (*ftp.ServerConn, error) {
 
 	ftpConn, err := ftp.Dial(fmt.Sprintf("%v:%v", ftpHostConf.Value, ftpPortConf.Value), ftp.DialWithTimeout(4*time.Second))
 	if err != nil {
+		log.Errorln(err)
 		return nil, &FTPError{
 			Message:   fmt.Sprintf("连接FTP服务器%s:%s失败", ftpHostConf.Value, ftpPortConf.Value),
 			OriginErr: err,
@@ -40,6 +41,7 @@ func connect() (*ftp.ServerConn, error) {
 	}
 	err = ftpConn.Login(ftpUserConf.Value, ftpPassConf.Value)
 	if err != nil {
+		log.Errorln(err)
 		return nil, &FTPError{
 			Message:   fmt.Sprintf("登录FTP服务器%s:%s失败", ftpHostConf.Value, ftpPortConf.Value),
 			OriginErr: err,
@@ -80,7 +82,7 @@ func ReadFile(path string) ([]byte, error) {
 		}
 	}()
 	if err != nil {
-		log.Printf("[c.Retr] with file(%v) failed:\n%v\n", path, err)
+		log.Error("[c.Retr] with file(%v) failed: %v", path, err)
 		return nil, &FTPError{
 			Message:   fmt.Sprintf("读取文件%s失败", path),
 			OriginErr: err,
@@ -89,7 +91,7 @@ func ReadFile(path string) ([]byte, error) {
 
 	buf, err := ioutil.ReadAll(res)
 	if err != nil {
-		log.Printf("[ReadFile] ioutil.ReadAll response failed: %v\n", err)
+		log.Errorln(err)
 		return nil, &FTPError{
 			Message:   fmt.Sprintf("读取文件%s失败", path),
 			OriginErr: err,
@@ -158,5 +160,5 @@ func (e *FTPError) Error() string {
 
 // Logger _
 func (e *FTPError) Logger() {
-	log.Printf("%s, originErr: %v", e.Message, e.OriginErr)
+	log.Error("%s, originErr: %v", e.Message, e.OriginErr)
 }

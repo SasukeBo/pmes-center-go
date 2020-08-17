@@ -7,5 +7,6 @@ import (
 
 func main() {
 	go logic.AutoFetch()
+
 	router.Start()
 }
