@@ -39,7 +39,6 @@ func connect() (*ftp.ServerConn, error) {
 			OriginErr: err,
 		}
 	}
-	log.Info("user %v, account %v", ftpUserConf.Value, ftpPassConf.Value)
 	err = ftpConn.Login(ftpUserConf.Value, ftpPassConf.Value)
 	if err != nil {
 		log.Errorln(err)

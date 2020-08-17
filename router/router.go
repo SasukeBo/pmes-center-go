@@ -39,9 +39,6 @@ func Start() {
 	r.MaxMultipartMemory = 256 << 20
 	r.POST("/posts", handler.Authenticate(), handler.Post()) // 上传文件
 
-	// Data transfer
-	r.POST("/produce", handler.HttpRequestLogger(), handler.DeviceProduce()) // 设备上传生产数据
-
 	log.Info("start service on [%s] mode", configer.GetEnv("env"))
 	r.Run(fmt.Sprintf(":%s", configer.GetString("port")))
 }

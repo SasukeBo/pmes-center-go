@@ -9,6 +9,7 @@ import (
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/jinzhu/copier"
+	"strings"
 )
 
 func ImportRecords(ctx context.Context, materialVersionID int, deviceID *int, page int, limit int, search model.ImportRecordSearch) (*model.ImportRecordsWrap, error) {
@@ -187,4 +188,56 @@ func ToggleBlockImports(ctx context.Context, ids []int, block bool) (model.Respo
 	}
 
 	return model.ResponseStatusOk, nil
+}
+
+func DownloadImportRecords(ctx context.Context, ids []int) (string, error) {
+	user := api.CurrentUser(ctx)
+	if !user.IsAdmin {
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
+	}
+	if len(ids) == 0 {
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, nil)
+	}
+
+	var idStrs []string
+	for _, id := range ids {
+		idStrs = append(idStrs, fmt.Sprint(id))
+	}
+	var fileName = fmt.Sprintf("dataset_%s.xlsx", strings.Join(idStrs, "_"))
+	var file orm.File
+	if err := orm.Model(&file).Where("name = ?", fileName).First(&file).Error; err == nil {
+		return file.Token, nil
+	}
+
+	var record orm.ImportRecord
+	if err := record.Get(uint(ids[0])); err != nil {
+		return "", errormap.SendGQLError(ctx, err.GetCode(), err, "import_record")
+	}
+
+	var template orm.DecodeTemplate
+	if err := template.GetByVersionID(record.MaterialVersionID); err != nil {
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "decode_template")
+	}
+
+	var products []orm.Product
+	err := orm.Model(&orm.Product{}).Where("import_record_id in (?)", ids).Order("created_at ASC").Find(&products).Error
+	if err != nil {
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
+	}
+
+	var points []orm.Point
+	err = orm.Model(&orm.Point{}).Where(
+		"material_version_id = ?", template.MaterialVersionID,
+	).Order("points.index ASC").Find(&points).Error
+	if err != nil {
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "points")
+	}
+
+	if generated, err := assembleDataIntoFile(fileName, points, products); err != nil {
+		return "", errormap.SendGQLError(ctx, errormap.ErrorCodeAssembleDataFailed, err)
+	} else {
+		file = *generated
+	}
+
+	return file.Token, nil
 }
