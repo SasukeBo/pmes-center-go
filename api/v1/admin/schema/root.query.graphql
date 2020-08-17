@@ -24,6 +24,8 @@ type Query {
     myImportRecords(page: Int!, limit: Int!): ImportRecordsWrap!
     "查询导入完成状态"
     importStatus(id: Int!): ImportStatusResponse!
+    "下载导入记录原始数据，返回文件Token"
+    downloadImportRecords(ids: [Int!]!): String!
 
     # 解析模板
     "解析模板列表"

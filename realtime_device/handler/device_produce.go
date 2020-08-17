@@ -13,65 +13,6 @@ import (
 	"strings"
 )
 
-func DeviceProduce1() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		deviceToken := c.PostForm("device_token")
-		var device orm.Device
-		if err := device.GetWithToken(deviceToken); err != nil {
-			errormap.SendHttpError(c, err.GetCode(), err, "device")
-			return
-		}
-
-		qualifiedStr := c.PostForm("qualified")
-		qualifiedInt, _ := strconv.ParseInt(qualifiedStr, 10, 64)
-		var qualified bool
-		if qualifiedInt == 1 {
-			qualified = true
-		}
-
-		attributesStr := c.PostForm("attributes")
-		attribute := make(types.Map)
-		kValues := strings.Split(attributesStr, ";")
-		for _, item := range kValues {
-			sectors := strings.Split(item, ":")
-			if len(sectors) < 2 {
-				continue
-			}
-
-			attribute[sectors[0]] = sectors[1]
-		}
-
-		pointValuesStr := c.PostForm("point_values")
-		pointValues := make(types.Map)
-		kValues = strings.Split(pointValuesStr, ";")
-		for _, item := range kValues {
-			sectors := strings.Split(item, ":")
-			if len(sectors) < 2 {
-				continue
-			}
-			value, err := strconv.ParseFloat(sectors[1], 64)
-			if err != nil {
-				value = 0
-			}
-			pointValues[sectors[0]] = value
-		}
-
-		var product = orm.Product{
-			MaterialID:  device.MaterialID,
-			DeviceID:    device.ID,
-			Qualified:   qualified,
-			Attribute:   attribute,
-			PointValues: pointValues,
-		}
-		if err := orm.Create(&product).Error; err != nil {
-			errormap.SendHttpError(c, errormap.ErrorCodeCreateObjectError, err, "product")
-			return
-		}
-
-		c.JSON(http.StatusOK, "ok")
-	}
-}
-
 type response struct {
 	DeviceToken string `json:"device_token"`
 	PointValues string `json:"point_values"`
@@ -124,17 +65,6 @@ func DeviceProduce() gin.HandlerFunc {
 		} else {
 			attribute = make(types.Map)
 		}
-
-		// TODO: deprecate
-		//kValues := strings.Split(attributesStr, ";")
-		//for _, item := range kValues {
-		//	sectors := strings.Split(item, ":")
-		//	if len(sectors) < 2 {
-		//		continue
-		//	}
-		//
-		//	attribute[sectors[0]] = sectors[1]
-		//}
 
 		pointValuesStr := form.PointValues
 		pointValues := make(types.Map)

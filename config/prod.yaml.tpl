@@ -9,6 +9,7 @@ db_name: your_db_name
 
 # service listen port
 port: your_service_listen_port
+realtime_device_listen_port:
 
 # ftp service config
 ftp_host:
