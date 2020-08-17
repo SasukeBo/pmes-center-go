@@ -28,7 +28,7 @@ const (
 	ImportStatusReverted  ImportStatus = "Reverted"
 
 	DeviceRealTimeRecordingCacheKey = "DEVICE_REALTIME_RECORDING_CACHE_KEY_%v"
-	newRecordDuration               = 4 * time.Hour
+	newRecordDuration               = 4 * time.Hour // 4小时一次新记录
 )
 
 type ImportRecord struct {

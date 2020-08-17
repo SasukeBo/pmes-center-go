@@ -135,7 +135,7 @@ func (d *Device) GetCurrentTemplateDecodeRule(conn ...*gorm.DB) *BarCodeRule {
 	}
 
 	var rule BarCodeRule
-	if err := rule.Get(template.BarCodeRuleID); err != nil {
+	if err := db.Model(&rule).Where("id = ?", template.BarCodeRuleID).First(&rule).Error; err != nil {
 		log.Errorln(err)
 		return nil
 	}
