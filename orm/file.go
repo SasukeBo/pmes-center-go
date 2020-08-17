@@ -11,9 +11,9 @@ const (
 
 	// 文件存储二级目录
 	DirPrivate = "priv"
-	DirUpload = "post"
-	DirSource = "source"
-	DirCache = "cache"
+	DirUpload  = "post"
+	DirSource  = "source"
+	DirCache   = "cache"
 )
 
 // 文件 model，用于存储文件信息。
@@ -25,6 +25,7 @@ type File struct {
 	Token       string `gorm:"not null;unique_index"` // 文件唯一标识
 	UserID      uint   `gorm:"column:user_id"`
 	Size        uint   // 文件大小
+	IsCache     bool   `gorm:"COMMENT:'是否为缓存文件'";default: false`
 	ContentType string `gorm:"not null"` // 文件内容类型
 }
 

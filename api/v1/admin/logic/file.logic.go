@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 	"github.com/SasukeBo/configer"
+	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api/v1/admin/model"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/google/uuid"
 	"github.com/jinzhu/copier"
 	"github.com/tealeg/xlsx/v3"
+	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 )
 
 func LoadFile(ctx context.Context, id uint) *model.File {
@@ -175,14 +178,11 @@ func assembleDataIntoFile(name string, points []orm.Point, data []orm.Product) (
 	sheet.SetColParameters(col)
 
 	// 保存文件
-	dst := configer.GetString("file_cache_path")
 	token, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
 	}
-
-	var relevantPath = filepath.Join(orm.DirCache, token.String())
-	path := filepath.Join(dst, relevantPath)
+	relevantPath, path := genCacheFilePath(token.String())
 	if err = xlsxObj.Save(path); err != nil {
 		return nil, err
 	}
@@ -191,14 +191,23 @@ func assembleDataIntoFile(name string, points []orm.Point, data []orm.Product) (
 		Name:        name,
 		Path:        relevantPath,
 		Token:       token.String(),
+		IsCache:     true,
 		ContentType: orm.XlsxContentType,
 	}
 	if err = orm.Save(file).Error; err != nil {
 		return nil, err
 	}
 
-	fmt.Println(path)
 	return file, nil
+}
+
+func genCacheFilePath(token string) (string, string) {
+	// 保存文件
+	dst := configer.GetString("file_cache_path")
+
+	var relevantPath = filepath.Join(orm.DirCache, token)
+	path := filepath.Join(dst, relevantPath)
+	return relevantPath, path
 }
 
 func addCellStyle(style *xlsx.Style) {
@@ -277,4 +286,29 @@ func addRow(sheet *xlsx.Sheet) *xlsx.Row {
 	row := sheet.AddRow()
 	row.SetHeight(13.2)
 	return row
+}
+
+func AutoCleanCacheFile() {
+	log.Info("[AutoCleanCacheFile] task starting...")
+	cleanCacheFile()
+	for {
+		select {
+		case <-time.After(24 * time.Hour):
+			cleanCacheFile()
+		}
+	}
+}
+
+func cleanCacheFile() {
+	var files []orm.File
+	if err := orm.Model(&orm.File{}).Where("is_cache = true").Find(&files).Error; err == nil {
+		for _, file := range files {
+			_, path := genCacheFilePath(file.Token)
+			err := os.Remove(path)
+			if err != nil {
+				log.Errorln(err)
+			}
+			orm.Delete(&file)
+		}
+	}
 }

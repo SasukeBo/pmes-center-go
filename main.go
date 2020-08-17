@@ -7,6 +7,6 @@ import (
 
 func main() {
 	go logic.AutoFetch()
-
+	go logic.AutoCleanCacheFile()
 	router.Start()
 }
