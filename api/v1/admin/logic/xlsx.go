@@ -639,7 +639,7 @@ func store(xr *XLSXReader) {
 	if total := len(xr.DataSet); total == 0 {
 		yield = 0
 	} else {
-		yield = float64(importOK) / float64(total)
+		yield = float64(importOK) / float64(total-invalidRow)
 	}
 	xr.Record.RowInvalidCount = invalidRow
 	_ = xr.Record.Finish(yield)
