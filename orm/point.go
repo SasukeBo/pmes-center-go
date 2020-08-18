@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 // 检测点位
@@ -39,7 +40,7 @@ func (p *Point) Get(id uint) *errormap.Error {
 }
 
 func (p *Point) ValueWithLegal(v string) (float64, bool) {
-	if v == "" {
+	if v == "" || strings.ToUpper(v) == "ERR" {
 		return 0, false
 	}
 
