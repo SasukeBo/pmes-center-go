@@ -164,7 +164,6 @@ func (xr *XLSXReader) setData(content []byte) error {
 	if err != nil {
 		return fmt.Errorf("读取数据文件失败，原始错误信息: %v", err)
 	}
-	formatTimeOfXlsx(xr.DecodeTemplate, file)
 	if xr.Device == nil {
 		if err := handleFileDevice(xr, file); err != nil {
 			return err
@@ -172,6 +171,10 @@ func (xr *XLSXReader) setData(content []byte) error {
 	}
 
 	originData, err := file.ToSlice()
+	if err != nil {
+		formatTimeOfXlsx(xr.DecodeTemplate, file)
+		originData, err = file.ToSlice()
+	}
 	if err != nil {
 		log.Error("[setData] file.ToSlice(): %v", err)
 		return err
@@ -206,7 +209,6 @@ const xlsxDateFormatForNumeric = "yyyy/mm/dd hh:mm:ss"
 
 func formatTimeOfXlsx(template *orm.DecodeTemplate, file *xlsx.File) error {
 	idx := template.CreatedAtColumnIndex - 1
-	beginRow := template.DataRowIndex - 1
 	if len(file.Sheets) == 0 {
 		return errors.New("file has no sheet")
 	}
@@ -214,19 +216,9 @@ func formatTimeOfXlsx(template *orm.DecodeTemplate, file *xlsx.File) error {
 	var i int
 	sheet.ForEachRow(func(r *xlsx.Row) error {
 		defer func() { i++ }()
-		if i < beginRow {
-			cell := r.GetCell(idx)
-			cell.SetDateTimeWithFormat(0, xlsxDateFormatForNumeric)
-			return nil
-		}
-		if cell := r.GetCell(idx); cell.Type() == xlsx.CellTypeNumeric {
-			v, err := cell.Float()
-			if err == nil {
-				cell.SetDateTimeWithFormat(v, xlsxDateFormatForNumeric)
-				fmt.Println(cell.String())
-			}
-		}
-
+		cell := r.GetCell(idx)
+		v, _ := cell.Float()
+		cell.SetDateTimeWithFormat(v, xlsxDateFormatForNumeric)
 		return nil
 	})
 
