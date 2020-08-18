@@ -195,7 +195,7 @@ type ComplexityRoot struct {
 		RevertImports               func(childComplexity int, ids []int) int
 		SaveBarCodeRule             func(childComplexity int, input model.BarCodeRuleInput) int
 		SaveDevice                  func(childComplexity int, input model.DeviceInput) int
-		SavePoints                  func(childComplexity int, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) int
+		SavePoints                  func(childComplexity int, materialID int, versionID int, saveItems []*model.PointCreateInput, deleteItems []int) int
 		ToggleBlockImports          func(childComplexity int, ids []int, block bool) int
 		UpdateDecodeTemplate        func(childComplexity int, input model.DecodeTemplateInput) int
 		UpdateMaterial              func(childComplexity int, input model.MaterialUpdateInput) int
@@ -292,7 +292,7 @@ type MutationResolver interface {
 	SaveBarCodeRule(ctx context.Context, input model.BarCodeRuleInput) (model.ResponseStatus, error)
 	DeleteBarCodeRule(ctx context.Context, id int) (model.ResponseStatus, error)
 	ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point, error)
-	SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error)
+	SavePoints(ctx context.Context, materialID int, versionID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error)
 	SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, error)
 	DeleteDevice(ctx context.Context, id int) (model.ResponseStatus, error)
 	RevertImports(ctx context.Context, ids []int) (model.ResponseStatus, error)
@@ -1149,7 +1149,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SavePoints(childComplexity, args["materialID"].(int), args["saveItems"].([]*model.PointCreateInput), args["deleteItems"].([]int)), true
+		return e.complexity.Mutation.SavePoints(childComplexity, args["materialID"].(int), args["versionID"].(int), args["saveItems"].([]*model.PointCreateInput), args["deleteItems"].([]int)), true
 
 	case "Mutation.toggleBlockImports":
 		if e.complexity.Mutation.ToggleBlockImports == nil {
@@ -1858,7 +1858,7 @@ input PointCreateInput {
     "解析导入的检测项，非创建"
     parseImportPoints(file: Upload!): [Point]!
     "保存检测项，处理删除的、修改的和新建的检测项"
-    savePoints(materialID: Int!, saveItems: [PointCreateInput]!, deleteItems: [Int!]!): ResponseStatus!
+    savePoints(materialID: Int!, versionID: Int!, saveItems: [PointCreateInput]!, deleteItems: [Int!]!): ResponseStatus!
 
     # 设备
     "保存设备"
@@ -2186,22 +2186,30 @@ func (ec *executionContext) field_Mutation_savePoints_args(ctx context.Context, 
 		}
 	}
 	args["materialID"] = arg0
-	var arg1 []*model.PointCreateInput
+	var arg1 int
+	if tmp, ok := rawArgs["versionID"]; ok {
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["versionID"] = arg1
+	var arg2 []*model.PointCreateInput
 	if tmp, ok := rawArgs["saveItems"]; ok {
-		arg1, err = ec.unmarshalNPointCreateInput2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐPointCreateInput(ctx, tmp)
+		arg2, err = ec.unmarshalNPointCreateInput2ᚕᚖgithubᚗcomᚋSasukeBoᚋpmesᚑdataᚑcenterᚋapiᚋv1ᚋadminᚋmodelᚐPointCreateInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["saveItems"] = arg1
-	var arg2 []int
+	args["saveItems"] = arg2
+	var arg3 []int
 	if tmp, ok := rawArgs["deleteItems"]; ok {
-		arg2, err = ec.unmarshalNInt2ᚕintᚄ(ctx, tmp)
+		arg3, err = ec.unmarshalNInt2ᚕintᚄ(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["deleteItems"] = arg2
+	args["deleteItems"] = arg3
 	return args, nil
 }
 
@@ -6196,7 +6204,7 @@ func (ec *executionContext) _Mutation_savePoints(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SavePoints(rctx, args["materialID"].(int), args["saveItems"].([]*model.PointCreateInput), args["deleteItems"].([]int))
+		return ec.resolvers.Mutation().SavePoints(rctx, args["materialID"].(int), args["versionID"].(int), args["saveItems"].([]*model.PointCreateInput), args["deleteItems"].([]int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

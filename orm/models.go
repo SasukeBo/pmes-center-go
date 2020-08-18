@@ -138,12 +138,12 @@ func init() {
 		"decode_templates", "devices", "import_records", "materials", "points",
 		"products", "system_configs", "users", "files", "bar_code_rules",
 	}
+	setupUTF8GeneralCI(tableNames)
 
 	if env != "process" && env != "TEST" {
 		setupRootUser()
 		setupPointsImportTemplate()
 	}
-	setupUTF8GeneralCI(tableNames)
 	setupDefaultConfig() // Test env need system config
 	DB.LogMode(true)
 	setupIndex()
