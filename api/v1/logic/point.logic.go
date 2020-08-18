@@ -48,7 +48,7 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 		version = *v
 	}
 
-	query := orm.DB.Model(&orm.Product{}).Where("products.material_id = ?", groupInput.TargetID)
+	query := orm.DB.Model(&orm.Product{}).Select("point_values").Where("products.material_id = ?", groupInput.TargetID)
 	query = query.Joins("JOIN import_records ON import_records.id = products.import_record_id")
 	query = query.Where("import_records.blocked = ? AND products.material_version_id = ?", false, version.ID)
 
@@ -89,9 +89,9 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "points")
 	}
 
-	var xAxisData []string
-	var data []float64
-	var amount []int
+	xAxisData := make([]string, 0)
+	data := make([]float64, 0)
+	amount := make([]int, 0)
 	var total = len(products)
 
 	if total == 0 {
