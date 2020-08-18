@@ -198,7 +198,7 @@ func TestAssembleDataIntoFile(t *testing.T) {
 }
 
 func TestReadXlsxStyle(t *testing.T) {
-	content, err := ioutil.ReadFile("/Users/sasukebo/workspace/pmes_data_cache/cache/test.xlsx")
+	content, err := ioutil.ReadFile("/Users/sasukebo/Downloads/test4.xlsx")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,11 +207,16 @@ func TestReadXlsxStyle(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sheet := file.Sheets[0]
-	row, _ := sheet.Row(0)
-	style := row.GetCell(0).GetStyle()
-	fmt.Println(style)
-	rowData, _ := sheet.Row(11)
-	style = rowData.GetCell(10).GetStyle()
-	fmt.Println(style)
+	template := orm.DecodeTemplate{
+		DataRowIndex:         16,
+		CreatedAtColumnIndex: 2,
+	}
+	formatTimeOfXlsx(&template, file)
+	_, err = file.ToSlice()
+	if err != nil {
+		fmt.Println()
+		fmt.Println()
+		fmt.Println(err)
+	}
+	//fmt.Println(slice)
 }
