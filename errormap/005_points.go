@@ -12,7 +12,7 @@ const (
 func init() {
 	// 400
 	register(ErrorCodePointAlreadyExists, http.StatusBadRequest, langMap{
-		ZH_CN: "对不起，您创建的检测项已经存在，请确认您的输入。",
-		EN:    "Sorry, the detect item you created already exists, please check your input.",
+		ZH_CN: "对不起，检测项中有名称重复项，请确认您的输入。",
+		EN:    "Sorry, the detect item you named is duplicated, please check your input.",
 	})
 }
