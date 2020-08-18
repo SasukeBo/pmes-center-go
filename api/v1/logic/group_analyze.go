@@ -71,7 +71,7 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, p
 	var joinDevice = false
 
 	// Version control and import_record block control
-	versionID, blockIDs, err := getVersionID(ctx, target, params, pVersionID)
+	versionID, blockIDs, err := getVersionIDAndBlockIDs(ctx, target, uint(params.TargetID), pVersionID)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +402,7 @@ func scanRows(rows *sql.Rows, groupBy *model.Category) []analysis {
 	return results
 }
 
-func getVersionID(ctx context.Context, target string, params model.GraphInput, pVersionID *int) (int, []int, error) {
+func getVersionIDAndBlockIDs(ctx context.Context, target string, id uint, pVersionID *int) (int, []int, error) {
 	var versionID int
 	var materialID uint
 	var blockIDs []int
@@ -411,10 +411,10 @@ func getVersionID(ctx context.Context, target string, params model.GraphInput, p
 	} else {
 		var version orm.MaterialVersion
 		if target == "material" {
-			materialID = uint(params.TargetID)
+			materialID = id
 		} else if target == "device" {
 			var device orm.Device
-			if err := device.Get(uint(params.TargetID)); err != nil {
+			if err := device.Get(id); err != nil {
 				return versionID, blockIDs, errormap.SendGQLError(ctx, err.GetCode(), err, "device")
 			}
 			materialID = device.MaterialID

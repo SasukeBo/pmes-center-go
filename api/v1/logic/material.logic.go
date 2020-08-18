@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"crypto/md5"
 	"fmt"
 	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api/v1/model"
@@ -126,6 +127,26 @@ func countProductQualifiedForMaterial(material *orm.Material) (int, int) {
 }
 
 func AnalyzeMaterial(ctx context.Context, id int, deviceID *int, versionID *int, duration []*time.Time) (*model.Material, error) {
+	for i, t := range duration {
+		nt := t.Truncate(time.Hour)
+		duration[i] = &nt
+	}
+	base := fmt.Sprintf("%s-%v-%v", "AnalyzeMaterial", id, duration)
+	if deviceID != nil {
+		base = base + fmt.Sprintf("-%v", *deviceID)
+	}
+	if versionID != nil {
+		base = base + fmt.Sprintf("-%v", *versionID)
+	}
+
+	var key = fmt.Sprint(md5.Sum([]byte(base)))
+	if v := cache.Get(key); v != nil {
+		if value, ok := v.(*model.Material); ok {
+			_ = cache.Set(key, value)
+			return value, nil
+		}
+	}
+
 	var material orm.Material
 	if err := material.Get(uint(id)); err != nil {
 		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
@@ -141,11 +162,19 @@ func AnalyzeMaterial(ctx context.Context, id int, deviceID *int, versionID *int,
 		materialVersionID = *versionID
 	}
 
-	query := orm.Model(&orm.Product{}).Joins("JOIN import_records ON import_records.id = products.import_record_id")
-	query = query.Where(
-		"products.material_id = ? AND import_records.blocked = ? AND products.material_version_id = ?",
-		material.ID, false, materialVersionID,
-	)
+	var blockedIDs []int
+	err := orm.Model(&orm.ImportRecord{}).Where(
+		"material_id = ? AND blocked = true", material.ID,
+	).Pluck("id", &blockedIDs).Error
+	if err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "import_record")
+	}
+
+	query := orm.Model(&orm.Product{}).Select("count(id) AS total, qualified").Group("qualified")
+	query = query.Where("material_version_id = ?", materialVersionID)
+	if len(blockedIDs) > 0 {
+		query = query.Where("import_record_id NOT IN (?)", blockedIDs)
+	}
 
 	if len(duration) > 0 {
 		query = query.Where("products.created_at > ?", *duration[0])
@@ -157,32 +186,51 @@ func AnalyzeMaterial(ctx context.Context, id int, deviceID *int, versionID *int,
 		query = query.Where("products.device_id = ?", *deviceID)
 	}
 
-	var ok int
-	var ng int
-	query.Where("products.qualified = ?", true).Count(&ok)
-	query.Where("products.qualified = ?", false).Count(&ng)
+	var results []struct {
+		Total     int  `json:"total"`
+		Qualified bool `json:"qualified"`
+	}
+	if err := query.Scan(&results).Error; err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
+	}
 
 	var out model.Material
 	if err := copier.Copy(&out, &material); err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "material")
 	}
+	for _, r := range results {
+		if r.Qualified {
+			out.Ok = r.Total
+		} else {
+			out.Ng = r.Total
+		}
+	}
 
-	out.Ok = ok
-	out.Ng = ng
+	_ = cache.Set(key, &out)
 	return &out, nil
 }
 
+type productGroupCount struct {
+	name string
+	ok   int
+	ng   int
+}
+
 func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error) {
+	for i, t := range duration {
+		nt := t.Truncate(time.Hour)
+		duration[i] = &nt
+	}
+	var key = fmt.Sprint(md5.Sum([]byte(fmt.Sprintf("%s-%v-%v", "MaterialYieldTop", duration, limit))))
+	if v := cache.Get(key); v != nil {
+		if value, ok := v.(*model.EchartsResult); ok {
+			_ = cache.Set(key, value)
+			return value, nil
+		}
+	}
+
 	// SELECT
-	query := orm.Model(&orm.Product{}).Select("materials.name AS name, COUNT(products.id) AS amount").Group("products.material_id")
-	// JOIN
-	query = query.Joins(`
-	JOIN materials ON products.material_id = materials.id
-	JOIN import_records ON import_records.id = products.import_record_id
-	JOIN material_versions ON products.material_version_id = material_versions.id
-	`)
-	// WHERE
-	query = query.Where("import_records.blocked = ? AND material_versions.active = ? ", false, true)
+	query := orm.Model(&orm.Product{}).Select("COUNT(id) AS total, qualified").Group("qualified")
 
 	if len(duration) > 0 {
 		t := duration[0]
@@ -194,56 +242,78 @@ func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*m
 		query = query.Where("products.created_at < ?", *t)
 	}
 
-	var totalResult = make(map[string]int)
 	t1 := time.Now()
-	totalRows, err := query.Rows()
+	var materials []orm.Material
+	if err := orm.Model(&orm.Material{}).Find(&materials).Error; err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "materials")
+	}
+
+	var productsChan = make(chan productGroupCount, 5)
+	var groupCount int
+
+	for _, material := range materials {
+		versionID, blockIDs, err := getVersionIDAndBlockIDs(ctx, "material", material.ID, nil)
+		if err != nil {
+			continue
+		}
+		groupCount++
+		var name = material.Name
+
+		go func() {
+			var result = productGroupCount{name: name}
+			var scans []struct {
+				Total     int
+				Qualified bool
+			}
+			newQuery := query.Where(
+				"material_version_id = ? ", versionID)
+			if len(blockIDs) > 0 {
+				newQuery = newQuery.Where("import_record_id NOT IN (?)", blockIDs)
+			}
+			if err := newQuery.Scan(&scans).Error; err != nil {
+				productsChan <- result
+				return
+			}
+			for _, scan := range scans {
+				if scan.Qualified {
+					result.ok = scan.Total
+				} else {
+					result.ng = scan.Total
+				}
+			}
+			productsChan <- result
+		}()
+	}
+
+	var results []productGroupCount
+	var receivedCount int
+	for {
+		if receivedCount >= groupCount {
+			break
+		}
+		select {
+		case result := <-productsChan:
+			results = append(results, result)
+			fmt.Println(result)
+		}
+		receivedCount++
+	}
 	t2 := time.Now()
 	log.Info("[MaterialYieldTop] query spend %v", t2.Sub(t1))
 
-	if err != nil {
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "products")
-	}
+	var seriesData = make([]float64, 0)
+	var xAxisData = make([]string, 0)
 
-	for totalRows.Next() {
-		var name string
-		var amount int64
-		err := totalRows.Scan(&name, &amount)
-		if err != nil {
-			continue
-		}
-
-		totalResult[name] = int(amount)
-	}
-
-	var ngResult = make(map[string]int)
-	ngRows, err := query.Where("qualified = ?", false).Rows()
-	if err != nil {
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "products")
-	}
-
-	for ngRows.Next() {
-		var name string
-		var amount int64
-		err := ngRows.Scan(&name, &amount)
-		if err != nil {
-			continue
-		}
-
-		ngResult[name] = int(amount)
-	}
-
-	var seriesData []float64
-	var xAxisData []string
-
-	for k, total := range totalResult {
-		xAxisData = append(xAxisData, k)
+	for _, result := range results {
+		xAxisData = append(xAxisData, result.name)
 		var rate float64 = 0
-		if ng, ok := ngResult[k]; ok {
-			rate = float64(ng) / float64(total)
+		if total := result.ok + result.ng; total > 0 {
+			rate = float64(result.ng) / float64(total)
 		}
 		seriesData = append(seriesData, rate)
 	}
 
+	// 排序
 	var length = len(seriesData)
 	for i := 0; i < length-1; i++ {
 		for j := 0; j < length-1-i; j++ {
@@ -262,12 +332,14 @@ func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*m
 		limit = len(xAxisData)
 	}
 
-	return &model.EchartsResult{
+	out := &model.EchartsResult{
 		XAxisData: xAxisData[:limit],
 		SeriesData: map[string]interface{}{
 			"data": seriesData[:limit],
 		},
-	}, nil
+	}
+	_ = cache.Set(key, out)
+	return out, nil
 }
 
 func GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GraphInput, versionID *int) (*model.EchartsResult, error) {
