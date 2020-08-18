@@ -195,7 +195,11 @@ func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*m
 	}
 
 	var totalResult = make(map[string]int)
+	t1 := time.Now()
 	totalRows, err := query.Rows()
+	t2 := time.Now()
+	log.Info("[MaterialYieldTop] query spend %v", t2.Sub(t1))
+
 	if err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeCountObjectFailed, err, "products")
 	}
