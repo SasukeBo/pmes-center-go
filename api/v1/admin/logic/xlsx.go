@@ -638,8 +638,10 @@ func store(xr *XLSXReader) {
 	var yield float64
 	if total := len(xr.DataSet); total == 0 {
 		yield = 0
+	} else if valid := total - invalidRow; valid != 0 {
+		yield = float64(importOK) / float64(valid)
 	} else {
-		yield = float64(importOK) / float64(total-invalidRow)
+		yield = 0
 	}
 	xr.Record.RowInvalidCount = invalidRow
 	_ = xr.Record.Finish(yield)
