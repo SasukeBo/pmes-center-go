@@ -23,9 +23,8 @@ func connectRedis() {
 	redisHost := configer.GetString("redis_host")
 	redisPort := configer.GetString("redis_port")
 	redisClient = redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:        fmt.Sprintf("%s:%s", redisHost, redisPort),
+		DialTimeout: 100,
 	})
 	if redisClient != nil {
 		log.Info("redis server connected")
