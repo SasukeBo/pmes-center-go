@@ -140,7 +140,7 @@ func init() {
 	}
 	setupUTF8GeneralCI(tableNames)
 
-	if env != "process" && env != "TEST" {
+	if env != "test" && env != "TEST" {
 		setupRootUser()
 		setupPointsImportTemplate()
 	}
