@@ -74,7 +74,7 @@ func ParseImportPoints(ctx context.Context, file graphql.Upload) ([]*model.Point
 	return outs, nil
 }
 
-func SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error) {
+func SavePoints(ctx context.Context, materialID int, versionID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error) {
 	user := api.CurrentUser(ctx)
 	if !user.IsAdmin {
 		return model.ResponseStatusError, errormap.SendGQLError(ctx, errormap.ErrorCodePermissionDeny, nil)
@@ -102,6 +102,7 @@ func SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCre
 		point.LowerLimit = saveItem.LowerLimit
 		point.Nominal = saveItem.Nominal
 		point.Index = parseIndexFromColumnCode(saveItem.Index)
+		point.MaterialVersionID = uint(versionID)
 		if err := tx.Save(&point).Error; err != nil {
 			tx.Rollback()
 			if strings.Contains(err.Error(), "Error 1062") {

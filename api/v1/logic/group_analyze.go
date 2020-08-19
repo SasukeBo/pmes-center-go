@@ -2,13 +2,18 @@ package logic
 
 import (
 	"context"
+	"crypto/md5"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/SasukeBo/pmes-data-center/api/v1/model"
+	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
+	"github.com/jinzhu/gorm"
 	"strings"
+	"time"
 )
 
 type analysis struct {
@@ -23,7 +28,37 @@ type echartsResult struct {
 	SeriesAmountData map[string][]float64
 }
 
-func groupAnalyze(ctx context.Context, params model.GraphInput, target string, versionID *int) (*model.EchartsResult, error) {
+type queryProton struct {
+	isRatio bool
+	rows    *sql.Rows
+}
+
+func groupAnalyze(ctx context.Context, params model.GraphInput, target string, pVersionID *int) (*model.EchartsResult, error) {
+	var out *model.EchartsResult
+	var key string
+	defer func() {
+		if key != "" {
+			_ = cache.Set(key, out)
+		}
+	}()
+	for i, t := range params.Duration {
+		nt := t.Truncate(time.Hour)
+		params.Duration[i] = &nt
+	}
+	if content, err := json.Marshal(params); err == nil {
+		key = fmt.Sprintf("%x-%s", md5.Sum(content), target)
+		if v := cache.Get(key); v != nil {
+			var ok bool
+			out, ok = v.(*model.EchartsResult)
+			if ok {
+				return out, nil
+			}
+		}
+	}
+
+	if params.Limit != nil && *params.Limit < 0 {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("limit不能小于0"))
+	}
 	query := orm.DB.Model(&orm.Product{})
 	switch target {
 	case "material":
@@ -35,16 +70,14 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, v
 	var selectVariables []interface{}
 	var joinDevice = false
 
-	// 连接 import_records
-	joins = append(joins, "JOIN import_records ON products.import_record_id = import_records.id")
-	query = query.Where("import_records.blocked = ?", false)
-
-	// 连接 material_version
-	if versionID != nil {
-		query = query.Where("products.material_version_id  = ?", *versionID)
-	} else {
-		joins = append(joins, "JOIN material_versions ON products.material_version_id = material_versions.id")
-		query = query.Where("material_versions.active  = ?", true)
+	// Version control and import_record block control
+	versionID, blockIDs, err := getVersionIDAndBlockIDs(ctx, target, uint(params.TargetID), pVersionID)
+	if err != nil {
+		return nil, err
+	}
+	query = query.Where("products.material_version_id = ?", versionID)
+	if len(blockIDs) > 0 {
+		query = query.Where("products.import_record_id NOT IN (?)", blockIDs)
 	}
 
 	// amount
@@ -112,37 +145,67 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, v
 		query = query.Where("products.created_at < ?", *t)
 	}
 
-	rows, err := query.Rows()
-	if err != nil {
+	var totalQueryCount = 1
+	var rowsChan = make(chan queryProton, 2)
+	go operateQuery(rowsChan, query, false)
+	if params.YAxis != "Amount" {
+		totalQueryCount++
+		ratioQuery := query.Where("products.qualified = ?", params.YAxis == "Yield")
+		go operateQuery(rowsChan, ratioQuery, true)
+	}
+
+	var receivedRowsCount int
+	var ratioRows, rows *sql.Rows
+	for {
+		if receivedRowsCount >= totalQueryCount {
+			break
+		}
+		select {
+		case rowsProton := <-rowsChan:
+			if rowsProton.isRatio {
+				ratioRows = rowsProton.rows
+			} else {
+				rows = rowsProton.rows
+			}
+		}
+		receivedRowsCount++
+	}
+
+	if rows == nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
 	}
-
 	results := scanRows(rows, params.GroupBy)
 
-	if params.Limit != nil && *params.Limit < 0 {
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("limit不能小于0"))
-	}
-
 	if params.YAxis != "Amount" {
-		qualified := true
-		if params.YAxis == "UnYield" {
-			qualified = false
-		}
-
-		rows, err := query.Where("products.qualified = ?", qualified).Rows()
-		if err != nil {
+		if ratioRows == nil {
 			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
 		}
-		qualifiedResults := scanRows(rows, params.GroupBy)
-
-		return calYieldAnalysisResult(results, qualifiedResults, params.Limit, params.Sort)
+		qualifiedResults := scanRows(ratioRows, params.GroupBy)
+		out, err = calYieldAnalysisResult(results, qualifiedResults, params.Limit, params.Sort)
+		if err == nil && key != "" {
+			_ = cache.Set(key, out)
+		}
+		return out, err
 	}
 
 	eResult, err := calAmountAnalysisResult(results, params.Limit, params.Sort)
 	if err != nil {
 		return nil, err
 	}
-	return convertToEchartsResult(eResult), nil
+
+	out = convertToEchartsResult(eResult)
+	return out, nil
+}
+
+func operateQuery(rowsChan chan queryProton, query *gorm.DB, isRatio bool) {
+	var result = queryProton{isRatio: isRatio}
+	rows, err := query.Rows()
+	if err != nil {
+		rowsChan <- result
+		return
+	}
+	result.rows = rows
+	rowsChan <- result
 }
 
 func sortResult(result *echartsResult, isAsc bool) {
@@ -337,4 +400,37 @@ func scanRows(rows *sql.Rows, groupBy *model.Category) []analysis {
 	_ = rows.Close()
 
 	return results
+}
+
+func getVersionIDAndBlockIDs(ctx context.Context, target string, id uint, pVersionID *int) (int, []int, error) {
+	var versionID int
+	var materialID uint
+	var blockIDs []int
+	if pVersionID != nil {
+		versionID = *pVersionID
+	} else {
+		var version orm.MaterialVersion
+		if target == "material" {
+			materialID = id
+		} else if target == "device" {
+			var device orm.Device
+			if err := device.Get(id); err != nil {
+				return versionID, blockIDs, errormap.SendGQLError(ctx, err.GetCode(), err, "device")
+			}
+			materialID = device.MaterialID
+		}
+		if err := version.GetActiveWithMaterialID(materialID); err != nil {
+			return versionID, blockIDs, errormap.SendGQLError(ctx, err.GetCode(), err, "material_version")
+		}
+		versionID = int(version.ID)
+	}
+
+	err := orm.Model(&orm.ImportRecord{}).Where(
+		"material_id = ? AND blocked = TRUE", materialID,
+	).Pluck("id", &blockIDs).Error
+	if err != nil {
+		return versionID, blockIDs, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "import_record")
+	}
+
+	return versionID, blockIDs, nil
 }

@@ -7,6 +7,7 @@ import "net/http"
 const (
 	// 500
 	ErrorCodeRevertImportFailed = "E0006S0500N0001"
+	ErrorCodeAssembleDataFailed = "E0006S0500N0002"
 	// 400
 	ErrorCodeImportGetPointsFailed           = "E0006S0400N0001"
 	ErrorCodeImportWithIllegalDecodeTemplate = "E0006S0400N0002"
@@ -31,5 +32,9 @@ func init() {
 	register(ErrorCodeRevertImportFailed, http.StatusInternalServerError, langMap{
 		ZH_CN: "对不起，无法撤销导入，发生了一些错误。",
 		EN:    "Sorry, cannot revert the import with some errors.",
+	})
+	register(ErrorCodeAssembleDataFailed, http.StatusInternalServerError, langMap{
+		ZH_CN: "对不起，生成原数据文件时发生错误。",
+		EN:    "Sorry, due to some errors, the original data file could not be generated.",
 	})
 }

@@ -60,7 +60,7 @@ func (d *Device) AfterSave() error {
 
 /*	functions
 --------------------------------------------------------------------------------------------------------------------- */
-func (d *Device) GetWithToken(token string) *errormap.Error {
+func (d *Device) GetWithToken(token string, conn ...*gorm.DB) *errormap.Error {
 	cacheKey := fmt.Sprintf(deviceCacheKey, "token", token)
 	cacheValue := cache.Get(cacheKey)
 	if cacheValue != nil {
@@ -73,7 +73,8 @@ func (d *Device) GetWithToken(token string) *errormap.Error {
 		}
 	}
 
-	if err := DB.Model(d).Where("uuid = ?", token).First(d).Error; err != nil {
+	db := choseConn(conn...)
+	if err := db.Model(d).Where("uuid = ?", token).First(d).Error; err != nil {
 		return handleError(err, "token", token)
 	}
 	_ = cache.Set(cacheKey, *d)
@@ -113,7 +114,8 @@ func (d *Device) genTemplateDecodeRuleKey() string {
 	return fmt.Sprintf("device_current_version_template_rule_key_%v_%s", d.ID, util.NowDateStr())
 }
 
-func (d *Device) GetCurrentTemplateDecodeRule() *BarCodeRule {
+func (d *Device) GetCurrentTemplateDecodeRule(conn ...*gorm.DB) *BarCodeRule {
+	db := choseConn(conn...)
 	key := d.genTemplateDecodeRuleKey()
 	value := cache.Get(key)
 	if value != nil {
@@ -125,16 +127,14 @@ func (d *Device) GetCurrentTemplateDecodeRule() *BarCodeRule {
 	}
 
 	var template DecodeTemplate
-	query := Model(&DecodeTemplate{}).Joins("JOIN material_versions ON decode_templates.material_version_id = material_versions.id")
+	query := db.Model(&DecodeTemplate{}).Joins("JOIN material_versions ON decode_templates.material_version_id = material_versions.id")
 	query = query.Where("decode_templates.material_id = ? AND material_versions.active = true", d.MaterialID)
 	if err := query.Find(&template).Error; err != nil {
-		log.Errorln(err)
 		return nil
 	}
 
 	var rule BarCodeRule
-	if err := rule.Get(template.BarCodeRuleID); err != nil {
-		log.Errorln(err)
+	if err := db.Model(&rule).Where("id = ?", template.BarCodeRuleID).First(&rule).Error; err != nil {
 		return nil
 	}
 

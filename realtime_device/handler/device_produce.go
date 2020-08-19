@@ -7,70 +7,12 @@ import (
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 )
-
-func DeviceProduce1() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		deviceToken := c.PostForm("device_token")
-		var device orm.Device
-		if err := device.GetWithToken(deviceToken); err != nil {
-			errormap.SendHttpError(c, err.GetCode(), err, "device")
-			return
-		}
-
-		qualifiedStr := c.PostForm("qualified")
-		qualifiedInt, _ := strconv.ParseInt(qualifiedStr, 10, 64)
-		var qualified bool
-		if qualifiedInt == 1 {
-			qualified = true
-		}
-
-		attributesStr := c.PostForm("attributes")
-		attribute := make(types.Map)
-		kValues := strings.Split(attributesStr, ";")
-		for _, item := range kValues {
-			sectors := strings.Split(item, ":")
-			if len(sectors) < 2 {
-				continue
-			}
-
-			attribute[sectors[0]] = sectors[1]
-		}
-
-		pointValuesStr := c.PostForm("point_values")
-		pointValues := make(types.Map)
-		kValues = strings.Split(pointValuesStr, ";")
-		for _, item := range kValues {
-			sectors := strings.Split(item, ":")
-			if len(sectors) < 2 {
-				continue
-			}
-			value, err := strconv.ParseFloat(sectors[1], 64)
-			if err != nil {
-				value = 0
-			}
-			pointValues[sectors[0]] = value
-		}
-
-		var product = orm.Product{
-			MaterialID:  device.MaterialID,
-			DeviceID:    device.ID,
-			Qualified:   qualified,
-			Attribute:   attribute,
-			PointValues: pointValues,
-		}
-		if err := orm.Create(&product).Error; err != nil {
-			errormap.SendHttpError(c, errormap.ErrorCodeCreateObjectError, err, "product")
-			return
-		}
-
-		c.JSON(http.StatusOK, "ok")
-	}
-}
 
 type response struct {
 	DeviceToken string `json:"device_token"`
@@ -79,6 +21,8 @@ type response struct {
 	Qualified   int    `json:"qualified"`
 	BarCode     string `json:"bar_code"`
 }
+
+var conn *gorm.DB
 
 func DeviceProduce() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -91,18 +35,18 @@ func DeviceProduce() gin.HandlerFunc {
 
 		deviceToken := form.DeviceToken
 		var device orm.Device
-		if err := device.GetWithToken(deviceToken); err != nil {
+		if err := device.GetWithToken(deviceToken, conn); err != nil {
 			errormap.SendHttpError(c, err.GetCode(), err, "device")
 			return
 		}
 		ip := c.Request.Header.Get("X-Real-IP")
 		if device.IP != ip {
 			device.IP = ip
-			_ = orm.Save(&device)
+			_ = conn.Save(&device)
 		}
 
 		var record orm.ImportRecord
-		if err := record.GetDeviceRealtimeRecord(&device); err != nil {
+		if err := record.GetDeviceRealtimeRecord(&device, conn); err != nil {
 			errormap.SendHttpError(c, errormap.ErrorCodeInternalError, err, "record")
 		}
 
@@ -116,7 +60,7 @@ func DeviceProduce() gin.HandlerFunc {
 		var attribute types.Map
 		var statusCode = 1
 
-		rule := device.GetCurrentTemplateDecodeRule()
+		rule := device.GetCurrentTemplateDecodeRule(conn)
 		barCode := strings.TrimSpace(form.BarCode)
 		if rule != nil {
 			decoder := logic.NewBarCodeDecoder(rule)
@@ -124,17 +68,6 @@ func DeviceProduce() gin.HandlerFunc {
 		} else {
 			attribute = make(types.Map)
 		}
-
-		// TODO: deprecate
-		//kValues := strings.Split(attributesStr, ";")
-		//for _, item := range kValues {
-		//	sectors := strings.Split(item, ":")
-		//	if len(sectors) < 2 {
-		//		continue
-		//	}
-		//
-		//	attribute[sectors[0]] = sectors[1]
-		//}
 
 		pointValuesStr := form.PointValues
 		pointValues := make(types.Map)
@@ -162,11 +95,16 @@ func DeviceProduce() gin.HandlerFunc {
 			BarCode:           barCode,
 			BarCodeStatus:     statusCode,
 		}
-		if err := orm.Create(&product).Error; err != nil {
+		if err := conn.Create(&product).Error; err != nil {
 			errormap.SendHttpError(c, errormap.ErrorCodeCreateObjectError, err, "product")
 			return
 		}
-		record.Increase(1, 1, qualified)
+		record.Increase(1, 1, qualified, conn)
 		c.JSON(http.StatusOK, "ok")
 	}
+}
+
+func init() {
+	conn = orm.NewConnection()
+	conn.LogMode(false)
 }

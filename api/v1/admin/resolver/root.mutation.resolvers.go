@@ -60,8 +60,8 @@ func (r *mutationResolver) ParseImportPoints(ctx context.Context, file graphql.U
 	return logic.ParseImportPoints(ctx, file)
 }
 
-func (r *mutationResolver) SavePoints(ctx context.Context, materialID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error) {
-	return logic.SavePoints(ctx, materialID, saveItems, deleteItems)
+func (r *mutationResolver) SavePoints(ctx context.Context, materialID int, versionID int, saveItems []*model.PointCreateInput, deleteItems []int) (model.ResponseStatus, error) {
+	return logic.SavePoints(ctx, materialID, versionID, saveItems, deleteItems)
 }
 
 func (r *mutationResolver) SaveDevice(ctx context.Context, input model.DeviceInput) (*model.Device, error) {

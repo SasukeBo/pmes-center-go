@@ -47,6 +47,10 @@ func (r *queryResolver) ImportStatus(ctx context.Context, id int) (*model.Import
 	return logic.ImportStatus(ctx, id)
 }
 
+func (r *queryResolver) DownloadImportRecords(ctx context.Context, ids []int) (string, error) {
+	return logic.DownloadImportRecords(ctx, ids)
+}
+
 func (r *queryResolver) ListDecodeTemplate(ctx context.Context, materialID int) ([]*model.DecodeTemplate, error) {
 	return logic.ListDecodeTemplate(ctx, materialID)
 }

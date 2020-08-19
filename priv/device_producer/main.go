@@ -14,7 +14,7 @@ var (
 	//barCode     = "FTTA31703CX2867HE101B17K17MT"
 	barCode = ""
 
-	url = "http://localhost/produce"
+	url = "http://192.168.5.146/produce"
 )
 
 func main() {
