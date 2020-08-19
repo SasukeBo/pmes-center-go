@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/log"
-	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/go-redis/redis/v8"
 	"reflect"
 	"time"
@@ -29,12 +28,11 @@ func connectRedis() {
 		DB:       0,  // use default DB
 	})
 	if redisClient != nil {
-		log.Info("[redis server connected]")
+		log.Info("redis server connected")
 	}
 }
 
 func Set(key string, value interface{}, opts ...interface{}) error {
-	t1 := time.Now()
 	dt := reflect.TypeOf(value)
 	switch dt.Kind() {
 	case reflect.Struct, reflect.Map, reflect.Array, reflect.Slice:
@@ -53,9 +51,7 @@ func Set(key string, value interface{}, opts ...interface{}) error {
 			expireDuration = v
 		}
 	}
-	_ = util.DebugTime(t1, "before set redis")
 	err := redisClient.Set(redisClient.Context(), key, value, expireDuration).Err()
-	_ = util.DebugTime(t1, "set redis")
 	return err
 }
 

@@ -103,27 +103,21 @@ func TestCache(t *testing.T) {
 		for i := 0; i < 5000; i++ {
 			sum = sum + value
 		}
-		//s1 := sum
-		//sum = sum + sum // 10000
-		//sum = sum + sum // 20000
-		//sum = sum + s1  // 25000
+		s1 := sum
+		sum = sum + sum // 10000
+		sum = sum + sum // 20000
+		sum = sum + s1  // 25000
 		fmt.Println(len(sum))
 		fmt.Println(len("h"))
 
 		var err error
 		t1 := time.Now()
 		err = Set("long_pds1", sum)
-		err = Set("long_pds2", sum)
-		err = Set("long_pds3", sum)
-		err = Set("long_pds4", sum)
 		t2 := util.DebugTime(t1, "set")
 		if err != nil {
 			t.Fatal(err)
 		}
 		_, err = Get("long_pds1")
-		_, err = Get("long_pds2")
-		_, err = Get("long_pds3")
-		_, err = Get("long_pds4")
 		if err != nil {
 			t.Fatal(err)
 		}
