@@ -20,3 +20,7 @@ ftp_password:
 # root user config
 root_name:
 root_pass:
+
+# redis config
+redis_host:
+redis_port:

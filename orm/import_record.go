@@ -122,17 +122,12 @@ func (i *ImportRecord) Increase(tc, fc int, qualified bool, conn *gorm.DB) error
 func (i *ImportRecord) GetDeviceRealtimeRecord(device *Device, db *gorm.DB) error {
 	// 生成key
 	cacheKey := i.genKey(device.ID)
-	log.Info("cacheKey is %s", cacheKey)
 
 	// 获取缓存
-	cacheValue := cache.Get(cacheKey)
-	if cacheValue != nil {
-		record, ok := cacheValue.(ImportRecord)
-		if ok && record.CreatedAt.Add(newRecordDuration).Before(time.Now()) { // 如果导入记录的创建时间距离现在为一小时之内
-			if err := copier.Copy(i, &record); err == nil {
-				_ = cache.Set(cacheKey, *i) // 刷新缓存
-				return nil
-			}
+	err := cache.Scan(cacheKey, i)
+	if err == nil {
+		if i.CreatedAt.Add(newRecordDuration).Before(time.Now()) { // 如果导入记录的创建时间距离现在为一小时之内
+			return nil
 		}
 	}
 
