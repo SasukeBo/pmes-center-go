@@ -86,7 +86,7 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 	}
 
 	log.Info("[FetchProducts]")
-	products := orm.FetchProducts(requiredIds)
+	products := orm.FetchProducts(requiredIds, query)
 	var points []orm.Point
 	if err := orm.Model(&orm.Point{}).Where("material_id = ? AND material_version_id = ?", groupInput.TargetID, version.ID).Find(&points).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "points")

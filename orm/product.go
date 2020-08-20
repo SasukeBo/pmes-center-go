@@ -1,11 +1,14 @@
 package orm
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
 	"github.com/SasukeBo/pmes-data-center/util"
+	"github.com/go-redis/redis/v8"
+	"github.com/jinzhu/gorm"
 	"time"
 )
 
@@ -24,125 +27,83 @@ type Product struct {
 	PointValues       types.Map `gorm:"COMMENT:'产品点位检测值集合';type:JSON;not null"`
 }
 
-const pageLength = 10000
+const pageLength = 1000
+const pDuration = 24 * time.Hour
 
 // 存储id连续的products
 // 分页缓存，10000的整数倍
 func cacheProducts(products []Product) {
-	if len(products) > pageLength {
-		products = products[0:pageLength]
-	}
-	key := getPageKey(int(products[0].ID))
-	fmt.Printf("set page key=%s, product[0]=%v, product[len-1]=%v\n", key, products[0].ID, products[len(products)-1].ID)
-	err := cache.Set(key, products, 24*time.Hour)
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
-type productPageMap map[int][]Product
-
-func getPageKey(id int) string {
-	return fmt.Sprintf("product-%v", id/pageLength)
-}
-
-func getPageNum(id int) int {
-	return id / pageLength
-}
-
-func getPageIndex(id int) int {
-	return id % pageLength
-}
-
-func reduceGetIndex(page []Product, id int) *Product {
-	pi := getPageIndex(id)
-	if pi >= len(page) {
-		pi = len(page) - 1
-	}
-
-	if hit := page[pi]; int(hit.ID) == id {
-		return &hit
-	} else {
-		if int(hit.ID) < id {
-			return nil
-		}
-
-		var begin = 0
-		var end = len(page) - 1
-		for {
-			mid := (begin + end) / 2
-			if guess := page[mid]; int(guess.ID) == id {
-				return &guess
-			} else if int(guess.ID) > id {
-				end = mid
-			} else if int(guess.ID) < id {
-				begin = mid
+	t1 := time.Now()
+	_, _ = cache.Pipelined(func(pip redis.Pipeliner) error {
+		for _, p := range products {
+			key := getPK(int(p.ID))
+			err := cache.SetWithPip(pip, key, p, pDuration)
+			if err != nil {
+				log.Errorln(err)
 			}
 		}
-	}
+		return nil
+	})
+	util.DebugTime(t1, "cache product:")
 }
 
-func FetchProducts(ids []int) []Product {
+func getPK(id int) string {
+	return fmt.Sprintf("product-%v", id)
+}
+
+type PipGet struct {
+	Get *redis.StringCmd
+	ID  int
+}
+
+func FetchProducts(ids []int, query *gorm.DB) []Product {
 	log.Info("start fetch length: %v", len(ids))
 	var results []Product
 	var unHits []int
-	var pageMap = make(productPageMap)
+
 	t1 := time.Now()
-	for _, id := range ids {
-		pn := getPageNum(id)
-		var hit Product
-		if page, ok := pageMap[pn]; ok {
-			guess := reduceGetIndex(page, id)
-			if guess == nil {
-				unHits = append(unHits, id)
-				continue
+	var pgs []PipGet
+	_, _ = cache.Pipelined(func(pip redis.Pipeliner) error {
+		for _, id := range ids {
+			pg := PipGet{
+				Get: pip.Get(cache.Ctx(), getPK(id)),
+				ID:  id,
 			}
-			hit = *guess
-		} else {
-			key := getPageKey(id)
-			if err := cache.Scan(key, &page); err != nil {
-				unHits = append(unHits, id)
-				continue
-			} else {
-				guess := reduceGetIndex(page, id)
-				if guess == nil {
-					unHits = append(unHits, id)
-					continue
-				}
-				hit = *guess
-			}
-			pageMap[pn] = page
+			pgs = append(pgs, pg)
 		}
-		if int(hit.ID) != id {
-			log.Error("id not match: %v %v", hit.ID, id)
-		}
-		results = append(results, hit)
-	}
-	util.DebugTime(t1, "time during cache loop")
 
-	if len(unHits) > 0 {
-		go CacheProductPage(unHits)
-		//var rest []Product
-		//if err := Model(&Product{}).Where("id in (?)", unHits).Find(&rest).Error; err == nil {
-		//	results = append(results, rest...)
-		//}
+		return nil
+	})
+	for _, pg := range pgs {
+		var p Product
+		if pg.Get.Err() == redis.Nil {
+			unHits = append(unHits, pg.ID)
+			continue
+		}
+		if err := json.Unmarshal([]byte(pg.Get.Val()), &p); err != nil {
+			unHits = append(unHits, pg.ID)
+			continue
+		}
+		results = append(results, p)
 	}
+	_ = util.DebugTime(t1, "Pipe get cache spend")
+
+	if unHitCount := len(unHits); unHitCount > 0 {
+		log.Info("total %v, unHits length = %v", len(ids), unHitCount)
+		var rest []Product
+		DB.LogMode(false)
+		defer DB.LogMode(true)
+		if err := Model(&Product{}).Where("id in (?)", unHits).Find(&rest).Error; err != nil {
+			log.Errorln(err)
+			if err := query.Find(&results).Error; err == nil {
+				go cacheProducts(results)
+				return results
+			}
+		}
+		results = append(results, rest...)
+		go cacheProducts(rest)
+	}
+
+	log.Infoln("len(results)", len(results))
 	return results
-}
-
-func CacheProductPage(ids []int) {
-	var currentPageNum = 0
-	for _, id := range ids {
-		pn := getPageNum(id)
-		if pn > currentPageNum {
-			go func(thisPN int) {
-				var page []Product
-				query := Model(&Product{}).Where("id >= ? AND id < ?", thisPN*pageLength, (thisPN+1)*pageLength)
-				if err := query.Limit(pageLength).Find(&page).Error; err == nil {
-					cacheProducts(page)
-				}
-			}(pn)
-			currentPageNum = pn
-		}
-	}
 }
