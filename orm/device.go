@@ -7,12 +7,10 @@ package orm
 
 import (
 	"fmt"
-	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/google/uuid"
-	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
 )
 
@@ -44,15 +42,15 @@ func (d *Device) BeforeCreate() error {
 
 // 清除缓存
 func (d *Device) AfterUpdate() error {
-	_ = cache.FlushCacheWithKey(fmt.Sprintf(deviceCacheKey, "token", d.UUID))
+	_ = cache.Del(fmt.Sprintf(deviceCacheKey, "token", d.UUID))
 	return nil
 }
 func (d *Device) AfterDelete() error {
-	_ = cache.FlushCacheWithKey(fmt.Sprintf(deviceCacheKey, "token", d.UUID))
+	_ = cache.Del(fmt.Sprintf(deviceCacheKey, "token", d.UUID))
 	return nil
 }
 func (d *Device) AfterSave() error {
-	_ = cache.FlushCacheWithKey(fmt.Sprintf(deviceCacheKey, "token", d.UUID))
+	_ = cache.Del(fmt.Sprintf(deviceCacheKey, "token", d.UUID))
 	return nil
 }
 
@@ -62,15 +60,9 @@ func (d *Device) AfterSave() error {
 --------------------------------------------------------------------------------------------------------------------- */
 func (d *Device) GetWithToken(token string, conn ...*gorm.DB) *errormap.Error {
 	cacheKey := fmt.Sprintf(deviceCacheKey, "token", token)
-	cacheValue := cache.Get(cacheKey)
-	if cacheValue != nil {
-		device, ok := cacheValue.(Device)
-		if ok {
-			if err := copier.Copy(d, &device); err == nil {
-				log.Info("get device from cache")
-				return nil
-			}
-		}
+	err := cache.Scan(cacheKey, d)
+	if err == nil {
+		return nil
 	}
 
 	db := choseConn(conn...)
@@ -115,25 +107,21 @@ func (d *Device) genTemplateDecodeRuleKey() string {
 }
 
 func (d *Device) GetCurrentTemplateDecodeRule(conn ...*gorm.DB) *BarCodeRule {
-	db := choseConn(conn...)
 	key := d.genTemplateDecodeRuleKey()
-	value := cache.Get(key)
-	if value != nil {
-		rule, ok := value.(*BarCodeRule)
-		if ok {
-			_ = cache.Set(key, rule)
-			return rule
-		}
+	var rule BarCodeRule
+	err := cache.Scan(key, &rule)
+	if err == nil {
+		return &rule
 	}
 
 	var template DecodeTemplate
+	db := choseConn(conn...)
 	query := db.Model(&DecodeTemplate{}).Joins("JOIN material_versions ON decode_templates.material_version_id = material_versions.id")
 	query = query.Where("decode_templates.material_id = ? AND material_versions.active = true", d.MaterialID)
 	if err := query.Find(&template).Error; err != nil {
 		return nil
 	}
 
-	var rule BarCodeRule
 	if err := db.Model(&rule).Where("id = ?", template.BarCodeRuleID).First(&rule).Error; err != nil {
 		return nil
 	}

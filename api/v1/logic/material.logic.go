@@ -78,12 +78,11 @@ type qualifiedResult struct {
 
 func countProductQualifiedForMaterial(material *orm.Material) (int, int) {
 	cacheKey := fmt.Sprintf("COUNT_PRODUCT_QUALIFIED_FOR_MATERIAL_%v", material.ID)
-	if value, err := cache.GetString(cacheKey); err == nil {
+	if value, err := cache.Get(cacheKey); err == nil {
 		values := strings.Split(value, ",")
 		if len(values) == 2 {
 			ok, _ := strconv.Atoi(values[0])
 			ng, _ := strconv.Atoi(values[1])
-			cache.Set(cacheKey, value)
 			return ok, ng
 		}
 	}
@@ -139,12 +138,10 @@ func AnalyzeMaterial(ctx context.Context, id int, deviceID *int, versionID *int,
 		base = base + fmt.Sprintf("-%v", *versionID)
 	}
 
+	var out model.Material
 	var key = fmt.Sprint(md5.Sum([]byte(base)))
-	if v := cache.Get(key); v != nil {
-		if value, ok := v.(*model.Material); ok {
-			_ = cache.Set(key, value)
-			return value, nil
-		}
+	if err := cache.Scan(key, &out); err == nil {
+		return &out, nil
 	}
 
 	var material orm.Material
@@ -194,7 +191,6 @@ func AnalyzeMaterial(ctx context.Context, id int, deviceID *int, versionID *int,
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
 	}
 
-	var out model.Material
 	if err := copier.Copy(&out, &material); err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeTransferObjectError, err, "material")
 	}
@@ -221,12 +217,10 @@ func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*m
 		nt := t.Truncate(time.Hour)
 		duration[i] = &nt
 	}
+	var out model.EchartsResult
 	var key = fmt.Sprint(md5.Sum([]byte(fmt.Sprintf("%s-%v-%v", "MaterialYieldTop", duration, limit))))
-	if v := cache.Get(key); v != nil {
-		if value, ok := v.(*model.EchartsResult); ok {
-			_ = cache.Set(key, value)
-			return value, nil
-		}
+	if err := cache.Scan(key, &out); err == nil {
+		return &out, nil
 	}
 
 	// SELECT
@@ -332,14 +326,14 @@ func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*m
 		limit = len(xAxisData)
 	}
 
-	out := &model.EchartsResult{
+	out = model.EchartsResult{
 		XAxisData: xAxisData[:limit],
 		SeriesData: map[string]interface{}{
 			"data": seriesData[:limit],
 		},
 	}
 	_ = cache.Set(key, out)
-	return out, nil
+	return &out, nil
 }
 
 func GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GraphInput, versionID *int) (*model.EchartsResult, error) {

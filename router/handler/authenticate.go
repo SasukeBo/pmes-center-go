@@ -2,11 +2,11 @@ package handler
 
 import (
 	"fmt"
+	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/util"
-	"github.com/SasukeBo/log"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jinzhu/gorm"
@@ -32,7 +32,7 @@ func Authenticate() gin.HandlerFunc {
 		}
 
 		var user orm.User
-		userUUID, err := cache.GetString(sessionID)
+		err = cache.Scan(sessionID, &user)
 		if err != nil { // 内存中未命中，前往db获取
 			log.Info("User not found in cache")
 
@@ -71,17 +71,7 @@ func Authenticate() gin.HandlerFunc {
 				return
 			}
 
-			cache.Set(sessionID, user.UUID)
-		} else {
-			err := orm.DB.Model(&orm.User{}).Where("uuid = ?", userUUID).First(&user).Error
-			if err != nil {
-				errormap.SendHttpError(
-					c, errormap.ErrorCodeUnauthenticated,
-					errormap.NewOrigin("Get user with uuid=%v failed: %v", userUUID, err),
-				)
-				return
-			}
-			cache.Set(sessionID, user.UUID)
+			cache.Set(sessionID, user)
 		}
 
 		c.Set("current_user", user)
@@ -167,7 +157,7 @@ func Logout() gin.HandlerFunc {
 		}
 
 		// 清除cache中记录的登录状态
-		cache.FlushCacheWithKey(accessToken)
+		cache.Del(accessToken)
 
 		c.JSON(http.StatusOK, object{"status": "ok"})
 	}

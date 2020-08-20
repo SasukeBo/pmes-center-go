@@ -56,3 +56,17 @@ func TestPoint_ValueWithLegal(t *testing.T) {
 	value, valid := point.ValueWithLegal("ERR")
 	fmt.Printf("value: %v, valid: %v\n", value, valid)
 }
+
+func TestCacheProducts(t *testing.T) {
+	var page = []Product{
+		{ID: 1},
+		{ID: 2},
+		{ID: 3},
+		{ID: 4},
+		{ID: 5},
+		{ID: 6},
+		{ID: 7},
+		{ID: 8},
+	}
+	cacheProducts(page)
+}

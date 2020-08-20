@@ -3,6 +3,7 @@ package util
 import (
 	"crypto/md5"
 	"fmt"
+	"github.com/SasukeBo/log"
 	"time"
 )
 
@@ -25,4 +26,10 @@ func Includes(items []string, target string) bool {
 	}
 
 	return false
+}
+
+func DebugTime(t time.Time, name string) time.Time {
+	nt := time.Now()
+	log.Info("[Debug] %s spend %v", name, nt.Sub(t))
+	return nt
 }

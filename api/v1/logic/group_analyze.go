@@ -34,7 +34,7 @@ type queryProton struct {
 }
 
 func groupAnalyze(ctx context.Context, params model.GraphInput, target string, pVersionID *int) (*model.EchartsResult, error) {
-	var out *model.EchartsResult
+	var out model.EchartsResult
 	var key string
 	defer func() {
 		if key != "" {
@@ -47,12 +47,8 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, p
 	}
 	if content, err := json.Marshal(params); err == nil {
 		key = fmt.Sprintf("%x-%s", md5.Sum(content), target)
-		if v := cache.Get(key); v != nil {
-			var ok bool
-			out, ok = v.(*model.EchartsResult)
-			if ok {
-				return out, nil
-			}
+		if err := cache.Scan(key, &out); err == nil {
+			return &out, nil
 		}
 	}
 
@@ -185,7 +181,7 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, p
 		if err == nil && key != "" {
 			_ = cache.Set(key, out)
 		}
-		return out, err
+		return &out, err
 	}
 
 	eResult, err := calAmountAnalysisResult(results, params.Limit, params.Sort)
@@ -194,7 +190,7 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, p
 	}
 
 	out = convertToEchartsResult(eResult)
-	return out, nil
+	return &out, nil
 }
 
 func operateQuery(rowsChan chan queryProton, query *gorm.DB, isRatio bool) {
@@ -242,7 +238,7 @@ func sortResult(result *echartsResult, isAsc bool) {
 	result.SeriesAmountData["data"] = seriesAmountData
 }
 
-func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, sort *model.Sort) (*model.EchartsResult, error) {
+func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, sort *model.Sort) (model.EchartsResult, error) {
 	totalAmount, _ := calAmountAnalysisResult(results, nil, nil)
 	yieldAmount, _ := calAmountAnalysisResult(qualifiedResults, nil, nil)
 
@@ -283,7 +279,7 @@ func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, so
 	return convertToEchartsResult(totalAmount), nil
 }
 
-func convertToEchartsResult(result *echartsResult) *model.EchartsResult {
+func convertToEchartsResult(result *echartsResult) model.EchartsResult {
 	seriesData := make(map[string]interface{})
 	seriesAmountData := make(map[string]interface{})
 	for k, v := range result.SeriesData {
@@ -291,7 +287,7 @@ func convertToEchartsResult(result *echartsResult) *model.EchartsResult {
 		seriesAmountData[k] = result.SeriesAmountData[k]
 	}
 
-	return &model.EchartsResult{
+	return model.EchartsResult{
 		XAxisData:        result.XAxisData,
 		SeriesData:       seriesData,
 		SeriesAmountData: seriesAmountData,
