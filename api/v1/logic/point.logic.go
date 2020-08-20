@@ -79,11 +79,12 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 		query = query.Where("products.created_at < ?", groupInput.Duration[1])
 	}
 
-	var products []orm.Product
-	if err := query.Find(&products).Error; err != nil {
+	var requiredIds []int
+	if err := query.Pluck("products.id", &requiredIds).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "size")
 	}
 
+	products := orm.FetchProducts(requiredIds, query)
 	var points []orm.Point
 	if err := orm.Model(&orm.Point{}).Where("material_id = ? AND material_version_id = ?", groupInput.TargetID, version.ID).Find(&points).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "points")
