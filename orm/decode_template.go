@@ -5,7 +5,6 @@ import (
 	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
-	"github.com/jinzhu/copier"
 	"github.com/jinzhu/gorm"
 )
 
@@ -32,15 +31,15 @@ const decodeTemplateCacheKey = "cache_decode_template_%v_%v"
 
 // 清除缓存
 func (d *DecodeTemplate) AfterUpdate() error {
-	_ = cache.FlushCacheWithKey(fmt.Sprintf(decodeTemplateCacheKey, "id", d.ID))
+	_ = cache.Del(fmt.Sprintf(decodeTemplateCacheKey, "id", d.ID))
 	return nil
 }
 func (d *DecodeTemplate) AfterDelete() error {
-	_ = cache.FlushCacheWithKey(fmt.Sprintf(decodeTemplateCacheKey, "id", d.ID))
+	_ = cache.Del(fmt.Sprintf(decodeTemplateCacheKey, "id", d.ID))
 	return nil
 }
 func (d *DecodeTemplate) AfterSave() error {
-	_ = cache.FlushCacheWithKey(fmt.Sprintf(decodeTemplateCacheKey, "id", d.ID))
+	_ = cache.Del(fmt.Sprintf(decodeTemplateCacheKey, "id", d.ID))
 	return nil
 }
 
@@ -66,14 +65,9 @@ func (d *DecodeTemplate) GetByVersionID(versionID uint) *errormap.Error {
 
 func (d *DecodeTemplate) GetCache(id uint) *errormap.Error {
 	var cacheKey = fmt.Sprintf(decodeTemplateCacheKey, "id", d.ID)
-	cacheValue := cache.Get(cacheKey)
-	if cacheValue != nil {
-		template, ok := cacheValue.(DecodeTemplate)
-		if ok {
-			if err := copier.Copy(d, &template); err == nil {
-				return nil
-			}
-		}
+	err := cache.Scan(cacheKey, d)
+	if err == nil {
+		return nil
 	}
 
 	if err := DB.Model(d).Where("id = ?", id).First(d).Error; err != nil {
