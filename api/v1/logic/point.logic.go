@@ -48,7 +48,7 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 		version = *v
 	}
 
-	query := orm.DB.Model(&orm.Product{}).Select("point_values").Where("products.material_id = ?", groupInput.TargetID)
+	query := orm.DB.Model(&orm.Product{}).Where("products.material_id = ?", groupInput.TargetID)
 	query = query.Joins("JOIN import_records ON import_records.id = products.import_record_id")
 	query = query.Where("import_records.blocked = ? AND products.material_version_id = ?", false, version.ID)
 
