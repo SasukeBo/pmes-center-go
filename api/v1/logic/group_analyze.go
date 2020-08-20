@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api/v1/model"
 	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
@@ -49,6 +50,8 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, p
 		key = fmt.Sprintf("%x-%s", md5.Sum(content), target)
 		if err := cache.Scan(key, &out); err == nil {
 			return &out, nil
+		} else {
+			log.Errorln(err)
 		}
 	}
 
