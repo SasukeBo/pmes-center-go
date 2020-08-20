@@ -1,7 +1,9 @@
 package cache
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/log"
@@ -31,7 +33,17 @@ func connectRedis() {
 	}
 }
 
-func Set(key string, value interface{}, opts ...interface{}) error {
+func Pipelined(fn func(pip redis.Pipeliner) error) ([]redis.Cmder, error) {
+	return redisClient.Pipelined(redisClient.Context(), fn)
+}
+
+func SetWithPip(pip redis.Pipeliner, key string, value interface{}, opts ...interface{}) error {
+	value = prepareSet(value)
+	expiredDuration := prepareExpire(opts)
+	return pip.Set(Ctx(), key, value, expiredDuration).Err()
+}
+
+func prepareSet(value interface{}) interface{} {
 	dt := reflect.TypeOf(value)
 	switch dt.Kind() {
 	case reflect.Struct, reflect.Map, reflect.Array, reflect.Slice:
@@ -43,15 +55,24 @@ func Set(key string, value interface{}, opts ...interface{}) error {
 	default:
 		value = fmt.Sprint(value)
 	}
+	return value
+}
 
+func prepareExpire(opts ...interface{}) time.Duration {
 	var expireDuration = time.Duration(expiredTime) * time.Second
 	if len(opts) > 0 {
 		if v, ok := opts[0].(time.Duration); ok {
 			expireDuration = v
 		}
 	}
-	err := redisClient.Set(redisClient.Context(), key, value, expireDuration).Err()
-	return err
+
+	return expireDuration
+}
+
+func Set(key string, value interface{}, opts ...interface{}) error {
+	value = prepareSet(value)
+	var expireDuration = prepareExpire(opts)
+	return redisClient.Set(redisClient.Context(), key, value, expireDuration).Err()
 }
 
 func Get(key string) (string, error) {
@@ -110,6 +131,9 @@ func Scan(key string, out interface{}) error {
 		return err
 	}
 
+	if get.Val() == "" {
+		return errors.New("key not found")
+	}
 	if err := json.Unmarshal([]byte(get.Val()), out); err != nil {
 		return err
 	}
@@ -124,4 +148,8 @@ func getRedis(key string) *redis.StringCmd {
 func Del(key string) error {
 	del := redisClient.Del(redisClient.Context(), key)
 	return del.Err()
+}
+
+func Ctx() context.Context {
+	return redisClient.Context()
 }
