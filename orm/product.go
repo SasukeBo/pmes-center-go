@@ -168,3 +168,26 @@ func pipFetch(ids []int, readyChan chan []PipGet) {
 	})
 	readyChan <- pgs
 }
+
+func AutoCacheProducts() {
+	doCache()
+	for {
+		select {
+		// 每30秒一次刷新缓存
+		case <-time.After(30 * time.Minute):
+			doCache()
+		}
+	}
+}
+
+func doCache() {
+	log.Info("[doCache] start caching")
+	var pds []Product
+	var now = time.Now()
+	if err := DB.Model(&Product{}).Where("created_at > ?", now.Add(-30*time.Minute)).Find(&pds).Error; err != nil {
+		return
+	}
+
+	log.Info("[doCache] cache %d products", len(pds))
+	cacheProducts(pds)
+}
