@@ -8,7 +8,7 @@ import (
 )
 
 func TestCache(t *testing.T) {
-	t.Run("Test Get Set", func(t *testing.T) {
+	t.Run("Test_Get_Set", func(t *testing.T) {
 		var key = "my_name_is"
 		var value = "sasuke"
 

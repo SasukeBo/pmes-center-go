@@ -24,7 +24,7 @@ func connectRedis() {
 	redisPort := configer.GetString("redis_port")
 	redisClient = redis.NewClient(&redis.Options{
 		Addr:        fmt.Sprintf("%s:%s", redisHost, redisPort),
-		DialTimeout: 100,
+		DialTimeout: time.Minute,
 	})
 	if redisClient != nil {
 		log.Info("redis server connected")
