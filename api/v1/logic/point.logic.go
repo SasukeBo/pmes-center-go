@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api/v1/model"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
@@ -49,8 +48,7 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 		version = *v
 	}
 
-	var requiredIds []int
-	query := orm.DB.Model(&orm.Product{}).Where("products.material_id = ?", groupInput.TargetID)
+	query := orm.DB.Model(&orm.Product{}).Select("point_values").Where("products.material_id = ?", groupInput.TargetID)
 	query = query.Joins("JOIN import_records ON import_records.id = products.import_record_id")
 	query = query.Where("import_records.blocked = ? AND products.material_version_id = ?", false, version.ID)
 
@@ -81,12 +79,11 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 		query = query.Where("products.created_at < ?", groupInput.Duration[1])
 	}
 
-	if err := query.Pluck("products.id", &requiredIds).Error; err != nil {
-		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "product")
+	var products []orm.Product
+	if err := query.Find(&products).Error; err != nil {
+		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "size")
 	}
 
-	log.Info("[FetchProducts]")
-	products := orm.FetchProducts(requiredIds)
 	var points []orm.Point
 	if err := orm.Model(&orm.Point{}).Where("material_id = ? AND material_version_id = ?", groupInput.TargetID, version.ID).Find(&points).Error; err != nil {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "points")
