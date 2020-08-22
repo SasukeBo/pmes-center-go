@@ -29,6 +29,12 @@ func Point(ctx context.Context, id int) (*model.Point, error) {
 	return &out, nil
 }
 
+type pointYieldResult struct {
+	Rate   float64
+	Amount int
+	Name   string
+}
+
 // 尺寸不良率排行
 func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID *int) (*model.EchartsResult, error) {
 	var material orm.Material
@@ -105,23 +111,42 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 	}
 
 	t1 := time.Now()
+	var resultChan = make(chan pointYieldResult, 3)
 	for _, point := range points {
-		var ok int
-		for _, product := range products {
-			v := product.PointValues[point.Name]
-			value, err := strconv.ParseFloat(fmt.Sprint(v), 64)
-			if err != nil {
-				continue
+		go func() {
+			var ok int
+			var name = point.Name
+			for _, p := range products {
+				v := p.PointValues[name]
+				value, err := strconv.ParseFloat(fmt.Sprint(v), 64)
+				if err != nil {
+					continue
+				}
+
+				if value <= point.UpperLimit && value >= point.LowerLimit {
+					ok++
+				}
 			}
 
-			if value <= point.UpperLimit && value >= point.LowerLimit {
-				ok++
+			resultChan <- pointYieldResult{
+				Name:   name,
+				Rate:   float64(total-ok) / float64(total),
+				Amount: total - ok,
 			}
+		}()
+	}
+	var count int
+	for {
+		count++
+		select {
+		case r := <-resultChan:
+			xAxisData = append(xAxisData, r.Name)
+			data = append(data, r.Rate)
+			amount = append(amount, r.Amount)
 		}
-		rate := float64(total-ok) / float64(total)
-		xAxisData = append(xAxisData, point.Name)
-		data = append(data, rate)
-		amount = append(amount, total-ok)
+		if count == len(points) {
+			break
+		}
 	}
 	t2 := util.DebugTime(t1, "points range cal yield spend")
 
