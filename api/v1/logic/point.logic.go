@@ -113,9 +113,8 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 	t1 := time.Now()
 	var resultChan = make(chan pointYieldResult, 3)
 	for _, point := range points {
-		go func() {
+		go func(name string) {
 			var ok int
-			var name = point.Name
 			for _, p := range products {
 				v := p.PointValues[name]
 				value, err := strconv.ParseFloat(fmt.Sprint(v), 64)
@@ -133,7 +132,7 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 				Rate:   float64(total-ok) / float64(total),
 				Amount: total - ok,
 			}
-		}()
+		}(point.Name)
 	}
 	var count int
 	for {
