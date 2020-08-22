@@ -8,6 +8,7 @@ import (
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
+	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/jinzhu/copier"
 	"strconv"
 	"strings"
@@ -26,6 +27,12 @@ func Point(ctx context.Context, id int) (*model.Point, error) {
 	}
 
 	return &out, nil
+}
+
+type pointYieldResult struct {
+	Rate   float64
+	Amount int
+	Name   string
 }
 
 // 尺寸不良率排行
@@ -103,24 +110,44 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 		}, nil
 	}
 
+	t1 := time.Now()
+	var resultChan = make(chan pointYieldResult, 3)
 	for _, point := range points {
-		var ok int
-		for _, product := range products {
-			v := product.PointValues[point.Name]
-			value, err := strconv.ParseFloat(fmt.Sprint(v), 64)
-			if err != nil {
-				continue
+		go func(point orm.Point) {
+			var ok int
+			for _, p := range products {
+				v := p.PointValues[point.Name]
+				value, err := strconv.ParseFloat(fmt.Sprint(v), 64)
+				if err != nil {
+					continue
+				}
+
+				if value <= point.UpperLimit && value >= point.LowerLimit {
+					ok++
+				}
 			}
 
-			if value <= point.UpperLimit && value >= point.LowerLimit {
-				ok++
+			resultChan <- pointYieldResult{
+				Name:   point.Name,
+				Rate:   float64(total-ok) / float64(total),
+				Amount: total - ok,
 			}
-		}
-		rate := float64(total-ok) / float64(total)
-		xAxisData = append(xAxisData, point.Name)
-		data = append(data, rate)
-		amount = append(amount, total-ok)
+		}(point)
 	}
+	var count int
+	for {
+		count++
+		select {
+		case r := <-resultChan:
+			xAxisData = append(xAxisData, r.Name)
+			data = append(data, r.Rate)
+			amount = append(amount, r.Amount)
+		}
+		if count == len(points) {
+			break
+		}
+	}
+	t2 := util.DebugTime(t1, "points range cal yield spend")
 
 	// 排序
 	sort := model.SortDesc
@@ -139,6 +166,7 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 			amount[j], amount[j+1] = amount[j+1], amount[j]
 		}
 	}
+	util.DebugTime(t2, "sort spend")
 
 	// limit
 	if groupInput.Limit != nil && *groupInput.Limit < len(points) {
