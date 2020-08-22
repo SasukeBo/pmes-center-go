@@ -445,6 +445,5 @@ func GroupAnalyzePoint(ctx context.Context, analyzeInput model.GraphInput) (*mod
 	}
 	qualifiedResults := scanRows(rows, analyzeInput.GroupBy)
 
-	out, err := calYieldAnalysisResult(results, qualifiedResults, analyzeInput.Limit, &sort)
-	return &out, err
+	return calYieldAnalysisResult(results, qualifiedResults, analyzeInput.Limit, &sort)
 }
