@@ -8,6 +8,7 @@ import (
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/SasukeBo/pmes-data-center/orm/types"
+	"github.com/SasukeBo/pmes-data-center/util"
 	"github.com/jinzhu/copier"
 	"strconv"
 	"strings"
@@ -103,6 +104,7 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 		}, nil
 	}
 
+	t1 := time.Now()
 	for _, point := range points {
 		var ok int
 		for _, product := range products {
@@ -121,6 +123,7 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 		data = append(data, rate)
 		amount = append(amount, total-ok)
 	}
+	t2 := util.DebugTime(t1, "points range cal yield spend")
 
 	// 排序
 	sort := model.SortDesc
@@ -139,6 +142,7 @@ func SizeUnYieldTop(ctx context.Context, groupInput model.GraphInput, versionID 
 			amount[j], amount[j+1] = amount[j+1], amount[j]
 		}
 	}
+	util.DebugTime(t2, "sort spend")
 
 	// limit
 	if groupInput.Limit != nil && *groupInput.Limit < len(points) {
