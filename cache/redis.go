@@ -39,7 +39,7 @@ func Pipelined(fn func(pip redis.Pipeliner) error) ([]redis.Cmder, error) {
 
 func SetWithPip(pip redis.Pipeliner, key string, value interface{}, opts ...interface{}) error {
 	value = prepareSet(value)
-	expiredDuration := prepareExpire(opts)
+	expiredDuration := prepareExpire(opts...)
 	return pip.Set(Ctx(), key, value, expiredDuration).Err()
 }
 
@@ -71,7 +71,7 @@ func prepareExpire(opts ...interface{}) time.Duration {
 
 func Set(key string, value interface{}, opts ...interface{}) error {
 	value = prepareSet(value)
-	var expireDuration = prepareExpire(opts)
+	var expireDuration = prepareExpire(opts...)
 	return redisClient.Set(redisClient.Context(), key, value, expireDuration).Err()
 }
 
