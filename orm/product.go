@@ -27,7 +27,7 @@ type Product struct {
 	PointValues       types.Map `gorm:"COMMENT:'产品点位检测值集合';type:JSON;not null"`
 }
 
-const pDuration = 24 * time.Hour
+const pDuration = 7 * 24 * time.Hour // 缓存7天
 
 // 存储id连续的products
 // 分页缓存，10000的整数倍
