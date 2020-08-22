@@ -2,19 +2,14 @@ package logic
 
 import (
 	"context"
-	"crypto/md5"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api/v1/model"
-	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/jinzhu/gorm"
 	"strings"
-	"time"
 )
 
 type analysis struct {
@@ -35,26 +30,6 @@ type queryProton struct {
 }
 
 func groupAnalyze(ctx context.Context, params model.GraphInput, target string, pVersionID *int) (*model.EchartsResult, error) {
-	var out model.EchartsResult
-	var key string
-	defer func() {
-		if key != "" {
-			_ = cache.Set(key, out)
-		}
-	}()
-	for i, t := range params.Duration {
-		nt := t.Truncate(time.Hour)
-		params.Duration[i] = &nt
-	}
-	if content, err := json.Marshal(params); err == nil {
-		key = fmt.Sprintf("%x-%s", md5.Sum(content), target)
-		if err := cache.Scan(key, &out); err == nil {
-			return &out, nil
-		} else {
-			log.Errorln(err)
-		}
-	}
-
 	if params.Limit != nil && *params.Limit < 0 {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("limit不能小于0"))
 	}
@@ -180,11 +155,7 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, p
 			return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeGetObjectFailed, err, "products")
 		}
 		qualifiedResults := scanRows(ratioRows, params.GroupBy)
-		out, err = calYieldAnalysisResult(results, qualifiedResults, params.Limit, params.Sort)
-		if err == nil && key != "" {
-			_ = cache.Set(key, out)
-		}
-		return &out, err
+		return calYieldAnalysisResult(results, qualifiedResults, params.Limit, params.Sort)
 	}
 
 	eResult, err := calAmountAnalysisResult(results, params.Limit, params.Sort)
@@ -192,8 +163,7 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, p
 		return nil, err
 	}
 
-	out = convertToEchartsResult(eResult)
-	return &out, nil
+	return convertToEchartsResult(eResult), nil
 }
 
 func operateQuery(rowsChan chan queryProton, query *gorm.DB, isRatio bool) {
@@ -241,7 +211,7 @@ func sortResult(result *echartsResult, isAsc bool) {
 	result.SeriesAmountData["data"] = seriesAmountData
 }
 
-func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, sort *model.Sort) (model.EchartsResult, error) {
+func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, sort *model.Sort) (*model.EchartsResult, error) {
 	totalAmount, _ := calAmountAnalysisResult(results, nil, nil)
 	yieldAmount, _ := calAmountAnalysisResult(qualifiedResults, nil, nil)
 
@@ -282,7 +252,7 @@ func calYieldAnalysisResult(results, qualifiedResults []analysis, limit *int, so
 	return convertToEchartsResult(totalAmount), nil
 }
 
-func convertToEchartsResult(result *echartsResult) model.EchartsResult {
+func convertToEchartsResult(result *echartsResult) *model.EchartsResult {
 	seriesData := make(map[string]interface{})
 	seriesAmountData := make(map[string]interface{})
 	for k, v := range result.SeriesData {
@@ -290,7 +260,7 @@ func convertToEchartsResult(result *echartsResult) model.EchartsResult {
 		seriesAmountData[k] = result.SeriesAmountData[k]
 	}
 
-	return model.EchartsResult{
+	return &model.EchartsResult{
 		XAxisData:        result.XAxisData,
 		SeriesData:       seriesData,
 		SeriesAmountData: seriesAmountData,

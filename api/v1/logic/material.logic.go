@@ -2,15 +2,12 @@ package logic
 
 import (
 	"context"
-	"crypto/md5"
 	"fmt"
 	"github.com/SasukeBo/log"
 	"github.com/SasukeBo/pmes-data-center/api/v1/model"
-	"github.com/SasukeBo/pmes-data-center/cache"
 	"github.com/SasukeBo/pmes-data-center/errormap"
 	"github.com/SasukeBo/pmes-data-center/orm"
 	"github.com/jinzhu/copier"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -77,16 +74,6 @@ type qualifiedResult struct {
 }
 
 func countProductQualifiedForMaterial(material *orm.Material) (int, int) {
-	cacheKey := fmt.Sprintf("COUNT_PRODUCT_QUALIFIED_FOR_MATERIAL_%v", material.ID)
-	if value, err := cache.Get(cacheKey); err == nil {
-		values := strings.Split(value, ",")
-		if len(values) == 2 {
-			ok, _ := strconv.Atoi(values[0])
-			ng, _ := strconv.Atoi(values[1])
-			return ok, ng
-		}
-	}
-
 	currentVersion, err := material.GetCurrentVersion()
 	if err != nil {
 		return 0, 0
@@ -121,29 +108,11 @@ func countProductQualifiedForMaterial(material *orm.Material) (int, int) {
 	}
 
 	_ = rows.Close()
-	cache.Set(cacheKey, fmt.Sprintf("%v,%v", ok, ng))
 	return ok, ng
 }
 
 func AnalyzeMaterial(ctx context.Context, id int, deviceID *int, versionID *int, duration []*time.Time) (*model.Material, error) {
-	for i, t := range duration {
-		nt := t.Truncate(time.Hour)
-		duration[i] = &nt
-	}
-	base := fmt.Sprintf("%s-%v-%v", "AnalyzeMaterial", id, duration)
-	if deviceID != nil {
-		base = base + fmt.Sprintf("-%v", *deviceID)
-	}
-	if versionID != nil {
-		base = base + fmt.Sprintf("-%v", *versionID)
-	}
-
 	var out model.Material
-	var key = fmt.Sprint(md5.Sum([]byte(base)))
-	if err := cache.Scan(key, &out); err == nil {
-		return &out, nil
-	}
-
 	var material orm.Material
 	if err := material.Get(uint(id)); err != nil {
 		return nil, errormap.SendGQLError(ctx, err.GetCode(), err, "material")
@@ -202,7 +171,6 @@ func AnalyzeMaterial(ctx context.Context, id int, deviceID *int, versionID *int,
 		}
 	}
 
-	_ = cache.Set(key, &out)
 	return &out, nil
 }
 
@@ -213,16 +181,6 @@ type productGroupCount struct {
 }
 
 func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*model.EchartsResult, error) {
-	for i, t := range duration {
-		nt := t.Truncate(time.Hour)
-		duration[i] = &nt
-	}
-	var out model.EchartsResult
-	var key = fmt.Sprint(md5.Sum([]byte(fmt.Sprintf("%s-%v-%v", "MaterialYieldTop", duration, limit))))
-	if err := cache.Scan(key, &out); err == nil {
-		return &out, nil
-	}
-
 	// SELECT
 	query := orm.Model(&orm.Product{}).Select("COUNT(id) AS total, qualified").Group("qualified")
 
@@ -326,14 +284,12 @@ func MaterialYieldTop(ctx context.Context, duration []*time.Time, limit int) (*m
 		limit = len(xAxisData)
 	}
 
-	out = model.EchartsResult{
+	return &model.EchartsResult{
 		XAxisData: xAxisData[:limit],
 		SeriesData: map[string]interface{}{
 			"data": seriesData[:limit],
 		},
-	}
-	_ = cache.Set(key, out)
-	return &out, nil
+	}, nil
 }
 
 func GroupAnalyzeMaterial(ctx context.Context, analyzeInput model.GraphInput, versionID *int) (*model.EchartsResult, error) {

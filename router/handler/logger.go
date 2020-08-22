@@ -19,14 +19,15 @@ func HttpRequestLogger() gin.HandlerFunc {
 
 		rw := &responseWriter{
 			ResponseWriter: c.Writer,
-			body:           bytes.NewBufferString(""),
+			Body:           bytes.NewBufferString(""),
 		}
 		c.Writer = rw
 		body, _ := ioutil.ReadAll(c.Request.Body)
 		c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		c.Set("requestBody", string(body))
 		c.Next()
 		fmt.Printf("\n%s\n", color.Warn.Render("[Debug Output]"))
 		fmt.Printf("%s %s\n", color.Notice.Render("[Request Body]"), string(body))
-		fmt.Printf("%s %s\n\n", color.Notice.Render("[Response Body]"), rw.body.String())
+		fmt.Printf("%s %s\n\n", color.Notice.Render("[Response Body]"), rw.Body.String())
 	}
 }
