@@ -30,6 +30,7 @@ type queryProton struct {
 }
 
 func groupAnalyze(ctx context.Context, params model.GraphInput, target string, pVersionID *int) (*model.EchartsResult, error) {
+	// TODO 逻辑处理group统计，取代sql查询，充分利用redis缓存的product数据
 	if params.Limit != nil && *params.Limit < 0 {
 		return nil, errormap.SendGQLError(ctx, errormap.ErrorCodeBadRequestParams, errors.New("limit不能小于0"))
 	}
@@ -131,9 +132,7 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, p
 	var receivedRowsCount int
 	var ratioRows, rows *sql.Rows
 	for {
-		if receivedRowsCount >= totalQueryCount {
-			break
-		}
+		receivedRowsCount++
 		select {
 		case rowsProton := <-rowsChan:
 			if rowsProton.isRatio {
@@ -142,7 +141,9 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, p
 				rows = rowsProton.rows
 			}
 		}
-		receivedRowsCount++
+		if receivedRowsCount == totalQueryCount {
+			break
+		}
 	}
 
 	if rows == nil {
