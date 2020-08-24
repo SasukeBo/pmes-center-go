@@ -63,7 +63,7 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, p
 	groupColumns = append(groupColumns, "axis")
 	switch params.XAxis {
 	case model.CategoryDate:
-		selectVariables = append(selectVariables, "DATE(products.created_at)")
+		selectVariables = append(selectVariables, "DATE(CONVERT_TZ(products.created_at, @@session.time_zone,'+8:00'))")
 	case model.CategoryDevice:
 		selectVariables = append(selectVariables, "devices.name")
 		joinDevice = true
@@ -82,7 +82,7 @@ func groupAnalyze(ctx context.Context, params model.GraphInput, target string, p
 		groupColumns = append(groupColumns, "group_by")
 		switch *params.GroupBy {
 		case model.CategoryDate:
-			selectVariables = append(selectVariables, "DATE(products.created_at)")
+			selectVariables = append(selectVariables, "DATE(CONVERT_TZ(products.created_at, @@session.time_zone,'+8:00'))")
 		case model.CategoryDevice:
 			selectVariables = append(selectVariables, "devices.name")
 			joinDevice = true
