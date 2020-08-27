@@ -552,7 +552,7 @@ func AutoFetch() {
 	fetch()
 	for {
 		select {
-		case <-time.After(1 * time.Hour):
+		case <-time.After(15 * time.Minute):
 			fetch()
 		}
 	}
