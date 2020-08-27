@@ -145,7 +145,8 @@ func init() {
 		setupPointsImportTemplate()
 	}
 	setupDefaultConfig() // Test env need system config
-	DB.LogMode(true)
+	logMode := configer.GetBool("db_log_mode")
+	DB.LogMode(logMode)
 	setupIndex()
 }
 
