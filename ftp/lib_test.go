@@ -14,7 +14,7 @@ func TestReadFile(t *testing.T) {
 }
 
 func TestGetList(t *testing.T) {
-	nameList, err := GetDeepFilePath("/1828")
+	nameList, err := GetDeepFilePath("/1828-BZ")
 	if err != nil {
 		t.Fatal(err)
 	}

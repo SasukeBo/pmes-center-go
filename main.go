@@ -9,9 +9,9 @@ import (
 
 func main() {
 	if configer.GetString("env") != "dev" {
-		go logic.AutoFetch()
 		go logic.AutoCleanCacheFile()
 	}
+	go logic.AutoFetch()
 	go orm.AutoCacheProducts()
 	router.Start()
 }
