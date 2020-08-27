@@ -2,6 +2,7 @@ package ftp
 
 import (
 	"fmt"
+	"github.com/SasukeBo/configer"
 	"github.com/SasukeBo/log"
 	"io/ioutil"
 	"path/filepath"
@@ -12,38 +13,28 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
+var (
+	ftpHost = configer.GetString(orm.SystemConfigFtpHostKey)
+	ftpPort = configer.GetString(orm.SystemConfigFtpPortKey)
+	ftpUser = configer.GetString(orm.SystemConfigFtpUsernameKey)
+	ftpPass = configer.GetString(orm.SystemConfigFtpPasswordKey)
+)
+
 // connect make a connection for ftp server
 func connect() (*ftp.ServerConn, error) {
-	var ftpHostConf, ftpPortConf, ftpUserConf, ftpPassConf orm.SystemConfig
-	if err := ftpHostConf.GetConfig(orm.SystemConfigFtpHostKey); err != nil {
-		return nil, &FTPError{Message: "没有找到FTP服务器Host配置", OriginErr: err}
-	}
-
-	if err := ftpPortConf.GetConfig(orm.SystemConfigFtpPortKey); err != nil {
-		return nil, &FTPError{Message: "没有找到FTP服务器Port配置", OriginErr: err}
-	}
-
-	if err := ftpUserConf.GetConfig(orm.SystemConfigFtpUsernameKey); err != nil {
-		return nil, &FTPError{Message: "没有找到FTP服务器登录账号", OriginErr: err}
-	}
-
-	if err := ftpPassConf.GetConfig(orm.SystemConfigFtpPasswordKey); err != nil {
-		return nil, &FTPError{Message: "没有找到FTP服务器登录密码", OriginErr: err}
-	}
-
-	ftpConn, err := ftp.Dial(fmt.Sprintf("%v:%v", ftpHostConf.Value, ftpPortConf.Value), ftp.DialWithTimeout(4*time.Second))
+	ftpConn, err := ftp.Dial(fmt.Sprintf("%v:%v", ftpHost, ftpPort), ftp.DialWithTimeout(4*time.Second))
 	if err != nil {
 		log.Errorln(err)
 		return nil, &FTPError{
-			Message:   fmt.Sprintf("连接FTP服务器%s:%s失败", ftpHostConf.Value, ftpPortConf.Value),
+			Message:   fmt.Sprintf("连接FTP服务器%s:%s失败", ftpHost, ftpPort),
 			OriginErr: err,
 		}
 	}
-	err = ftpConn.Login(ftpUserConf.Value, ftpPassConf.Value)
+	err = ftpConn.Login(ftpUser, ftpPass)
 	if err != nil {
 		log.Errorln(err)
 		return nil, &FTPError{
-			Message:   fmt.Sprintf("登录FTP服务器%s:%s失败", ftpHostConf.Value, ftpPortConf.Value),
+			Message:   fmt.Sprintf("登录FTP服务器%s:%s失败", ftpHost, ftpPort),
 			OriginErr: err,
 		}
 	}
@@ -125,7 +116,6 @@ func deepGetEntries(conn *ftp.ServerConn, path string) ([]string, error) {
 
 	for _, v := range entries {
 		dp := filepath.Join(path, v.Name)
-		//fmt.Printf("entry path: %s\n", dp)
 		switch v.Type {
 		case ftp.EntryTypeFile:
 			if strings.Contains(v.Name, ".xlsx") {

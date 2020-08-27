@@ -96,6 +96,12 @@ func handleFileDevice(xr *XLSXReader, file *xlsx.File) error {
 // 删除已读取的文件
 // 存储文件到本地缓存
 func (xr *XLSXReader) ReadFTP(path string) error {
+	var err error = nil
+	defer func() {
+		if err != nil {
+			xr.Record.Failed(errormap.ErrorCodeImportFailedWithPanic, err)
+		}
+	}()
 	// 读取文件
 	content, err := ftp.ReadFile(path)
 	if err != nil {
@@ -116,7 +122,7 @@ func (xr *XLSXReader) ReadFTP(path string) error {
 	// 创建目录
 	var relevantPath = filepath.Join(orm.DirSource, xr.Material.Name, "default")
 	var directory = filepath.Join(dst, relevantPath)
-	if err := os.MkdirAll(directory, os.ModePerm); err != nil {
+	if err = os.MkdirAll(directory, os.ModePerm); err != nil {
 		return &ftp.FTPError{
 			Message:   fmt.Sprintf("create directory(%s) failed: %v", directory, err),
 			OriginErr: err,
@@ -132,7 +138,7 @@ func (xr *XLSXReader) ReadFTP(path string) error {
 		}
 	}
 	var localPath = filepath.Join(directory, token.String())
-	if err := ioutil.WriteFile(localPath, content, fileModeReadWrite); err != nil {
+	if err = ioutil.WriteFile(localPath, content, fileModeReadWrite); err != nil {
 		return &ftp.FTPError{
 			Message:   fmt.Sprintf("save file to localpath(%s) failed: %v", localPath, err),
 			OriginErr: err,
@@ -151,7 +157,7 @@ func (xr *XLSXReader) ReadFTP(path string) error {
 	_ = ftp.RemoveFile(path)
 
 	xr.Record.FileID = file.ID
-	if err := xr.setData(content); err != nil {
+	if err = xr.setData(content); err != nil {
 		return err
 	}
 
@@ -336,31 +342,6 @@ func FetchFileData(user orm.User, material orm.Material, device orm.Device, toke
 	return err
 }
 
-//// checkFile 仅检查文件是否已经被读取到指定料号
-// TODO: 遗弃
-//func checkFile(materialID uint, fileName string) bool {
-//	var importRecord orm.ImportRecord
-//	// 查找 当前料号的 当前文件名的 已完成的 且 没有处理错误的 文件导入记录，若存在则忽略此文件
-//	orm.DB.Model(&importRecord).Where(
-//		"file_name = ? AND material_id = ? AND status = ?",
-//		fileName, materialID, model.ImportStatusFinished,
-//	).First(&importRecord)
-//
-//	if importRecord.ID != 0 {
-//		return false
-//	}
-//
-//	if !strings.Contains(fileName, ".xlsx") {
-//		return false
-//	}
-//
-//	return true
-//}
-
-//func resolvePath(m, path string) string {
-//	return fmt.Sprintf("./%s/%s", m, filepath.Base(path))
-//}
-
 var (
 	singleInsertLimit = 5000
 	insertProductsTpl = `
@@ -382,141 +363,6 @@ var (
 	productValueFieldTpl = `(?,?,?,?,?,?,?,?,?,?)`
 	productValueCount    = 10
 )
-
-// TODO deprecated
-//func store(xr *XLSXReader) {
-//	defer func() {
-//		err := recover()
-//		if err != nil {
-//			fmt.Println(err)
-//			_ = xr.Record.Failed(errormap.ErrorCodeImportFailedWithPanic, err)
-//			debug.PrintStack()
-//		}
-//	}()
-//
-//	var time1 = time.Now()
-//
-//	var versions []orm.MaterialVersion
-//	if err := orm.Model(&orm.MaterialVersion{}).Where("material_id = ? AND active = true", xr.Material.ID).Find(&versions).Error; err != nil {
-//		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, err)
-//		return
-//	}
-//	if len(versions) == 0 {
-//		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotFound, nil)
-//		return
-//	}
-//	if len(versions) > 1 {
-//		_ = xr.Record.Failed(errormap.ErrorCodeActiveVersionNotUnique, nil)
-//		return
-//	}
-//
-//	var currentVersion = versions[0]
-//	var points []orm.Point
-//	if err := orm.DB.Model(&orm.Point{}).Where(
-//		"material_id = ? AND material_version_id = ?", xr.Material.ID, currentVersion.ID,
-//	).Find(&points).Error; err != nil {
-//		_ = xr.Record.Failed(errormap.ErrorCodeImportGetPointsFailed, err)
-//		return
-//	}
-//
-//	productColumns := xr.DecodeTemplate.ProductColumns
-//	productValueExpands := make([]interface{}, 0)
-//
-//	var importOK int
-//	for _, row := range xr.DataSet {
-//		qualified := true
-//		createdAt := time.Now()
-//		if t := timer.ParseTime(row[xr.DecodeTemplate.CreatedAtColumnIndex-1], 8); t != nil {
-//			createdAt = *t
-//		}
-//		attribute := make(types.Map)
-//		for name, iColumn := range productColumns {
-//			column := iColumn.(map[string]interface{})
-//			index := int(column["Index"].(float64))
-//			cType := column["Type"].(string)
-//			value := row[index-1]
-//
-//			switch cType {
-//			case orm.ProductColumnTypeDatetime:
-//				t := timer.ParseTime(value, 8)
-//				if t == nil {
-//					now := time.Now()
-//					t = &now
-//				}
-//				attribute[name] = *t
-//			case orm.ProductColumnTypeFloat:
-//				fv, err := strconv.ParseFloat(value, 64)
-//				if err != nil {
-//					fv = float64(0)
-//				}
-//				attribute[name] = fv
-//			case orm.ProductColumnTypeInteger:
-//				iv, err := strconv.ParseInt(value, 10, 64)
-//				if err != nil {
-//					iv = int64(0)
-//				}
-//				attribute[name] = iv
-//			case orm.ProductColumnTypeString:
-//				attribute[name] = fmt.Sprint(value)
-//			}
-//		}
-//
-//		pointValues := make(types.Map)
-//		for _, v := range points {
-//			idx := v.Index - 1
-//			if idx >= len(row) {
-//				message := fmt.Sprintf("point(%s) index(%d) out of range with data row length(%d)", v.Name, idx, len(row))
-//				_ = xr.Record.Failed(errormap.ErrorCodeImportWithIllegalDecodeTemplate, message)
-//				log.Errorln(message)
-//				return
-//			}
-//			value := parseFloat(row[idx])
-//			if value < v.LowerLimit || value > v.UpperLimit {
-//				qualified = false
-//			}
-//			pointValues[v.Name] = value
-//		}
-//		var deviceID uint
-//		if xr.Device != nil {
-//			deviceID = xr.Device.ID
-//		}
-//
-//		productValueExpands = append(productValueExpands,
-//			xr.Record.ID,
-//			xr.Material.ID,
-//			deviceID,
-//			qualified,
-//			createdAt,
-//			attribute,
-//			pointValues,
-//			currentVersion.ID,
-//		)
-//		if qualified {
-//			importOK++
-//		}
-//	}
-//
-//	execInsert(productValueExpands, productValueCount, insertProductsTpl, productValueFieldTpl, xr.Record)
-//
-//	/*			记录单次导入良率
-//	---------------------------------------------------------------------------------------------------------------- */
-//	var yield float64
-//	if total := len(xr.DataSet); total == 0 {
-//		yield = 0
-//	} else {
-//		yield = float64(importOK) / float64(total)
-//	}
-//	_ = xr.Record.Finish(yield)
-//
-//	/*			记录当前版本的总量与良率
-//	---------------------------------------------------------------------------------------------------------------- */
-//	if err := currentVersion.UpdateWithRecord(xr.Record); err != nil {
-//		log.Error("[store] currentVersion update with record failed: %v", err)
-//	}
-//
-//	var time2 = time.Now()
-//	fmt.Printf("___________________________ process file [%s] duration is %v\n", xr.Record.FileName, time2.Sub(time1))
-//}
 
 // store xlsx data into db
 func store(xr *XLSXReader) {
@@ -721,14 +567,34 @@ func fetch() {
 
 	for _, m := range materials {
 		// TODO: add log
-		log.Info("[autoFetch] fetch data for %s", m.Name)
+		log.Info("[autoFetch] fetch file list for %s", m.Name)
+		dt, err := m.GetCurrentVersionTemplate()
+		if err != nil {
+			log.Error("[AutoFetch] GetCurrentVersionTemplate failed: %v", err)
+			continue
+		}
 
-		go func() {
-			err := FetchMaterialData(&m)
-			if err != nil {
-				// TODO: add log
-				log.Errorln(err)
+		xr := newXLSXReader(&m, nil, dt)
+		paths, _ := ftp.GetDeepFilePath(m.Name)
+		for _, path := range paths {
+			importRecord := &orm.ImportRecord{
+				FileName:          filepath.Base(path),
+				MaterialID:        m.ID,
+				Status:            orm.ImportStatusLoading,
+				ImportType:        orm.ImportRecordTypeSystem,
+				DecodeTemplateID:  dt.ID,
+				MaterialVersionID: dt.MaterialVersionID,
 			}
-		}()
+			if err := orm.Create(importRecord).Error; err != nil {
+				log.Errorln(err)
+				continue
+			}
+			xr.Record = importRecord
+			if err := xr.ReadFTP(path); err != nil {
+				log.Error("[AutoFetch] ReadFTP(%v) failed: %v", path, err)
+				continue
+			}
+			store(xr)
+		}
 	}
 }

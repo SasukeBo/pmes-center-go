@@ -21,8 +21,8 @@ func init() {
 		EN:    "Sorry, failed to import data with some unknown errors.",
 	})
 	register(ErrorCodeImportWithIllegalDecodeTemplate, http.StatusBadRequest, langMap{
-		ZH_CN: "对不起，导入数据时使用的解析模板不合法，导入失败。",
-		EN:    "Sorry, failed to import data with illegal decode template.",
+		ZH_CN: "对不起，导入文件不符合解析模板配置，导入失败。",
+		EN:    "Sorry, failed to import data with unsuitable decode template.",
 	})
 	register(ErrorCodeImportGetPointsFailed, http.StatusBadRequest, langMap{
 		ZH_CN: "对不起，导入数据时获取料号检测项信息发生错误。",
